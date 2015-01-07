@@ -1,0 +1,9 @@
+# Read Design
+read_verilog v/firfilter.v
+
+# High Level Synthesis
+hierarchy -check
+proc; opt; fsm; opt;
+
+show -width -format dot -prefix ./dataflow
+
