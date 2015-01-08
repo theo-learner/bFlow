@@ -1,6 +1,6 @@
-read_verilog v/firfilter3.v
+read_verilog v/mux_using_if.v
 
 hierarchy -check
 proc; opt; fsm; opt; wreduce; opt
 
-show -width -format dot -prefix ./firfilter3_df
+show -width -format dot -prefix ./mux_using_if_df

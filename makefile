@@ -19,13 +19,11 @@ all: main
 #build subdirectories
 	
 main: $(OBJS)
-	$(CXX) $(OBJS) -o main
+	$(CXX) $(OBJS) -o hbflow 
 
 %.o: %.cpp 
 	$(CXX) $(CFLAGS) -c -o $@ $<
 
 
-
-
 clean: 
-	rm *.o
+	rm *.o hbflow  .yosys.dmp .yscript.seq

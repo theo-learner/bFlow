@@ -78,25 +78,34 @@ def extractSWString():
 		sw="";
 		for index in xrange(len(dataflow_node)-2):
 			node = dataflow_node[index+1];
+		
+			#	Make sure it isn't a port/point node
+			if 'n' in node:
+				continue;
+
 			#print "CHECKING NODE: " + node;
 			operation = labelAttr[node];
 
 			if 'x' in node: 									 #Check to see if the node is a splice
 				sw = sw + 'N';
-			elif ('$add' in operation) or ('sub' in operation):
+			elif ('$add' in operation) or ('sub' in operation):  #Add or sub operation
 				sw = sw + 'A';
-			elif '$mul' in operation: 
+			elif '$mul' in operation:                            #Multiplication operation
 				sw = sw + 'X';
-			elif '$eq' in operation:	
+			elif '$eq' in operation:	                           #Equality Operation
 				sw = sw + 'E';
-			elif '$mux' in operation:
+			elif '$mux' in operation:                            #Conditional
 				sw = sw + 'M';
-			elif '$dff' in operation:
+			elif '$dff' in operation or '$adff' in operation:    #memory
 				sw = sw + 'F';
+			elif '$shift' in operation:                          #Shift
+				sw = sw + 'S';
+			elif '$gt' in operation or '$lt' in operation:       #Comparator
+				sw = sw + 'C';
 			elif '$' in operation:
-				sw = sw + 'L';
+				sw = sw + 'L';                                     #Logic
 			else:
-				sw = sw + 'B';
+				sw = sw + 'B';                                     #...
 				
 
 			#print "OPERATION= " + operation + " SW: " + sw;
@@ -115,7 +124,10 @@ def removeComponent(node):
 
 	#Make sure it is not a multiInput point
 	if len(predList) > 1:
-		print "Multiinput point!";
+		print "Traceback Error:  Multiinput point!!!!!";
+		print "NODE: " + node;
+		print "predList: ";
+		print predList;
 		sys.exit(1);
 	if len(succList) < 1:
 		return;
@@ -188,7 +200,8 @@ for node in nodeList:
 			outNodeList.append(node);
 		#print "SHAPE: " + shapeAttr[node];
 	elif shapeAttr[node] == "point":         # Check to see if it is a point node
-		removeComponent(node);
+		#removeComponent(node);
+		continue;
 	elif shapeAttr[node] == "diamond":         # Check to see if it is a point node
 		removeComponent(node);
 	else:                                    # Process the Combinational blocks
@@ -216,7 +229,8 @@ atIndex = 1;
 for node in nodeList:
 	#print "CHECKING NODE: " + repr(node);
 	if(dfg.has_node(node)):
-		findAddTree(node);
+		if 'n' not in node:
+			findAddTree(node);
 
 
 	
@@ -226,9 +240,15 @@ dataflowList_node = [];
 for out in outNodeList:
 	for inNode in inNodeList:
 		#print "FROM " + inNode + " TO: " + out;
-		p = nx.shortest_path(dfg, inNode, out);
-		#print p;
-		dataflowList_node.append(p);
+		try:
+			p = nx.shortest_path(dfg, inNode, out);
+
+			#Store the path of node names into list
+			dataflowList_node.append(p);
+		except:
+			continue;
+			#print "No path from " + inNode + " to " + out;
+
 
 
 
@@ -241,6 +261,11 @@ for dataflow_node in dataflowList_node:
 	for index in xrange(len(dataflow_node)-2):
 		node = dataflow_node[index+1];
 		#print "CHECKING NODE: " + node;
+		
+		#	Make sure it isn't a port/point node
+		if 'n' in node:
+			continue;
+
 		operation = labelAttr[node];
 
 		if 'x' in node: 									 #Check to see if the node is a splice

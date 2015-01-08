@@ -27,11 +27,15 @@ int main(int argc, char** argv){
 
 		while(getline(infile, file)){
 			std::string seq = extractDataflow(file);
+
 			printf("ALIGNING SEQ1: %s - SEQ2: %s\n", refseq.c_str(), seq.c_str());
+			int score = 0;
 			if(refseq.length() < seq.length())
-				swAlignment(refseq.c_str(), refseq.size(), seq.c_str(), seq.size());
+				score = swAlignment(refseq.c_str(), refseq.size(), seq.c_str(), seq.size());
 			else
-				swAlignment(seq.c_str(), seq.size(), refseq.c_str(), refseq.size());
+				score = swAlignment(seq.c_str(), seq.size(), refseq.c_str(), refseq.size());
+
+			printf("[MAIN] -- Optimal SW Score: %d\n", score);
 
 			/*cmd = "python pscript.py " + cname + "_df.dot > .pscript.dmp";
 				system(cmd.c_str());
@@ -70,7 +74,7 @@ std::string create_yosys_script(std::string infile, std::string outFile){
 
 	yosysScript += "hierarchy -check\n";
 	yosysScript += "proc; opt; fsm; opt; wreduce; opt\n\n";
-	
+
 	yosysScript += "show -width -format dot -prefix ./" + outFile + "\n";
 
 	std::ofstream ofs;
@@ -81,26 +85,26 @@ std::string create_yosys_script(std::string infile, std::string outFile){
 	return g_YosysScript.c_str();
 
 }
-		
-bool readDumpFile(std::string file, std::string errorString)	{
-		std::stringstream ss;
-		std::ifstream ifs;
-		ifs.open(file.c_str());
-		ss<<ifs.rdbuf();
-		ifs.close();
 
-		if(ss.str().find(errorString) != std::string::npos)
-			throw 1;
-		else return true;
+bool readDumpFile(std::string file, std::string errorString)	{
+	std::stringstream ss;
+	std::ifstream ifs;
+	ifs.open(file.c_str());
+	ss<<ifs.rdbuf();
+	ifs.close();
+
+	if(ss.str().find(errorString) != std::string::npos)
+		throw 1;
+	else return true;
 }
 
 std::string readSeqFile(std::string file){
 
-		std::stringstream ss;
-		std::ifstream ifs;
-		ifs.open(file.c_str());
-		ss<<ifs.rdbuf();
-		ifs.close();
+	std::stringstream ss;
+	std::ifstream ifs;
+	ifs.open(file.c_str());
+	ss<<ifs.rdbuf();
+	ifs.close();
 
 	std::string seq = ss.str();
 	if(seq == "") throw 2;
@@ -109,36 +113,36 @@ std::string readSeqFile(std::string file){
 }
 
 std::string extractDataflow(std::string file){
-		printf("\nVerilog File: %s\n", file.c_str());
-	
-		int lastSlashIndex = file.find_last_of("/") + 1;
-		if(lastSlashIndex == -1) lastSlashIndex = 0;
+	printf("\nVerilog File: %s\n", file.c_str());
 
-		int lastDotIndex= file.find_last_of(".");
-		std::string cname = file.substr(lastSlashIndex, lastDotIndex-lastSlashIndex);
-		std::string extension= file.substr(lastDotIndex+1, file.length()-lastDotIndex);
-		printf("VNAME: %s\tVEXT: %s\n", cname.c_str(), extension.c_str());
+	int lastSlashIndex = file.find_last_of("/") + 1;
+	if(lastSlashIndex == -1) lastSlashIndex = 0;
 
-		//Make sure the file is a verilog file
-		if(extension != "v" && extension != "vhd") throw 3;
+	int lastDotIndex= file.find_last_of(".");
+	std::string cname = file.substr(lastSlashIndex, lastDotIndex-lastSlashIndex);
+	std::string extension= file.substr(lastDotIndex+1, file.length()-lastDotIndex);
+	printf("VNAME: %s\tVEXT: %s\n", cname.c_str(), extension.c_str());
 
-		//RUN YOSYS TO GET DATAFLOW OF THE VERILOG FILE
-		std::string scriptFile = create_yosys_script(file, cname+"_df");
-		if(scriptFile == "") return 0;
+	//Make sure the file is a verilog file
+	if(extension != "v" && extension != "vhd") throw 3;
 
-		std::string cmd = "yosys -Qq -s ";
-		cmd += scriptFile + " -l .yosys.dmp";
-		printf("[CMD] -- Running command: %s\n", cmd.c_str());
-		system(cmd.c_str());
+	//RUN YOSYS TO GET DATAFLOW OF THE VERILOG FILE
+	std::string scriptFile = create_yosys_script(file, cname+"_df");
+	if(scriptFile == "") return 0;
 
-		//Check to see if yosys encountered an error
-		readDumpFile(".yosys.dmp", "ERROR:");
+	std::string cmd = "yosys -Qq -s ";
+	cmd += scriptFile + " -l .yosys.dmp";
+	printf("[CMD] -- Running command: %s\n", cmd.c_str());
+	system(cmd.c_str());
 
-		//RUN PYTHON SCRIPT TO EXTRACT DATAFLOW FROM DOT FILE THAT IS GENERATED
-		cmd = "python pscript.py " + cname + "_df.dot";
-		printf("[CMD] -- Running command: %s\n", cmd.c_str());
-		system(cmd.c_str());
+	//Check to see if yosys encountered an error
+	readDumpFile(".yosys.dmp", "ERROR:");
 
-		std::string seq = readSeqFile(".yscript.seq");
-		return seq;
+	//RUN PYTHON SCRIPT TO EXTRACT DATAFLOW FROM DOT FILE THAT IS GENERATED
+	cmd = "python pscript.py " + cname + "_df.dot";
+	printf("[CMD] -- Running command: %s\n", cmd.c_str());
+	system(cmd.c_str());
+
+	std::string seq = readSeqFile(".yscript.seq");
+	return seq;
 }
