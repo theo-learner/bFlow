@@ -15,7 +15,7 @@ int main(int argc, char** argv){
 		if(argc != 3) throw 4;
 
 		printf("Extracting dataflow from reference design\n");	
-		std::string refseq = extractDataflow(argv[1]);
+		std::string targetseq = extractDataflow(argv[1]);
 
 		//Make sure database file is okay
 		std::ifstream infile;
@@ -26,14 +26,12 @@ int main(int argc, char** argv){
 		printf("Extracting dataflows from database\n");	
 
 		while(getline(infile, file)){
-			std::string seq = extractDataflow(file);
+			std::string queryseq= extractDataflow(file);
 
-			printf("ALIGNING SEQ1: %s - SEQ2: %s\n", refseq.c_str(), seq.c_str());
+			printf("ALIGNING QUERY: %s - TARGET: %s\n", targetseq.c_str(), queryseq.c_str());
 			int score = 0;
-			if(refseq.length() < seq.length())
-				score = swAlignment(refseq.c_str(), refseq.size(), seq.c_str(), seq.size());
-			else
-				score = swAlignment(seq.c_str(), seq.size(), refseq.c_str(), refseq.size());
+				score = swAlignment(targetseq.c_str(), targetseq.size(), queryseq.c_str(), queryseq.size());
+				//score = swAlignment(queryseq.c_str(), queryseq.size(), targetseq.c_str(), targetseq.size());
 
 			printf("[MAIN] -- Optimal SW Score: %d\n", score);
 
@@ -48,7 +46,7 @@ int main(int argc, char** argv){
 	}
 	catch(int e){
 		if(e == 1)
-			printf("[ERROR] -- Yosys encountered an error. Exiting\n");
+			printf("[ERROR] -- Error encountered in DMP file. Exiting\n");
 		else if(e == 2)
 			printf("[ERROR] -- There was no sequence extracted. Exiting\n");
 		else if(e == 3)
@@ -121,13 +119,13 @@ std::string extractDataflow(std::string file){
 	int lastDotIndex= file.find_last_of(".");
 	std::string cname = file.substr(lastSlashIndex, lastDotIndex-lastSlashIndex);
 	std::string extension= file.substr(lastDotIndex+1, file.length()-lastDotIndex);
-	printf("VNAME: %s\tVEXT: %s\n", cname.c_str(), extension.c_str());
+	//printf("VNAME: %s\tVEXT: %s\n", cname.c_str(), extension.c_str());
 
 	//Make sure the file is a verilog file
 	if(extension != "v" && extension != "vhd") throw 3;
 
 	//RUN YOSYS TO GET DATAFLOW OF THE VERILOG FILE
-	std::string scriptFile = create_yosys_script(file, cname+"_df");
+	std::string scriptFile = create_yosys_script(file, "dot/" + cname + "_df");
 	if(scriptFile == "") return 0;
 
 	std::string cmd = "yosys -Qq -s ";
@@ -139,9 +137,12 @@ std::string extractDataflow(std::string file){
 	readDumpFile(".yosys.dmp", "ERROR:");
 
 	//RUN PYTHON SCRIPT TO EXTRACT DATAFLOW FROM DOT FILE THAT IS GENERATED
-	cmd = "python pscript.py " + cname + "_df.dot";
+	cmd = "python pscript.py dot/" + cname + "_df.dot";// > .pscript.dmp";
 	printf("[CMD] -- Running command: %s\n", cmd.c_str());
 	system(cmd.c_str());
+
+	//Check to see if yosys encountered an error
+	readDumpFile(".pscript.dmp", "Traceback");
 
 	std::string seq = readSeqFile(".yscript.seq");
 	return seq;

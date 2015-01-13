@@ -1,8 +1,9 @@
 #!/usr/bin/python2.7
 
 import networkx as nx;
-import sys;
+import sys, traceback;
 import re;
+import copy;
 
 
 def findAddTree(node):
@@ -82,6 +83,8 @@ def extractSWString():
 			#	Make sure it isn't a port/point node
 			if 'n' in node:
 				continue;
+			elif shapeAttr[node] == "diamond":         # Check to see if it is a point node
+				continue;
 
 			#print "CHECKING NODE: " + node;
 			operation = labelAttr[node];
@@ -124,11 +127,12 @@ def removeComponent(node):
 
 	#Make sure it is not a multiInput point
 	if len(predList) > 1:
-		print "Traceback Error:  Multiinput point!!!!!";
-		print "NODE: " + node;
-		print "predList: ";
-		print predList;
-		sys.exit(1);
+		#print "Traceback Error:  Multiinput point!!!!!";
+		#print "NODE: " + node;
+		#print "predList: ";
+		#print predList;
+		#sys.exit(1);
+		return;
 	if len(succList) < 1:
 		return;
 
@@ -143,185 +147,251 @@ def removeComponent(node):
 		edgeAttr[(predList[0], dest)] = size
 
 
+
+
+
+def findMaxPath(node, dst, marked, path, maxPath):
+	#print "node " + node+ " dst: " + dst;
+	if node == dst:
+		path.append(node);
+		if len(path) > len(maxPath):
+			maxPath = copy.deepcopy(path);
+			path.pop(len(path)-1);
+			
+		return maxPath;
+
+	path.append(node);
+	#print path;
+	marked.append(node);	
+
+	predList = dfg.predecessors(node);
+	for pred in predList:
+		if pred not in marked:
+			maxPath = findMaxPath(pred, dst,  marked, path, maxPath);
+
+
+
+	path.pop(len(path)-1);
+	#print "BT PATH"
+	#print path;
+	return maxPath;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ################################################################################
 #
 # START OF PYTHON PROGRAM
 #
 ################################################################################
+try:
+	# Read in dot file of the dataflow
+	fileName = sys.argv[1];
+	print "[DFX] -- Reading in DOT File: " + fileName;
+	dfg = nx.DiGraph(nx.read_dot(fileName));
 
-# Read in dot file of the dataflow
-fileName = sys.argv[1];
-print "[DFX] -- Reading in DOT File: " + fileName;
-dfg = nx.DiGraph(nx.read_dot(fileName));
 
-
-#Get the nodes and edges of the graph
-print "[DFX] -- Getting node and edge list"
-nodeList = dfg.nodes();
-edgeList = dfg.edges();
-
-outNodeList= [];
-inNodeList= [];
-constantList= [];
+	#Get the nodes and edges of the graph
+	print "[DFX] -- Getting node and edge list"
+	nodeList = dfg.nodes();
+	edgeList = dfg.edges();
+	
+	outNodeList= [];
+	inNodeList= [];
+	constantList= [];
 
 ###############################################################################
 # Get the shape and label attributes
 ###############################################################################
-shapeAttr = nx.get_node_attributes(dfg, 'shape');
-labelAttr = nx.get_node_attributes(dfg, 'label');
+	shapeAttr = nx.get_node_attributes(dfg, 'shape');
+	labelAttr = nx.get_node_attributes(dfg, 'label');
 
 
 
 ###############################################################################
 # Preprocess edges 
 ###############################################################################
-edgeAttr = nx.get_edge_attributes(dfg, 'label');
-for edge in edgeList:
-	if edge not in edgeAttr:
-		edgeAttr[edge] = 1;
-	else:
-		label = edgeAttr[edge];
-		label = re.search('<(.*)>', label);
-		edgeAttr[edge] = label.group(1);
-
-
-
-###############################################################################
-# Preprocess nodes
-###############################################################################
-for node in nodeList:
-	if 'v' in node:                          # Check to see if it is a  constant
-		constantList.append(node);
-	elif shapeAttr[node] == "octagon":       # Check to see if it is a port node
-		inputs = dfg.predecessors(node);
-		if len(inputs) == 0:
-			inNodeList.append(node);
+	edgeAttr = nx.get_edge_attributes(dfg, 'label');
+	for edge in edgeList:
+		if edge not in edgeAttr:
+			edgeAttr[edge] = 1;
 		else:
-			outNodeList.append(node);
-		#print "SHAPE: " + shapeAttr[node];
-	elif shapeAttr[node] == "point":         # Check to see if it is a point node
-		#removeComponent(node);
-		continue;
-	elif shapeAttr[node] == "diamond":         # Check to see if it is a point node
-		removeComponent(node);
-	else:                                    # Process the Combinational blocks
-		label = labelAttr[node];
-		label = re.search('\\\\n(.*)\|', label);
-
-		if label != None:
-			labelAttr[node] = label.group(1);
-
-	#print "LABEL: " + labelAttr[node];
-	#print "NAME:  " + node;
-
-	#print
-
-
-
-
-
-#Set the nodes with the simplified label
-#nx.set_node_attributes(dfg, 'label', labelAttr);
-
-
-#Combine adders into add trees
-atIndex = 1;
-for node in nodeList:
-	#print "CHECKING NODE: " + repr(node);
-	if(dfg.has_node(node)):
-		if 'n' not in node:
-			findAddTree(node);
-
-
+			label = edgeAttr[edge];
+			label = re.search('<(.*)>', label);
+			edgeAttr[edge] = label.group(1);
 	
+	
+	
+	###############################################################################
+	# Preprocess nodes
+	###############################################################################
+	for node in nodeList:
+		if 'v' in node:                          # Check to see if it is a  constant
+			constantList.append(node);
+		elif shapeAttr[node] == "octagon":       # Check to see if it is a port node
+			inputs = dfg.predecessors(node);
+			if len(inputs) == 0:
+				inNodeList.append(node);
+			else:
+				outNodeList.append(node);
+			#print "SHAPE: " + shapeAttr[node];
+		elif shapeAttr[node] == "point":         # Check to see if it is a point node
+			removeComponent(node);
+		elif shapeAttr[node] == "diamond":         # Check to see if it is a point node
+			removeComponent(node);
+		else:                                    # Process the Combinational blocks
+			label = labelAttr[node];
+			label = re.search('\\\\n(.*)\|', label);
+	
+			if label != None:
+				labelAttr[node] = label.group(1);
+	
+		#print "LABEL: " + labelAttr[node];
+		#print "NAME:  " + node;
+	
+		#print
+	
+	
+	
+	
+	
+	#Set the nodes with the simplified label
+	#nx.set_node_attributes(dfg, 'label', labelAttr);
 
-# Dataflow extraction Vectorized
-dataflowList_node = [];
-for out in outNodeList:
-	for inNode in inNodeList:
-		#print "FROM " + inNode + " TO: " + out;
-		try:
-			p = nx.shortest_path(dfg, inNode, out);
+
+	###############################################################################
+	# Combine adders into add trees
+	###############################################################################
+	atIndex = 1;
+	for node in nodeList:
+		#print "CHECKING NODE: " + repr(node);
+		if(dfg.has_node(node)):
+			if 'n' not in node:
+				findAddTree(node);
+
+	nx.write_dot(dfg, "newdot.dot");
+		
+
+	###############################################################################
+	# Dataflow extraction Vectorized
+	###############################################################################
+	dataflowList_node = [];
+	for out in outNodeList:
+		for inNode in inNodeList:
+			#print "FROM " + inNode + " TO: " + out;
+			#p = nx.shortest_path(dfg, inNode, out);
+			#t = nx.dfs_postorder_nodes(dfg, inNode);
+			#print "SRC: " + inNode + " DST: " + out;
+			marked = [];
+			path= [];
+			maxPath= [];
+			p = findMaxPath(out, inNode, marked, path, maxPath);
+
+			if len(p) == 0:
+				continue;
 
 			#Store the path of node names into list
 			dataflowList_node.append(p);
-		except:
-			continue;
 			#print "No path from " + inNode + " to " + out;
 
 
 
 
-# Extract the dataflow object names with bus sizes
-dataflowList = [];
-for dataflow_node in dataflowList_node:
-	dataflow = [];
-	#print "CHECKING DATAFLOW";
+	###############################################################################
+	# Extract the dataflow object names with bus sizes
+	###############################################################################
+	dataflowList = [];
+	for dataflow_node in dataflowList_node:
+		dataflow = [];
+		#print "CHECKING DATAFLOW";
+		#print dataflow_node;
 
-	for index in xrange(len(dataflow_node)-2):
-		node = dataflow_node[index+1];
-		#print "CHECKING NODE: " + node;
-		
-		#	Make sure it isn't a port/point node
-		if 'n' in node:
-			continue;
-
-		operation = labelAttr[node];
-
-		if 'x' in node: 									 #Check to see if the node is a splice
-			operation = "NETSPLICE";
-		elif '$add' in operation:             #Check to see if the operation is a add
-			osize = edgeAttr[(node, dataflow_node[index+2])];
-			operation = operation + repr(osize);
-			if 'Tree' in operation:
-				predList = dfg.predecessors(node);
-				operation = operation + "_" + repr(len(predList));
-		elif '$mul' in operation: 
-			insize = [];
-			predList = dfg.predecessors(node);
-			for pred in predList:
-				osize = edgeAttr[(pred, node)];
-				insize.append(osize);
-
-			operation = operation + insize[0] + "x" + insize[1];
-		elif '$eq' == operation:	
-			predList = dfg.predecessors(node);
-			osize = edgeAttr[(predList[0], node)];
-			operation = operation + repr(osize);
-		elif ('$mux' in operation) or ('sub' in operation):
-			osize = edgeAttr[(node, dataflow_node[index+2])];
-			operation = operation + repr(osize);
-		elif '$' == operation:	
-			predList = dfg.predecessors(node);
-			operation = operation + repr(len(predList));
-				
-		
-		
-		#print "OPERATION= " + operation;
+		for index in xrange(len(dataflow_node)-2):
+			node = dataflow_node[index+1];
+			#print "CHECKING NODE: " + node;
 			
+			#	Make sure it isn't a port/point node
+			if 'n' in node:
+				continue;
+			elif shapeAttr[node] == "diamond":         # Check to see if it is a point node
+				continue;
+
+			operation = labelAttr[node];
+
+			if 'x' in node: 									 #Check to see if the node is a splice
+				operation = "NETSPLICE";
+			elif '$add' in operation:             #Check to see if the operation is a add
+				#osize = edgeAttr[(node, dataflow_node[index+2])];
+				osize = edgeAttr[(dataflow_node[index+2], node)];
+				operation = operation + repr(osize);
+
+				if 'Tree' in operation:
+					predList = dfg.predecessors(node);
+					operation = operation + "_" + repr(len(predList));
+			elif '$mul' in operation: 
+				insize = [];
+				predList = dfg.predecessors(node);
+				for pred in predList:
+					osize = edgeAttr[(pred, node)];
+					insize.append(osize);
+
+				operation = operation + insize[0] + "x" + insize[1];
+			elif '$eq' == operation:	
+				predList = dfg.predecessors(node);
+				osize = edgeAttr[(predList[0], node)];
+				operation = operation + repr(osize);
+			elif ('$mux' in operation) or ('sub' in operation):
+				#osize = edgeAttr[(node, dataflow_node[index+2])];
+				osize = edgeAttr[(dataflow_node[index+2], node)];
+				operation = operation + repr(osize);
+			elif '$' == operation:	
+				predList = dfg.predecessors(node);
+				operation = operation + repr(len(predList));
+					
+			
+			
+			#print "OPERATION= " + operation;
 				
-		dataflow.append(operation);
-	#print;
-	dataflowList.append(dataflow);
+					
+			dataflow.append(operation);
+		#print;
+		dataflowList.append(dataflow);
 
 #print dataflowList;
 #print constantList;
 
 
-sw = extractSWString();
-print sw;
-maxString = "";
-maxStringLen = 0;
-for sw_str in sw:
-	if len(sw_str) > maxStringLen:
-		maxStringLen = len(sw_str);
-		maxString = sw_str;
+	sw = extractSWString();
+	print sw;
+	maxString = "";
+	maxStringLen = 0;
+	for sw_str in sw:
+		if len(sw_str) > maxStringLen:
+			maxStringLen = len(sw_str);
+			maxString = sw_str;
 
-print "MAX STRING FEATURE: " + maxString;
-fileStream = open(".yscript.seq", 'w');
-fileStream.write(maxString);
-fileStream.close();
+	print "MAX STRING FEATURE: " + maxString;
+	fileStream = open(".yscript.seq", 'w');
+	fileStream.write(maxString);
+	fileStream.close();
 
+except:
+	print "Error: ", sys.exc_info()[0];
+	traceback.print_exc(file=sys.stdout);
 
 
 
