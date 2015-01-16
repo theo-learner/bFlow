@@ -2,20 +2,29 @@
 #include <stdio.h>
 #include <fstream>
 #include <sstream>
+#include <map>
+#include <list>
 #include "sw/src/ssw.h"
+#include "sw/src/ssw_cpp.h"
 
 std::string create_yosys_script(std::string, std::string);
 bool readDumpFile(std::string, std::string);
-std::string readSeqFile(std::string);
+void readFile(std::string file, std::list<std::string>& list);
 const std::string g_YosysScript= "ys";
-std::string extractDataflow(std::string);
+void extractDataflow(std::string, std::list<std::string>&);
 
 int main(int argc, char** argv){
 	try{
 		if(argc != 3) throw 4;
 
+		std::string referenceCircuit = argv[1];
+
 		printf("Extracting dataflow from reference design\n");	
-		std::string targetseq = extractDataflow(argv[1]);
+		std::list<std::string> refseq;
+		extractDataflow(referenceCircuit, refseq);
+
+		std::list<std::string> refCnst;
+		readFile(".const", refCnst);
 
 		//Make sure database file is okay
 		std::ifstream infile;
@@ -25,24 +34,84 @@ int main(int argc, char** argv){
 		std::string file;
 		printf("Extracting dataflows from database\n");	
 
+		//File, sequence
+		std::map<std::string, std::list<std::string> > sequenceDatabase;
+		std::map<std::string, std::list<std::string> >::iterator iMapS;
+		//File, list of constants
+		std::map<std::string, std::list<std::string> > constantDatabase;
+		std::map<std::string, std::list<std::string> >::iterator iMapC;
+
 		while(getline(infile, file)){
-			std::string queryseq= extractDataflow(file);
+			std::list<std::string> seq;
+			extractDataflow(file, seq);
 
-			printf("ALIGNING QUERY: %s - TARGET: %s\n", targetseq.c_str(), queryseq.c_str());
-			int score = 0;
-				score = swAlignment(targetseq.c_str(), targetseq.size(), queryseq.c_str(), queryseq.size());
-				//score = swAlignment(queryseq.c_str(), queryseq.size(), targetseq.c_str(), targetseq.size());
-
-			printf("[MAIN] -- Optimal SW Score: %d\n", score);
-
-			/*cmd = "python pscript.py " + cname + "_df.dot > .pscript.dmp";
-				system(cmd.c_str());
-				if(!readDumpFile(".pscript.dmp", "Traceback (")){
-				printf("[ERROR] -- pyscript encountered an error. Exiting\n");
-				return 0;
-				}
-			 */
+			std::list<std::string> cnst;
+			readFile(".const", cnst);
+			sequenceDatabase[file] = seq;
+			constantDatabase[file] = cnst;
 		}
+
+		for(iMapS = sequenceDatabase.begin(); iMapS != sequenceDatabase.end(); iMapS++){
+			//std::string maxDBSeq iMapS->second.front();
+			//std::string minDBSeq = iMapS->second.back();
+			printf("\nREF: %s\t - DB: %s\n", referenceCircuit.c_str(), iMapS->first.c_str());
+
+			std::list<std::string>::iterator iSeq;	
+			std::list<std::string>::iterator iRef = refseq.begin();	
+			std::vector<double> simScore(2);
+			int index = 0;
+			for(iSeq = iMapS->second.begin(); iSeq != iMapS->second.end(); iSeq++){
+				// Declares a Aligner with weighted score penalties
+				StripedSmithWaterman::Aligner aligner(10, 10, 9, 1);
+				// Declares a default filter
+				StripedSmithWaterman::Filter filter;
+				// Declares an alignment that stores the result
+				StripedSmithWaterman::Alignment alignment;
+
+				// Aligns the query to the ref
+				//Make sure the first item in align is the longest. Otherwise seg fault may occur. 
+				int numMatch = 0;
+				double score = 0.0;
+				if(iSeq->length() > iRef->length()){
+					printf(" * COMPARING REF: %s \tDB: %s\n", iRef->c_str(), iSeq->c_str());
+					numMatch = aligner.Align(iRef->c_str(), iSeq->c_str(), iSeq->length(), filter, &alignment);
+				}
+				else{
+					printf(" * COMPARING DB: %s \tREF: %s\n", iSeq->c_str(), iRef->c_str());
+					numMatch = aligner.Align(iSeq->c_str(), iRef->c_str(), iRef->length(), filter, &alignment);
+
+					score = (double)numMatch / iSeq->length();
+					printf(" -- MATCHED WITH SMALLER score: %f\n", score);
+				}
+
+				score = (double)numMatch / iRef->length();
+				simScore[index] = score;
+
+
+				//printf(" -- Best Smith-Waterman score:\t%d\n", alignment.sw_score);
+				//printf(" -- Next-best Smith-Waterman score:\t%d\n", alignment.sw_score_next_best);
+
+
+				iRef++;
+				index++;
+			}
+			printf(" -------------------------------------------------\n");
+			printf(" -- MATCHED WITH MAXREF score: %f\n", simScore[0]);
+			printf(" -- MATCHED WITH MINREF score: %f\n", simScore[1]);
+
+
+			std::list<std::string>::iterator iList;
+			iMapC = constantDatabase.find(iMapS->first);
+			printf("CONST DB: ");
+			for(iList = iMapC->second.begin(); iList != iMapC->second.end(); iList++)
+				printf("%s ", iList->c_str());
+			printf("\tREF: ");
+			for(iList = refCnst.begin(); iList != refCnst.end(); iList++)
+				printf("%s ", iList->c_str());
+			printf("\n\n");
+
+		}
+
 	}
 	catch(int e){
 		if(e == 1)
@@ -96,21 +165,18 @@ bool readDumpFile(std::string file, std::string errorString)	{
 	else return true;
 }
 
-std::string readSeqFile(std::string file){
-
-	std::stringstream ss;
+void readFile(std::string file, std::list<std::string>& list){
 	std::ifstream ifs;
 	ifs.open(file.c_str());
-	ss<<ifs.rdbuf();
+
+	std::string line;
+	while(getline(ifs, line))
+		list.push_back(line);
+
 	ifs.close();
-
-	std::string seq = ss.str();
-	if(seq == "") throw 2;
-
-	return seq;
 }
 
-std::string extractDataflow(std::string file){
+void extractDataflow(std::string file, std::list<std::string>& dataflow){
 	printf("\nVerilog File: %s\n", file.c_str());
 
 	int lastSlashIndex = file.find_last_of("/") + 1;
@@ -126,7 +192,7 @@ std::string extractDataflow(std::string file){
 
 	//RUN YOSYS TO GET DATAFLOW OF THE VERILOG FILE
 	std::string scriptFile = create_yosys_script(file, "dot/" + cname + "_df");
-	if(scriptFile == "") return 0;
+	if(scriptFile == "") return;
 
 	std::string cmd = "yosys -Qq -s ";
 	cmd += scriptFile + " -l .yosys.dmp";
@@ -144,6 +210,5 @@ std::string extractDataflow(std::string file){
 	//Check to see if yosys encountered an error
 	readDumpFile(".pscript.dmp", "Traceback");
 
-	std::string seq = readSeqFile(".yscript.seq");
-	return seq;
+	readFile(".seq", dataflow);
 }

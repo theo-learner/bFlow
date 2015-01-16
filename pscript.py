@@ -70,9 +70,73 @@ def findAddTree(node):
 				findAddTree(name);
 				break;
 
+	
+	
+	###############################################################################
+	# Extract the dataflow object names with bus sizes
+	###############################################################################
+def extractDF(dataflowList_node):
+	dataflowList = [];
+	for dataflow_node in dataflowList_node:
+		dataflow = [];
+		#print "CHECKING DATAFLOW";
+		#print dataflow_node;
+		#for index in xrange(len(dataflow_node)-2):
+		#	print labelAttr[dataflow_node[index]];
+
+		for index in xrange(len(dataflow_node)-2):
+			node = dataflow_node[index+1];
+			#print "CHECKING NODE: " + node;
+			
+			#	Make sure it isn't a port/point node
+			if 'n' in node:
+				continue;
+			elif shapeAttr[node] == "diamond":         # Check to see if it is a point node
+				continue;
+
+			operation = labelAttr[node];
+
+			if 'x' in node: 									 #Check to see if the node is a splice
+				operation = "NETSPLICE";
+
+			elif '$add' in operation:             #Check to see if the operation is a add
+				#osize = edgeAttr[(node, dataflow_node[index+2])];
+				osize = edgeAttr[(dataflow_node[index+2], node)];
+				operation = operation + repr(osize);
+
+				if 'Tree' in operation:
+					predList = dfg.predecessors(node);
+					operation = operation + "_" + repr(len(predList));
+
+			elif '$mul' in operation: 
+				insize = [];
+				predList = dfg.predecessors(node);
+				for pred in predList:
+					osize = edgeAttr[(pred, node)];
+					insize.append(osize);
+
+				operation = operation + insize[0] + "x" + insize[1];
+			elif '$eq' == operation:	
+				predList = dfg.predecessors(node);
+				osize = edgeAttr[(predList[0], node)];
+				operation = operation + repr(osize);
+			elif ('$mux' in operation) or ('sub' in operation):
+				#osize = edgeAttr[(node, dataflow_node[index+2])];
+				osize = edgeAttr[(dataflow_node[index+2], node)];
+				operation = operation + repr(osize);
+			elif '$' == operation:	
+				predList = dfg.predecessors(node);
+				operation = operation + repr(len(predList));
+					
+			dataflow.append(operation);
+		dataflowList.append(dataflow);
+	print dataflowList;
+	return dataflowList;
 
 
-def extractSWString():
+
+
+def extractSWString(dataflowList_node):
 	swList = set();
 	for dataflow_node in dataflowList_node:
 		#print "CHECKING DATAFLOW";
@@ -156,8 +220,10 @@ def findMaxPath(node, dst, marked, path, maxPath):
 		path.append(node);
 		if len(path) > len(maxPath):
 			maxPath = copy.deepcopy(path);
-			path.pop(len(path)-1);
+			#print "NEW MAX PATH"
+			#print maxPath;
 			
+		path.pop(len(path)-1);
 		return maxPath;
 
 	path.append(node);
@@ -206,7 +272,6 @@ try:
 
 
 	#Get the nodes and edges of the graph
-	print "[DFX] -- Getting node and edge list"
 	nodeList = dfg.nodes();
 	edgeList = dfg.edges();
 	
@@ -289,11 +354,11 @@ try:
 	###############################################################################
 	# Dataflow extraction Vectorized
 	###############################################################################
-	dataflowList_node = [];
+	dataflowMaxList_node = [];
+	dataflowMinList_node = [];
 	for out in outNodeList:
 		for inNode in inNodeList:
 			#print "FROM " + inNode + " TO: " + out;
-			#p = nx.shortest_path(dfg, inNode, out);
 			#t = nx.dfs_postorder_nodes(dfg, inNode);
 			#print "SRC: " + inNode + " DST: " + out;
 			marked = [];
@@ -301,93 +366,73 @@ try:
 			maxPath= [];
 			p = findMaxPath(out, inNode, marked, path, maxPath);
 
+
 			if len(p) == 0:
 				continue;
+			
+			s = nx.shortest_path(dfg, inNode, out);
 
 			#Store the path of node names into list
-			dataflowList_node.append(p);
+			dataflowMaxList_node.append(p);
+			dataflowMinList_node.append(list(reversed(s)));
 			#print "No path from " + inNode + " to " + out;
 
 
 
+	#dfMax = extractDF(dataflowMaxList_node);
+	#dfMin = extractDF(dataflowMinList_node);
+
+
+
 
 	###############################################################################
-	# Extract the dataflow object names with bus sizes
+	# Extract the sequence 
 	###############################################################################
-	dataflowList = [];
-	for dataflow_node in dataflowList_node:
-		dataflow = [];
-		#print "CHECKING DATAFLOW";
-		#print dataflow_node;
-
-		for index in xrange(len(dataflow_node)-2):
-			node = dataflow_node[index+1];
-			#print "CHECKING NODE: " + node;
-			
-			#	Make sure it isn't a port/point node
-			if 'n' in node:
-				continue;
-			elif shapeAttr[node] == "diamond":         # Check to see if it is a point node
-				continue;
-
-			operation = labelAttr[node];
-
-			if 'x' in node: 									 #Check to see if the node is a splice
-				operation = "NETSPLICE";
-			elif '$add' in operation:             #Check to see if the operation is a add
-				#osize = edgeAttr[(node, dataflow_node[index+2])];
-				osize = edgeAttr[(dataflow_node[index+2], node)];
-				operation = operation + repr(osize);
-
-				if 'Tree' in operation:
-					predList = dfg.predecessors(node);
-					operation = operation + "_" + repr(len(predList));
-			elif '$mul' in operation: 
-				insize = [];
-				predList = dfg.predecessors(node);
-				for pred in predList:
-					osize = edgeAttr[(pred, node)];
-					insize.append(osize);
-
-				operation = operation + insize[0] + "x" + insize[1];
-			elif '$eq' == operation:	
-				predList = dfg.predecessors(node);
-				osize = edgeAttr[(predList[0], node)];
-				operation = operation + repr(osize);
-			elif ('$mux' in operation) or ('sub' in operation):
-				#osize = edgeAttr[(node, dataflow_node[index+2])];
-				osize = edgeAttr[(dataflow_node[index+2], node)];
-				operation = operation + repr(osize);
-			elif '$' == operation:	
-				predList = dfg.predecessors(node);
-				operation = operation + repr(len(predList));
-					
-			
-			
-			#print "OPERATION= " + operation;
-				
-					
-			dataflow.append(operation);
-		#print;
-		dataflowList.append(dataflow);
-
-#print dataflowList;
-#print constantList;
-
-
-	sw = extractSWString();
-	print sw;
+	swMax = extractSWString(dataflowMaxList_node);
+	swMin = extractSWString(dataflowMinList_node);
+	print swMax;
+	print swMin;
 	maxString = "";
 	maxStringLen = 0;
-	for sw_str in sw:
+	for sw_str in swMax:
 		if len(sw_str) > maxStringLen:
 			maxStringLen = len(sw_str);
 			maxString = sw_str;
 
-	print "MAX STRING FEATURE: " + maxString;
-	fileStream = open(".yscript.seq", 'w');
+	print "MAX MAXSTRING FEATURE: " + maxString;
+	fileStream = open(".seq", 'w');
+	fileStream.write(maxString+"\n");
+	
+	maxString = "";
+	maxStringLen = 0;
+	for sw_str in swMin:
+		if len(sw_str) > maxStringLen:
+			maxStringLen = len(sw_str);
+			maxString = sw_str;
+
+	print "MAX MINSTRING FEATURE: " + maxString;
 	fileStream.write(maxString);
+
 	fileStream.close();
+
+
+	constSet = set();
+	for constant in constantList:
+		cnstVal = labelAttr[constant];
+		cnstVal = re.search('\'(.*)', cnstVal);
+		if(cnstVal == None):
+			cnstVal = labelAttr[constant];
+			constSet.add(cnstVal);
+		else:
+			cnstVal = cnstVal.group(1);
+			constSet.add(repr(int(cnstVal,2)));
+
+	fileStream = open(".const", 'w');
+	for constant in constSet:		
+		fileStream.write(constant+"\n");
+
+	fileStream.close();
+
 
 except:
 	print "Error: ", sys.exc_info()[0];

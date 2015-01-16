@@ -10,16 +10,19 @@ CFLAGS = \
 		-Iyosys
 
 OBJS = \
-	main.o \
 	sw/src/ssw.o \
+	sw/src/ssw_cpp.o \
 	$
 
 all: main
 
 #build subdirectories
 	
-main: $(OBJS)
-	$(CXX) $(OBJS) -o hbflow 
+main: $(OBJS) main.o 
+	$(CXX) $(OBJS) main.o -o hbflow 
+
+mainopt: $(OBJS) swparam_opt.o
+	$(CXX) $(OBJS) swparam_opt.o -o opt_sswparam 
 
 %.o: %.cpp 
 	$(CXX) $(CFLAGS) -c -o $@ $<

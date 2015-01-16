@@ -1,6 +1,6 @@
-read_verilog v/firfilter2.v
+read_verilog v/uart_rx_only3.v
 
 hierarchy -check
 proc; opt; fsm; opt; wreduce; opt
 
-show -width -format dot -prefix ./dot/firfilter2_df
+show -width -format dot -prefix ./dot/uart_rx_only3_df

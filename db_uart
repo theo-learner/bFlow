@@ -1,9 +1,8 @@
-v/life_5.v
-v/life8.v
-v/sobel2.v
-v/prewitt.v
-v/median.v
-v/firfilter2.v
 v/uart.v
-v/uart_opencores.v
+v/uart2.v
 v/uart_tx_only.v
+v/uart_tx_only2.v
+v/uart_tx_only3.v
+v/uart_rx_only.v
+v/uart_rx_only2.v
+v/uart_rx_only3.v
