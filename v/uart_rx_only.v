@@ -1,6 +1,6 @@
 //http://referencevoltage.com/?p=54
 
-module uartRX_sm(errorOut, dataOut, dataAvailableOut, dataLoadIn, 
+module uart_rx_only(errorOut, dataOut, dataAvailableOut, dataLoadIn, 
               serialIn, baudLoadHiIn, baudLoadLoIn, clk, reset);
   input serialIn, baudLoadHiIn, baudLoadLoIn, clk, reset;
   input [7:0] dataLoadIn; 

@@ -1,4 +1,4 @@
-module life(input self, input [7:0] n,
+module life_4(input self, input [7:0] n,
 	output reg out);
 
 	wire[7:0] count;

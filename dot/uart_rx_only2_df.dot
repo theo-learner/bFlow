@@ -1,5 +1,5 @@
-digraph "rxd_top" {
-label="rxd_top";
+digraph "uart_rx_only2" {
+label="uart_rx_only2";
 rankdir="LR";
 remincross=true;
 n2 [ shape=octagon, label="rst", color="black", fontcolor="black" ];

@@ -18,7 +18,7 @@
 // Additional Comments: 
 //
 //////////////////////////////////////////////////////////////////////////////////
-module sobel2(p0, p1, p2, p3, p5, p6, p7, p8, out);
+module sobel3(p0, p1, p2, p3, p5, p6, p7, p8, out);
 
 input  [7:0] p0,p1,p2,p3,p5,p6,p7,p8;	// 8 bit pixels inputs 
 output [7:0] out;					// 8 bit output pixel 
@@ -29,20 +29,21 @@ wire signed [10:0] abs_gx,abs_gy;	//it is used to find the absolute value of gx 
 wire [10:0] sum;			//the max value is 255*8. here no sign bit needed. 
 
 assign gx1 = p2-p0;
-assign gx2 = (p5-p3) * 2;
+assign gx2 = (p5-p3) << 1;
 assign gx3 = p8-p6;
 
 assign gy1 = p0-p6;
-assign gy2 = (p1-p7) * 2;
+assign gy2 = (p1-p7) << 1
 assign gy3 = p2-p8;
 
-assign gx=gx1+gx2+gx3;//sobel mask for gradient in horiz. direction 
-assign gy=gy1+gy2+gy3;//sobel mask for gradient in vertical direction 
+assign gx=gx3+gx1+gx2;//sobel mask for gradient in horiz. direction 
+assign gy=gy2+gy3+gy1;//sobel mask for gradient in vertical direction 
 
-assign abs_gx = (gx[10]? ~gx+1 : gx);	// to find the absolute value of gx. 
 assign abs_gy = (gy[10]? ~gy+1 : gy);	// to find the absolute value of gy. 
+assign abs_gx = (gx[10]? ~gx+1 : gx);	// to find the absolute value of gx. 
 
-assign sum = (abs_gx+abs_gy);				// finding the sum 
-assign out = sum > 8'hff ? 8'hff : sum[7:0];	// to limit the max value to 255  
+
+assign sum = (abs_gy+abs_gx);				// finding the sum 
+assign out = sum > 255 ? 255 : sum[7:0];	// to limit the max value to 255  
 
 endmodule

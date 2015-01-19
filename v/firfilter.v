@@ -18,7 +18,7 @@
 // Additional Comments: 
 //
 //////////////////////////////////////////////////////////////////////////////////
-module firfilter8(input CLK, input reset, // initialize registers                
+module firfilter(input CLK, input reset, // initialize registers                
     input[7:0] Din, // Data input for load
 	 input[2:0] B0,
 	 input[2:0] B1,

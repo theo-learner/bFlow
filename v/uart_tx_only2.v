@@ -2,7 +2,7 @@
 http://blessongeorgevlsi.blogspot.com/2012/04/design-of-universal-asynchronous.html
 */
 
-module uart_tx(
+module uart_tx_only2(
                                 clk,
                                 rst_n,
                                 write,

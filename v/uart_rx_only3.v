@@ -19,7 +19,7 @@
 //	Changed the shift register to shift the LSB out first
 //------------------------------------------------------------------------------
 
-module uartrx(dout,clk,bclk,reset,rxd,frame,overrun,ready,busy,CS);
+module uart_rx_only3(dout,clk,bclk,reset,rxd,frame,overrun,ready,busy,CS);
     output [7:0] dout;		//data output from input shift register
     input clk;				//system clock
     input bclk;	  			//16x baud rate clock

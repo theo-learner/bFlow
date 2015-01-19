@@ -1,6 +1,10 @@
-read_verilog v/uart_rx_only3.v
+echo on
+read_verilog v/IIR6sos_18bit_fp.v
 
 hierarchy -check
 proc; opt; fsm; opt; wreduce; opt
 
-show -width -format dot -prefix ./dot/uart_rx_only3_df
+flatten; opt
+wreduce; opt
+
+show -width -format dot -prefix ./dot/IIR6sos_18bit_fp_df IIR6sos_18bit_fp

@@ -1,5 +1,5 @@
-digraph "uartRX_sm" {
-label="uartRX_sm";
+digraph "uart_rx_only" {
+label="uart_rx_only";
 rankdir="LR";
 remincross=true;
 n2 [ shape=octagon, label="serialIn", color="black", fontcolor="black" ];

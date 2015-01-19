@@ -1,5 +1,5 @@
-digraph "firfilter8" {
-label="firfilter8";
+digraph "firfilter2" {
+label="firfilter2";
 rankdir="LR";
 remincross=true;
 n2 [ shape=octagon, label="CLK", color="black", fontcolor="black" ];

@@ -21,7 +21,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 // 
-module uart(
+module uart_opencores(
     input clk, // The master clock for this module
     input rst, // Synchronous reset.
     input rx, // Incoming serial line

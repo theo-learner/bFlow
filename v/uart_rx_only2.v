@@ -11,7 +11,7 @@
 // Revision 0.01 - File Created
 // Additional Comments: 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-module rxd_top(  input rst, input clk,input rxd,output reg [7:0] dout, output reg ready  );
+module uart_rx_only2(  input rst, input clk,input rxd,output reg [7:0] dout, output reg ready  );
   reg load;
   parameter st0 = 4'd0;
   parameter st1 = 4'd1;

@@ -3,6 +3,7 @@
 #include <fstream>
 #include <sstream>
 #include <map>
+#include <set>
 #include <list>
 #include "sw/src/ssw.h"
 #include "sw/src/ssw_cpp.h"
@@ -11,20 +12,56 @@ std::string create_yosys_script(std::string, std::string);
 bool readDumpFile(std::string, std::string);
 void readFile(std::string file, std::list<std::string>& list);
 const std::string g_YosysScript= "ys";
-void extractDataflow(std::string, std::list<std::string>&);
+void extractDataflow(std::string, std::string, std::list<std::string>&);
+
+//Used to sort the id and name by the score
+struct Score{
+	double score;
+	std::string name;
+};
+
+
+//Used to compare the cScore so that it is sorted by the score
+struct setCompare{
+	bool operator()(const Score& lhs, const Score& rhs) const{
+		return lhs.score >= rhs.score;
+	}
+};
+
+void getFileProperties(std::string file, std::string& name, std::string& ext){
+		//Get extension and top name
+		int lastSlashIndex = file.find_last_of("/") + 1;
+		if(lastSlashIndex == -1) lastSlashIndex = 0;
+
+		int lastDotIndex= file.find_last_of(".");
+		name = file.substr(lastSlashIndex, lastDotIndex-lastSlashIndex);
+		ext= file.substr(lastDotIndex+1, file.length()-lastDotIndex);
+}
+
 
 int main(int argc, char** argv){
 	try{
 		if(argc != 3) throw 4;
 
+
+		//Reference circuit name
 		std::string referenceCircuit = argv[1];
+		std::string topName = "", extension = "";
+		getFileProperties(referenceCircuit, topName, extension);
+
+		//Make sure the file is a verilog file
+		if(extension != "v" && extension != "vhd") throw 3;
 
 		printf("Extracting dataflow from reference design\n");	
 		std::list<std::string> refseq;
-		extractDataflow(referenceCircuit, refseq);
+		extractDataflow(referenceCircuit, topName, refseq);
 
 		std::list<std::string> refCnst;
 		readFile(".const", refCnst);
+
+
+
+
 
 		//Make sure database file is okay
 		std::ifstream infile;
@@ -42,8 +79,13 @@ int main(int argc, char** argv){
 		std::map<std::string, std::list<std::string> >::iterator iMapC;
 
 		while(getline(infile, file)){
+			getFileProperties(file, topName, extension);
+		
+			//Make sure the file is a verilog file
+			if(extension != "v" && extension != "vhd") throw 3;
+
 			std::list<std::string> seq;
-			extractDataflow(file, seq);
+			extractDataflow(file, topName, seq);
 
 			std::list<std::string> cnst;
 			readFile(".const", cnst);
@@ -51,6 +93,9 @@ int main(int argc, char** argv){
 			constantDatabase[file] = cnst;
 		}
 
+		std::set<Score, setCompare> resultsMax;
+		std::set<Score, setCompare> resultsMin;
+		std::set<Score, setCompare> resultsAvg;
 		for(iMapS = sequenceDatabase.begin(); iMapS != sequenceDatabase.end(); iMapS++){
 			//std::string maxDBSeq iMapS->second.front();
 			//std::string minDBSeq = iMapS->second.back();
@@ -60,6 +105,9 @@ int main(int argc, char** argv){
 			std::list<std::string>::iterator iRef = refseq.begin();	
 			std::vector<double> simScore(2);
 			int index = 0;
+
+			//Two sequences...one max path, max path or shortestpaths
+			double avg = 0.0;
 			for(iSeq = iMapS->second.begin(); iSeq != iMapS->second.end(); iSeq++){
 				// Declares a Aligner with weighted score penalties
 				StripedSmithWaterman::Aligner aligner(10, 10, 9, 1);
@@ -86,6 +134,21 @@ int main(int argc, char** argv){
 
 				score = (double)numMatch / iRef->length();
 				simScore[index] = score;
+				if(index == 0){
+					Score result;
+					result.name = iMapS->first;
+					result.score = score;
+					resultsMax.insert(result);
+					avg = score;
+
+				}
+				else{
+					Score result;
+					result.name = iMapS->first;
+					result.score = score;
+					resultsMin.insert(result);
+					avg = (avg + score)/2;
+				}
 
 
 				//printf(" -- Best Smith-Waterman score:\t%d\n", alignment.sw_score);
@@ -95,6 +158,12 @@ int main(int argc, char** argv){
 				iRef++;
 				index++;
 			}
+
+			Score result;
+			result.name = iMapS->first;
+			result.score = avg;
+			resultsAvg.insert(result);
+
 			printf(" -------------------------------------------------\n");
 			printf(" -- MATCHED WITH MAXREF score: %f\n", simScore[0]);
 			printf(" -- MATCHED WITH MINREF score: %f\n", simScore[1]);
@@ -111,6 +180,24 @@ int main(int argc, char** argv){
 			printf("\n\n");
 
 		}
+
+		std::set<Score, setCompare>::iterator iSet;
+		printf("Results Max:\n");
+		printf("----------------------\n");
+		for(iSet = resultsMax.begin(); iSet != resultsMax.end(); iSet++){
+			printf("Sim: %7.4f\tCircuit: %s\n", iSet->score, iSet->name.c_str());
+		}
+		printf("\nResults Min:\n");
+		printf("----------------------\n");
+		for(iSet = resultsMin.begin(); iSet != resultsMin.end(); iSet++){
+			printf("Sim: %7.4f\tCircuit: %s\n", iSet->score, iSet->name.c_str());
+		}
+		printf("\nResults Avg:\n");
+		printf("----------------------\n");
+		for(iSet = resultsAvg.begin(); iSet != resultsAvg.end(); iSet++){
+			printf("Sim: %7.4f\tCircuit: %s\n", iSet->score, iSet->name.c_str());
+		}
+
 
 	}
 	catch(int e){
@@ -133,16 +220,19 @@ int main(int argc, char** argv){
 	return 1;
 }
 
-std::string create_yosys_script(std::string infile, std::string outFile){
+std::string create_yosys_script(std::string infile, std::string top){
 	//Create Yosys Script	
 	std::string yosysScript = "";
+	yosysScript += "echo on\n";
 	yosysScript += "read_verilog ";
 	yosysScript += infile + "\n\n";
 
 	yosysScript += "hierarchy -check\n";
 	yosysScript += "proc; opt; fsm; opt; wreduce; opt\n\n";
+	yosysScript += "flatten; opt\n";
+	yosysScript += "wreduce; opt\n\n";
 
-	yosysScript += "show -width -format dot -prefix ./" + outFile + "\n";
+	yosysScript += "show -width -format dot -prefix ./dot/" + top + "_df " + top + "\n";
 
 	std::ofstream ofs;
 	ofs.open(g_YosysScript.c_str());
@@ -176,22 +266,14 @@ void readFile(std::string file, std::list<std::string>& list){
 	ifs.close();
 }
 
-void extractDataflow(std::string file, std::list<std::string>& dataflow){
+void extractDataflow(std::string file, std::string top, std::list<std::string>& dataflow){
 	printf("\nVerilog File: %s\n", file.c_str());
 
-	int lastSlashIndex = file.find_last_of("/") + 1;
-	if(lastSlashIndex == -1) lastSlashIndex = 0;
-
-	int lastDotIndex= file.find_last_of(".");
-	std::string cname = file.substr(lastSlashIndex, lastDotIndex-lastSlashIndex);
-	std::string extension= file.substr(lastDotIndex+1, file.length()-lastDotIndex);
 	//printf("VNAME: %s\tVEXT: %s\n", cname.c_str(), extension.c_str());
 
-	//Make sure the file is a verilog file
-	if(extension != "v" && extension != "vhd") throw 3;
 
 	//RUN YOSYS TO GET DATAFLOW OF THE VERILOG FILE
-	std::string scriptFile = create_yosys_script(file, "dot/" + cname + "_df");
+	std::string scriptFile = create_yosys_script(file, top);
 	if(scriptFile == "") return;
 
 	std::string cmd = "yosys -Qq -s ";
@@ -203,7 +285,7 @@ void extractDataflow(std::string file, std::list<std::string>& dataflow){
 	readDumpFile(".yosys.dmp", "ERROR:");
 
 	//RUN PYTHON SCRIPT TO EXTRACT DATAFLOW FROM DOT FILE THAT IS GENERATED
-	cmd = "python pscript.py dot/" + cname + "_df.dot";// > .pscript.dmp";
+	cmd = "python pscript.py dot/" + top + "_df.dot";// > .pscript.dmp";
 	printf("[CMD] -- Running command: %s\n", cmd.c_str());
 	system(cmd.c_str());
 

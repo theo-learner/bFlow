@@ -18,7 +18,7 @@
 // Additional Comments: 
 //
 //////////////////////////////////////////////////////////////////////////////////
-module life(input self, input [7:0] n,
+module life_3(input self, input [7:0] n,
 	output reg out);
 
 	wire[7:0] count;

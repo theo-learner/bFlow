@@ -18,7 +18,7 @@
 // Additional Comments: 
 //
 //////////////////////////////////////////////////////////////////////////////////
-module life8(input self, input [7:0] n,
+module life8_2(input self, input [7:0] n,
 	output reg out);
 
 	reg[7:0] count;

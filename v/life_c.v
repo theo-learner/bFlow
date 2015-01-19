@@ -1,4 +1,4 @@
-module life(input self, input [7:0] neighbors,
+module life_c(input self, input [7:0] neighbors,
 	output reg out);
 
 	reg [3:0] count;

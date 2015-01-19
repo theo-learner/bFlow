@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-module uart #(
+module uart_mm #(
 	parameter csr_addr = 4'h0,
 	parameter clk_freq = 100000000,
 	parameter baud = 115200

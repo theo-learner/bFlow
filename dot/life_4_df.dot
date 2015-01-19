@@ -1,5 +1,5 @@
-digraph "life" {
-label="life";
+digraph "life_4" {
+label="life_4";
 rankdir="LR";
 remincross=true;
 n2 [ shape=octagon, label="self", color="black", fontcolor="black" ];

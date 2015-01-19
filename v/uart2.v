@@ -32,7 +32,7 @@ https://github.com/alexforencich/verilog-uart
  * AXI4-Stream UART
  */
 
-module uart #
+module uart2 #
 (
     parameter DATA_WIDTH = 8
 )

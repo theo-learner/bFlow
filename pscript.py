@@ -161,7 +161,7 @@ def extractSWString(dataflowList_node):
 				sw = sw + 'X';
 			elif '$eq' in operation:	                           #Equality Operation
 				sw = sw + 'E';
-			elif '$mux' in operation:                            #Conditional
+			elif '$mux' in operation or '$pmux' in operation:    #Conditional
 				sw = sw + 'M';
 			elif '$dff' in operation or '$adff' in operation:    #memory
 				sw = sw + 'F';
@@ -425,6 +425,8 @@ try:
 			constSet.add(cnstVal);
 		else:
 			cnstVal = cnstVal.group(1);
+			if('x' in cnstVal):
+				continue;
 			constSet.add(repr(int(cnstVal,2)));
 
 	fileStream = open(".const", 'w');

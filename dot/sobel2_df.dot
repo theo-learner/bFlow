@@ -1,5 +1,5 @@
-digraph "sobel" {
-label="sobel";
+digraph "sobel2" {
+label="sobel2";
 rankdir="LR";
 remincross=true;
 n2 [ shape=octagon, label="p0", color="black", fontcolor="black" ];

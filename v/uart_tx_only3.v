@@ -31,7 +31,7 @@
 //	Changed the shift register to shift the LSB out first
 //----------------------------------------------------------------------------------
 
-module uarttx(din,load,clock,reset,shift,txd,ready,CS);
+module uart_tx_only3(din,load,clock,reset,shift,txd,ready,CS);
     input [7:0] din;		//data to be transmitted
     input load;			//loads the transmit register
     input clock;			// 1x transmit clock

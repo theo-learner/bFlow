@@ -1,4 +1,4 @@
-module uart(
+module uart_tx_only(
    // Outputs
    uart_busy,   // High means UART is transmitting
    uart_tx,     // UART transmit wire
