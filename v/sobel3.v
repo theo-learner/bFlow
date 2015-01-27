@@ -33,7 +33,7 @@ assign gx2 = (p5-p3) << 1;
 assign gx3 = p8-p6;
 
 assign gy1 = p0-p6;
-assign gy2 = (p1-p7) << 1
+assign gy2 = (p1-p7) << 1;
 assign gy3 = p2-p8;
 
 assign gx=gx3+gx1+gx2;//sobel mask for gradient in horiz. direction 

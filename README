@@ -1,0 +1,21 @@
+
+	hbflow: 
+ 	
+	AUTHOR:	Kevin Zeng
+ 	Copyright 2012 – 2015 Virginia Polytechnic Institute and 
+				State University
+
+
+Introduction
+------------
+
+hbflow is a flow that takes a verilog file and finds a sequence that best 
+describes it. It is a program extracts a birthmark that tries to 
+characterize a hardware design. Given a database. it will try and return 
+a ranked order of the circuits that best describes it
+
+Running hbflow
+--------------
+
+hbflow depends on the Yosys open synthesis tools as well as the python
+library networkx. 

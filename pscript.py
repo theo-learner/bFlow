@@ -145,7 +145,7 @@ def extractSWString(dataflowList_node):
 			node = dataflow_node[index+1];
 		
 			#	Make sure it isn't a port/point node
-			if 'n' in node:
+			if 'n' in node:# or 'x' in node:
 				continue;
 			elif shapeAttr[node] == "diamond":         # Check to see if it is a point node
 				continue;
@@ -155,22 +155,28 @@ def extractSWString(dataflowList_node):
 
 			if 'x' in node: 									 #Check to see if the node is a splice
 				sw = sw + 'N';
-			elif ('$add' in operation) or ('sub' in operation):  #Add or sub operation
+			elif ('$add' in operation) or ('sub' in operation):                        #Add or sub operation
 				sw = sw + 'A';
-			elif '$mul' in operation:                            #Multiplication operation
+			elif ('$fa' in operation) or ('lcu' in operation):                        #Add or sub operation
+				sw = sw + 'A';
+			elif ('$alu' in operation) or ('pow' in operation):                        #Add or sub operation
+				sw = sw + 'P';
+			elif '$mul' in operation or '$div' in operation or 'mod' in operation:     #Multiplication operation
 				sw = sw + 'X';
-			elif '$eq' in operation:	                           #Equality Operation
-				sw = sw + 'E';
-			elif '$mux' in operation or '$pmux' in operation:    #Conditional
+			elif '$mux' in operation or '$pmux' in operation:                          #Conditional
 				sw = sw + 'M';
-			elif '$dff' in operation or '$adff' in operation:    #memory
+			elif '$dff' in operation or '$adff' in operation:                          #memory
 				sw = sw + 'F';
-			elif '$shift' in operation:                          #Shift
+			elif '$eq' in operation or '$ne' in operation:	                           #Equality Operation
+				sw = sw + 'E';
+			elif '$sh' in operation or '$ssh' in operation:                            #Shift
 				sw = sw + 'S';
-			elif '$gt' in operation or '$lt' in operation:       #Comparator
+			elif '$gt' in operation or '$lt' in operation:                             #Comparator
 				sw = sw + 'C';
+			elif '$dlatch' in operation or '$sr' in operation:                         #memory
+				sw = sw + 'F';
 			elif '$' in operation:
-				sw = sw + 'L';                                     #Logic
+				sw = sw + 'L';                                                           #Logic
 			else:
 				sw = sw + 'B';                                     #...
 				
@@ -214,27 +220,54 @@ def removeComponent(node):
 
 
 
-def findMaxPath(node, dst, marked, path, maxPath):
+def findMaxPath(node, dst, marked, path, maxPath, maxPathList):
 	#print "node " + node+ " dst: " + dst;
 	if node == dst:
 		path.append(node);
 		if len(path) > len(maxPath):
+			#maxPathList = [];
 			maxPath = copy.deepcopy(path);
+			maxPathList.append(maxPath);
 			#print "NEW MAX PATH"
 			#print maxPath;
+		elif len(path) == len(maxPath):
+			maxPath = copy.deepcopy(path);
+			maxPathList.append(maxPath);
 			
 		path.pop(len(path)-1);
 		return maxPath;
 
 	path.append(node);
-	#print path;
 	marked.append(node);	
 
 	predList = dfg.predecessors(node);
 	for pred in predList:
 		if pred not in marked:
-			maxPath = findMaxPath(pred, dst,  marked, path, maxPath);
+			maxPath = findMaxPath(pred, dst,  marked, path, maxPath, maxPathList);
+		else:
+			length = len(maxPathList)
+			for index in xrange(length):
+				start = False;
+				for i in maxPathList[index]:
+					if i == pred:
+						start = True;
+						tempPath = copy.deepcopy(path);
 
+					if start:
+						tempPath.append(i);
+	
+				if start == True:
+					if len(tempPath) > len(maxPath):
+						#maxPathList = [];
+						maxPath = copy.deepcopy(tempPath);
+						maxPathList.append(maxPath);
+						#print "NEW MAX PATH"
+						#print maxPath;
+					elif len(tempPath) == len(maxPath):
+						maxPath = copy.deepcopy(tempPath);
+						maxPathList.append(maxPath);
+					break;
+				
 
 
 	path.pop(len(path)-1);
@@ -341,14 +374,14 @@ try:
 	###############################################################################
 	# Combine adders into add trees
 	###############################################################################
-	atIndex = 1;
-	for node in nodeList:
-		#print "CHECKING NODE: " + repr(node);
-		if(dfg.has_node(node)):
-			if 'n' not in node:
-				findAddTree(node);
+	#atIndex = 1;
+	#for node in nodeList:
+#		#print "CHECKING NODE: " + repr(node);
+#		if(dfg.has_node(node)):
+#			if 'n' not in node:
+#				findAddTree(node);
 
-	nx.write_dot(dfg, "newdot.dot");
+#	nx.write_dot(dfg, "newdot.dot");
 		
 
 	###############################################################################
@@ -360,21 +393,40 @@ try:
 		for inNode in inNodeList:
 			#print "FROM " + inNode + " TO: " + out;
 			#t = nx.dfs_postorder_nodes(dfg, inNode);
-			#print "SRC: " + inNode + " DST: " + out;
+			if(not nx.has_path(dfg, inNode, out)):
+				continue;
+			
+			print "SRC: " + inNode + " DST: " + out;
 			marked = [];
 			path= [];
 			maxPath= [];
-			p = findMaxPath(out, inNode, marked, path, maxPath);
+			maxPathList= [];
+			findMaxPath(out, inNode, marked, path, maxPath, maxPathList);
+			#print len(maxPathList)
 
 
-			if len(p) == 0:
-				continue;
 			
-			s = nx.shortest_path(dfg, inNode, out);
+			#s = nx.shortest_path(dfg, inNode, out);
+			#print s;
+			for s in nx.all_shortest_paths(dfg, inNode, out):
+				dataflowMinList_node.append(list(reversed(s)));
 
 			#Store the path of node names into list
-			dataflowMaxList_node.append(p);
-			dataflowMinList_node.append(list(reversed(s)));
+			maxLength = 0;
+			
+			tempMaxList = []
+			for p in maxPathList:
+				if len(p) > maxLength:
+					maxLength = len(p);
+					tempMaxList= [];
+					tempMaxList.append(p);
+
+				elif len(p) == maxLength:
+					tempMaxList.append(p);
+
+			for p in tempMaxList:
+				dataflowMaxList_node.append(p);
+			#dataflowMinList_node.append(list(reversed(s)));
 			#print "No path from " + inNode + " to " + out;
 
 
@@ -390,29 +442,76 @@ try:
 	###############################################################################
 	swMax = extractSWString(dataflowMaxList_node);
 	swMin = extractSWString(dataflowMinList_node);
+	print "MAX: LENGTH: " + repr(len(swMax))
 	print swMax;
+	print "MIN: LENGTH: " + repr(len(swMin))
 	print swMin;
-	maxString = "";
-	maxStringLen = 0;
-	for sw_str in swMax:
-		if len(sw_str) > maxStringLen:
-			maxStringLen = len(sw_str);
-			maxString = sw_str;
 
-	print "MAX MAXSTRING FEATURE: " + maxString;
+	swMax = list(swMax);
+	swMax.sort(lambda x, y: -1*(cmp(len(x), len(y))));
+
+	maxList = [];
+
 	fileStream = open(".seq", 'w');
-	fileStream.write(maxString+"\n");
+	seqOutput = "";
+	numMaxSeq = 3;
+	numSeq = 0;
+	sequence = "";
+	maxLength = 0;
 	
-	maxString = "";
-	maxStringLen = 0;
+
+
+	for sw_str in swMax:
+		#sw_str = re.sub('M+', 'M', sw_str)
+		#sw_str.replace("FMMMM", "R");
+		#sw_str.replace("FMMM", "R");
+		#sw_str.replace("FMM", "R");
+		#sw_str.replace("FM", "R");
+		if(maxLength <= len(sw_str) ):
+			maxLength = len(sw_str);
+
+			sequence = sequence + sw_str + "\n";
+			numSeq = numSeq + 1;
+			if(numMaxSeq == numSeq):
+				break;
+		else:
+			break;
+
+	print "MAX MAXSTRING FEATURE: "
+	sequence = repr(numSeq) + "\n" + sequence;
+	seqOutput = sequence;
+	print sequence;
+
+	
+
+	swMin = list(swMin);
+	swMin.sort(lambda x, y: -1*(cmp(len(x), len(y))));
+
+	numSeq = 0;
+	sequence = "";
+	maxLength = 0;
 	for sw_str in swMin:
-		if len(sw_str) > maxStringLen:
-			maxStringLen = len(sw_str);
-			maxString = sw_str;
+		#sw_str = re.sub('M+', 'M', sw_str)
+		#sw_str.replace("FMMMM", "R");
+		#sw_str.replace("FMMM", "R");
+		#sw_str.replace("FMM", "R");
+		#sw_str.replace("FM", "R");
+		if(maxLength <= len(sw_str) ):
+			maxLength = len(sw_str);
 
-	print "MAX MINSTRING FEATURE: " + maxString;
-	fileStream.write(maxString);
+			sequence = sequence + sw_str + "\n";
+			numSeq = numSeq + 1;
+			if(numMaxSeq == numSeq):
+				break;
+		else:
+			break;
 
+	print "MAX MINSTRING FEATURE: "
+	sequence = repr(numSeq) + "\n" + sequence;
+	seqOutput = seqOutput +  sequence;
+	print sequence;
+
+	fileStream.write(seqOutput);
 	fileStream.close();
 
 
@@ -439,6 +538,7 @@ try:
 except:
 	print "Error: ", sys.exc_info()[0];
 	traceback.print_exc(file=sys.stdout);
+
 
 
 

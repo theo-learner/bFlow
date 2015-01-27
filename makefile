@@ -12,6 +12,8 @@ CFLAGS = \
 OBJS = \
 	sw/src/ssw.o \
 	sw/src/ssw_cpp.o \
+	similarity.o \
+	swalign.o \
 	$
 
 all: main

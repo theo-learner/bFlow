@@ -27,7 +27,7 @@ module firfilter5(input CLK, input reset, // initialize registers
   
   always @(posedge CLK) begin
     if (reset) begin
-      D0 <= 0; D1 <= 0; D2 <= 0;
+      D3 <= 0; D1 <= 0; D2 <= 0;
     end else begin
       D3 <= Din; D2 <= D3; D1 <= D2; 
       Dout<= ( (D1) +  (D2) +  (D3))/3; 
@@ -35,5 +35,3 @@ module firfilter5(input CLK, input reset, // initialize registers
   end 
   
 endmodule
-// fir 
-
