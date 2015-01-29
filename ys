@@ -1,5 +1,5 @@
 echo on
-read_verilog v/IIR6_18bit_parallel.v
+read_verilog v/uart_rx_only3.v
 
 hierarchy -check
 proc; opt; fsm; opt; wreduce; opt
@@ -7,4 +7,4 @@ proc; opt; fsm; opt; wreduce; opt
 flatten; opt
 wreduce; opt
 
-show -width -format dot -prefix ./dot/IIR6_18bit_parallel_df IIR6_18bit_parallel
+show -width -format dot -prefix ./dot/uart_rx_only3_df uart_rx_only3

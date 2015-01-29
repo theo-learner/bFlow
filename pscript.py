@@ -337,6 +337,19 @@ try:
 	###############################################################################
 	# Preprocess nodes
 	###############################################################################
+	addc= {};
+	muxc= {};
+	ffc= {};
+	subc= {};
+	mulc= {};
+	divc= {};
+	eqc= {};
+	cmpc= {};
+	shc= {};
+	lc= {};
+	bc= {};
+	fflist = [];
+
 	for node in nodeList:
 		if 'v' in node:                          # Check to see if it is a  constant
 			constantList.append(node);
@@ -357,13 +370,105 @@ try:
 	
 			if label != None:
 				labelAttr[node] = label.group(1);
+				sucList = dfg.successors(node);
+				size = edgeAttr[(node, sucList[0])];
+				size = int(size);
+
+				operation = labelAttr[node];
+				#print operation + " " + repr(size);
+
+				#Count the number of components
+				if ('$add' in operation):
+					if(size in addc):
+						addc[size] = addc[size] + 1;
+					else:
+						addc[size] = 1;
+				elif ('sub' in operation):                        #Add or sub operation
+					if(size in subc):
+						subc[size] = subc[size] + 1;
+					else:
+						subc[size] = 1;
+				elif '$mul' in operation:
+					if(size in mulc):
+						mulc[size] = mulc[size] + 1;
+					else:
+						mulc[size] = 1;
+				elif '$div' in operation:
+					if(size in divc):
+						divc[size] = divc[size] + 1;
+					else:
+						divc[size] = 1;
+				elif '$mux' in operation or '$pmux' in operation:                          #Conditional
+					if(size in muxc):
+						muxc[size] = muxc[size] + 1;
+					else:
+						muxc[size] = 1;
+				elif '$dff' in operation or '$adff' in operation:                          #memory
+					if(size in ffc):
+						ffc[size] = ffc[size] + 1;
+					else:
+						ffc[size] = 1;
+					fflist.append(node);
+				elif '$eq' in operation or '$ne' in operation:	                           #Equality Operation
+					if(size in eqc):
+						eqc[size] = eqc[size] + 1;
+					else:
+						eqc[size] = 1;
+				#elif '$sh' in operation or '$ssh' in operation:                            #Shift
+					if(size in shc):
+						shc[size] = shc[size] + 1;
+					else:
+						shc[size] = 1;
+				elif '$gt' in operation or '$lt' in operation:                             #Comparator
+					if(size in cmpc):
+						cmpc[size] = cmpc[size] + 1;
+					else:
+						cmpc[size] = 1;
+				elif '$dlatch' in operation or '$sr' in operation:                         #memory
+					if(size in ffc):
+						ffc[size] = ffc[size] + 1;
+					else:
+						ffc[size] = 1;
+					fflist.append(node);
+				elif '$' in operation:
+					if(size in lc):
+						lc[size] = lc[size] + 1;
+					else:
+						lc[size] = 1;
+				else:
+					if(size in bc):
+						bc[size] = bc[size] + 1;
+					else:
+						bc[size] = 1;
 	
 		#print "LABEL: " + labelAttr[node];
 		#print "NAME:  " + node;
 	
 		#print
-	
-	
+
+	#print fflist;	
+	#print "add"
+	#print addc;	
+	#print "sub"
+	#print subc;	
+	#print "lc"
+	#print lc;	
+	#print "bc"
+	#print bc;	
+	#print "ffc"
+	#print ffc;	
+	#print "mulc"
+	#print mulc;	
+	#print "divc"
+	#print divc;	
+	#print "shc"
+	#print shc;	
+	#print "cmpc"
+	#print cmpc;	
+	#print "eqc"
+	#print eqc;	
+	#print "mux"
+	#print muxc;	
 	
 	
 	
@@ -374,7 +479,7 @@ try:
 	###############################################################################
 	# Combine adders into add trees
 	###############################################################################
-	#atIndex = 1;
+#	#atIndex = 1;
 	#for node in nodeList:
 #		#print "CHECKING NODE: " + repr(node);
 #		if(dfg.has_node(node)):
@@ -383,6 +488,29 @@ try:
 
 #	nx.write_dot(dfg, "newdot.dot");
 		
+	
+	###############################################################################
+	# FF and input correspondence
+	###############################################################################
+	ffCc = {};
+	for ff in fflist:
+		count = 0;
+
+		#print "FF: " + ff;
+		for inNode in inNodeList:
+			if(nx.has_path(dfg, inNode, ff)):
+				#print "HAS PATH TO " + inNode +  " "  + labelAttr[inNode];
+				count = count + 1;
+		
+		if(count in ffCc):
+			ffCc[count] = ffCc[count] + 1;
+		else:
+			ffCc[count] = 1;
+		
+		#print "COUNT:  " + repr(count);
+	
+	#print "ffC"
+	#print ffCc;	
 
 	###############################################################################
 	# Dataflow extraction Vectorized
@@ -396,7 +524,7 @@ try:
 			if(not nx.has_path(dfg, inNode, out)):
 				continue;
 			
-			print "SRC: " + inNode + " DST: " + out;
+			#print "SRC: " + inNode + " DST: " + out;
 			marked = [];
 			path= [];
 			maxPath= [];
@@ -431,9 +559,6 @@ try:
 
 
 
-	#dfMax = extractDF(dataflowMaxList_node);
-	#dfMin = extractDF(dataflowMinList_node);
-
 
 
 
@@ -452,7 +577,6 @@ try:
 
 	maxList = [];
 
-	fileStream = open(".seq", 'w');
 	seqOutput = "";
 	numMaxSeq = 3;
 	numSeq = 0;
@@ -511,10 +635,13 @@ try:
 	seqOutput = seqOutput +  sequence;
 	print sequence;
 
+	#Output Sequence extracted 
+	fileStream = open(".seq", 'w');
 	fileStream.write(seqOutput);
 	fileStream.close();
 
 
+	#Output Constant Data
 	constSet = set();
 	for constant in constantList:
 		cnstVal = labelAttr[constant];
@@ -532,6 +659,59 @@ try:
 	for constant in constSet:		
 		fileStream.write(constant+"\n");
 
+	fileStream.close();
+	
+	
+	#Output number for each component 
+	fileStream = open(".component", 'w');
+	fileStream.write("9\n"+repr(len(addc)) + " ");
+	for k, v in addc.iteritems():		
+		fileStream.write(repr(k) + " " + repr(v) + "   ");
+
+	fileStream.write("\n" + repr(len(subc)) + " " );
+	for k, v in subc.iteritems():		
+		fileStream.write(repr(k) + " " + repr(v) + "   ");
+
+	fileStream.write("\n" + repr(len(mulc)) + " " );
+	for k, v in mulc.iteritems():		
+		fileStream.write(repr(k) + " " + repr(v) + "   ");
+
+	#fileStream.write("\n" + repr(len(divc)) + " " );
+	#for k, v in divc.iteritems():		
+#		fileStream.write(repr(k) + " " + repr(v) + "   ");
+	
+#	fileStream.write("\n" + repr(len(shc)) + " " );
+#	for k, v in shc.iteritems():		
+#		fileStream.write(repr(k) + " " + repr(v) + "   ");
+
+	fileStream.write("\n" + repr(len(muxc)) + " " );
+	for k, v in muxc.iteritems():		
+		fileStream.write(repr(k) + " " + repr(v) + "   ");
+
+	fileStream.write("\n" + repr(len(eqc)) + " " );
+	for k, v in eqc.iteritems():		
+		fileStream.write(repr(k) + " " + repr(v) + "   ");
+
+	fileStream.write("\n" + repr(len(cmpc)) + " " );
+	for k, v in cmpc.iteritems():		
+		fileStream.write(repr(k) + " " + repr(v) + "   ");
+
+	fileStream.write("\n" + repr(len(ffc)) + " " );
+	for k, v in ffc.iteritems():		
+		fileStream.write(repr(k) + " " + repr(v) + "   ");
+
+	fileStream.write("\n" + repr(len(lc)) + " " );
+	for k, v in lc.iteritems():		
+		fileStream.write(repr(k) + " " + repr(v) + "   ");
+
+#	fileStream.write("\n" + repr(len(bc)) + " " );
+#	for k, v in bc.iteritems():		
+#		fileStream.write(repr(k) + " " + repr(v) + "   ");
+
+	fileStream.write("\n" + repr(len(ffCc)) + " " );
+	for k, v in ffCc.iteritems():		
+		fileStream.write(repr(k) + " " + repr(v) + "   ");
+	
 	fileStream.close();
 
 

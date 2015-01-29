@@ -8,15 +8,20 @@
 #include "sw/src/ssw.h"
 #include "sw/src/ssw_cpp.h"
 #include "similarity.hpp"
-#include "swalign.h"
+#include "print.hpp"
 
 std::string create_yosys_script(std::string, std::string);
 bool readDumpFile(std::string, std::string);
 void readFile(std::string file, std::list<std::string>& list);
 void readFile(std::string file, std::set<std::string>& set);
+void readFile(std::string file, std::vector<std::map<unsigned, unsigned> >& );
 void readSeqFile(std::string file, std::list<std::string>&, std::list<std::string>&);
 const std::string g_YosysScript= "ys";
 void extractDataflow(std::string, std::string, std::list<std::string>&, std::list<std::string>&);
+
+double calculateSimilarity(std::map<unsigned, unsigned>&,
+                         std::map<unsigned, unsigned>& );
+
 
 //Used to sort the id and name by the score
 struct Score{
@@ -49,6 +54,53 @@ void align(std::list<std::string>& ref, std::list<std::string>& db, double& sim,
 	double maxScore = 0.0;
 	for(iRef= ref.begin(); iRef!= ref.end(); iRef++){
 		for(iSeq = db.begin(); iSeq != db.end(); iSeq++){
+			//RUN PYTHON SCRIPT TO EXTRACT DATAFLOW FROM DOT FILE THAT IS GENERATED
+			printf(" * COMPARING REF: %s \tDB: %s\n", iRef->c_str(), iSeq->c_str());
+			std::string cmd = "python ssw.py " + *iRef + " " + *iSeq;// > .pscript.dmp";
+			//printf("[CMD] -- Running command: %s\n", cmd.c_str());
+			system(cmd.c_str());
+
+			std::ifstream ifs;
+			ifs.open(".align");
+
+			std::string questr, refstr, dummy;
+			getline(ifs, questr);
+			//getline(ifs, result);
+			getline(ifs, refstr);
+
+			double penalty = 0.0;
+			for(unsigned int i = 0; i < questr.length(); i++){
+				//printf("comparing %c - %c\n", questr[i], refstr[i]);
+				if(questr[i] == '-')
+					penalty += 0.05	;
+				else if(refstr[i] == '-')
+					penalty += 0.05	;
+				else if(refstr[i] != questr[i])
+					penalty += 0.20;
+			}
+
+			int qlen, rlen, score, matches, mismatches;
+			double psim;
+			ifs>>dummy>>qlen;
+			ifs>>dummy>>rlen;
+			ifs>>dummy>>score;
+			ifs>>dummy>>matches;
+			ifs>>dummy>>psim;
+			ifs>>dummy>>mismatches;
+			ifs.close();
+			
+
+			double cursim= (double)(matches - penalty) / (double) rlen;
+			double curscore = (double) score;
+			if(cursim> maxSim) maxSim = cursim;
+			if(curscore> maxScore) maxScore = curscore;
+			printf("REFLENGTH:  %d", rlen);
+			printf("\t\tQUERY: %d\t", qlen);
+			printf("\t\tMATCH: %d\t", matches);
+			printf("\t\tMISMATCH: %d", mismatches);
+			printf("\t\tPEN: %f\n", penalty);
+			printf(" -- Best Smith-Waterman score:\t%f\t\tSIM: %f\n", curscore, cursim);
+			/*
 			// Declares a Aligner with weighted score penalties
 			StripedSmithWaterman::Aligner aligner(100, 100, 90, 5);
 			// Declares a default filter
@@ -59,8 +111,7 @@ void align(std::list<std::string>& ref, std::list<std::string>& db, double& sim,
 			// Aligns the query to the ref
 			//Make sure the first item in align is the longest. Otherwise seg fault may occur. 
 			int refMatchLen = 0;
-			if(iSeq->length() > iRef->length()){
-				printf(" * COMPARING REF: %s \tDB: %s\n", iRef->c_str(), iSeq->c_str());
+			if(iRef->length() > iSeq->length()){ printf(" * COMPARING REF: %s \tDB: %s\n", iRef->c_str(), iSeq->c_str());
 				aligner.Align(iRef->c_str(), iSeq->c_str(), iSeq->length(), filter, &alignment);
 				refMatchLen = alignment.query_end - alignment.query_begin + 1;
 			}
@@ -75,7 +126,6 @@ void align(std::list<std::string>& ref, std::list<std::string>& db, double& sim,
 			}
 
 			double mismatches = 0.0;
-			if(alignment.result.length() != alignment.result.length()) throw 6;
 			if(alignment.query.length() != alignment.result.length()) throw 6;
 
 			for(unsigned int i = 0; i < alignment.result.length(); i++){
@@ -95,83 +145,16 @@ void align(std::list<std::string>& ref, std::list<std::string>& db, double& sim,
 			//if(alignment.sw_score > maxScore) maxScore = alignment.sw_score;
 			if(cursim> maxSim) maxSim = cursim;
 			if(curscore> maxScore) maxScore = curscore;
-			
+
 			printf("REFLENGTH: %d +GAP: %d", (int)iRef->size(), refLength);
 			printf("\t\tQUERY: %d\t", (int)(iSeq->size()));
 			printf("\t\tTOTAL: %d\t", (int)(alignment.length-refMatchLen+iRef->size()));
 			printf("\t\tMATCH: %d\t", alignment.matches);
 			printf("\t\tMISMATCH: %f\n", mismatches);
+      printf("Cigar: %s\n", alignment.cigar_string.c_str());
 
 			printf(" -- Best Smith-Waterman score:\t%d\t\tSIM: %f\n", alignment.sw_score, cursim);
-
-			/*
-				 seq_pair problem;
-				 seq_pair_t result;
-				 if(iSeq->length() > iRef->length()){
-				 printf(" * COMPARING REF: %s \tDB: %s\n", iRef->c_str(), iSeq->c_str());
-				 char c[strlen(iRef->c_str())], d[strlen(iSeq->c_str())];
-
-				 strcpy(c, iRef->c_str());
-				 strcpy(d, iSeq->c_str());
-				 problem.a = c;
-				 problem.b = d;
-				 problem.alen = strlen(problem.a);
-				 problem.blen = strlen(problem.b);
-				 result = smith_waterman(&problem);
-				 printf("     REF:     %s\n     QUE:     %s\n", result->a, result->b);
-
-				 }
-				 else{
-				 printf(" * COMPARING DB: %s \tREF: %s\n", iSeq->c_str(), iRef->c_str());
-				 char c[strlen(iSeq->c_str())], d[strlen(iRef->c_str())];
-
-				 strcpy(c, iSeq->c_str());
-				 strcpy(d, iRef->c_str());
-				 problem.a = c;
-				 problem.b = d;
-				 problem.alen = strlen(problem.a);
-				 problem.blen = strlen(problem.b);
-				 result = smith_waterman(&problem);
-				 printf("     REF:     %s\n     QUE:     %s\n", result->b, result->a);
-				 }
-
-
-
-				 std::string resultRef = result->a;
-				 std::string resultQuery = result->b;
-
-
-
-				 double mismatches = 0.0;
-				 double matches = 0.0;
-				 int refGap = 0;
-				 if(resultRef.length() != resultQuery.length()) throw 6;
-
-				 for(unsigned int i = 0; i < resultRef.length(); i++){
-				 if(resultRef[i] == '-'){
-				 mismatches += 0.05;
-				 refGap++;
-				 }
-				 else if(resultQuery[i] == '-')
-				 mismatches += 0.05;
-				 else if(resultRef[i] != resultQuery[i])
-				 mismatches += 0.25;
-				 else if(resultRef[i] == resultQuery[i])
-				 matches += 1.0;
-				 }
-
-
-
-				 int refLength = iRef->length() + refGap;
-				 sim= (matches - mismatches) / (double) refLength;
-				 if(sim> maxSim) maxSim = sim;
-
-				 printf("REFLENGTH: %d", refLength);
-				 printf("\t\tMATCH: %f\t", matches);
-				 printf("\t\tMISMATCH: %f\n", mismatches);
-
-				 printf(" -- Best Smith-Waterman score: %f\n", sim);
-			 */
+		*/
 
 		}
 
@@ -186,9 +169,9 @@ void align(std::list<std::string>& ref, std::list<std::string>& db, double& sim,
 
 int main(int argc, char** argv){
 	try{
-		if(argc != 3) throw 4;
+		if(argc != 2) throw 4;
 
-
+/*
 		//Reference circuit name
 		std::string referenceCircuit = argv[1];
 		std::string topName = "", extension = "";
@@ -203,17 +186,17 @@ int main(int argc, char** argv){
 
 		std::set<std::string> refCnst;
 		readFile(".const", refCnst);
+		*/
 
 
-
-
-
+		
 		//Make sure database file is okay
 		std::ifstream infile;
-		infile.open(argv[2]);
+		infile.open(argv[1]);
 		if (!infile.is_open()) throw 5;
 
 		std::string file;
+		std::string topName = "", extension = "";
 		printf("Extracting dataflows from database\n");	
 
 		//File, sequence
@@ -223,8 +206,12 @@ int main(int argc, char** argv){
 		std::map<std::string, std::list<std::string> >::iterator iMin2;
 		std::map<std::string, std::list<std::string> >::iterator iMax;
 		std::map<std::string, std::list<std::string> >::iterator iMax2;
+
 		//File, list of constants
 		std::map<std::string, std::set<std::string> > constantDatabase;
+
+		//File, fingerprints 
+		std::map<std::string, std::vector<std::map<unsigned, unsigned> > > fpDatabase;
 
 
 		std::vector<std::string> cktname;
@@ -237,13 +224,17 @@ int main(int argc, char** argv){
 			std::list<std::string> seqMax;
 			std::list<std::string> seqMin;
 			extractDataflow(file, topName, seqMax, seqMin);
-
-			std::set<std::string> cnst;
-			readFile(".const", cnst);
 			seqMaxDatabase[file] = seqMax;
 			seqMinDatabase[file] = seqMin;
 
+			std::set<std::string> cnst;
+			readFile(".const", cnst);
 			constantDatabase[file] = cnst;
+		
+			std::vector<std::map<unsigned, unsigned> > fingerprint;
+			readFile(".component", fingerprint);
+			fpDatabase[file] = fingerprint;
+			
 			cktname.push_back(file);
 		}
 
@@ -266,6 +257,14 @@ int main(int argc, char** argv){
 			std::vector<double> sim;
 			sim.reserve(seqMinDatabase.size());
 			simTable2.push_back(sim);
+		}
+		
+		std::vector<std::vector<double> > simTable3;
+		simTable3.reserve(seqMinDatabase.size());
+		for(unsigned int i = 0; i < seqMinDatabase.size(); i++){
+			std::vector<double> sim;
+			sim.reserve(seqMinDatabase.size());
+			simTable3.push_back(sim);
 		}
 
 
@@ -307,57 +306,63 @@ int main(int argc, char** argv){
 				simTable[index].push_back(result.score);
 
 				/*
-				Score result2;
-				result2.name = iMax->first;
-				result2.score = asc/2;
-				resultsAsc.insert(result2);
-				simTable2[index].push_back(result2.score);
-				*/	
+					 Score result2;
+					 result2.name = iMax->first;
+					 result2.score = asc/2;
+					 resultsAsc.insert(result2);
+					 simTable2[index].push_back(result2.score);
+				 */	
 
 				printf(" -------------------------------------------------\n");
 				printf(" -- MATCHED WITH MAXREF score: %f\n", result.score);
 				//printf(" -- MATCHED WITH MINREF score: %f\n", result2.score);
 
 
+				//Constant Calculation
 				std::set<std::string>::iterator iSet;
 				std::map<std::string, std::set<std::string> >::iterator iCRef;
 				std::map<std::string, std::set<std::string> >::iterator iCQue;
 				iCQue = constantDatabase.find(iMax2->first);
-				printf("CONST  DB: ");
-				for(iSet = iCQue->second.begin(); iSet != iCQue->second.end(); iSet++)
-					printf("%s ", iSet->c_str());
-				printf("\nCONST REF: ");
 				iCRef = constantDatabase.find(iMax->first);
-				for(iSet = iCRef->second.begin(); iSet != iCRef->second.end(); iSet++)
-					printf("%s ", iSet->c_str());
-				printf("\nSIM: %f\n\n", SIMILARITY::tanimoto(iCQue->second, iCRef->second));
-				
+				printf("CONST  DB: ");
+				cprint(iCQue->second);
+				printf("CONST REF: ");
+				cprint(iCRef->second);
+
 				double csim = SIMILARITY::tanimoto(iCQue->second, iCRef->second);
 				if(iCQue->second.size() == 0 && iCRef->second.size() == 0)
 					csim = 1.0;
 				simTable2[index].push_back(csim);
+				printf("\nCSIM: %f\n", csim);
 
+				//Fingerprint  Calculation
+				std::map<std::string, std::vector<std::map<unsigned, unsigned> > >::iterator iFRef;
+				std::map<std::string, std::vector<std::map<unsigned, unsigned> > >::iterator iFQue;
+				iFQue = fpDatabase.find(iMax2->first);
+				iFRef = fpDatabase.find(iMax->first);
 
+				double fsim = 0.0;
+				for(unsigned int q = 0; q < iFRef->second.size(); q++)
+					fsim += calculateSimilarity(iFRef->second[q], iFQue->second[q]);
+				
+				fsim = fsim / (double) iFRef->second.size();
+				simTable3[index].push_back(fsim);
+				printf("FP DB: \n");
+				cprint(iFQue->second);
+				printf("FP REF: \n");
+				cprint(iFRef->second);
+				printf("FSIM: %f\n\n", fsim);
+				
 				iMin2++;
-
 			}
 
 			iMin++;
 			index++;
 		}
-		/*
-			 std::set<Score, setCompare>::iterator iSet;
-			 printf("\nResults Avg:\n");
-			 printf("----------------------\n");
-			 for(iSet = resultsAvg.begin(); iSet != resultsAvg.end(); iSet++){
-			 printf("Sim: %7.4f\tCircuit: %s\n", iSet->score, iSet->name.c_str());
-			 }
-			 printf("\nResults Score:\n");
-			 printf("----------------------\n");
-			 for(iSet = resultsAsc.begin(); iSet != resultsAsc.end(); iSet++){
-			 printf("Sim: %7.4f\tCircuit: %s\n", iSet->score, iSet->name.c_str());
-			 }
-		 */
+
+
+
+
 
 		printf("Excel Format\n");
 		printf("Circuits\t");
@@ -377,9 +382,13 @@ int main(int argc, char** argv){
 			printf("%s ", name.substr(lastSlashIndex, name.length()-lastSlashIndex-2).c_str());
 
 
-			for(unsigned int k = 0; k < simTable.size(); k++)
-				printf("%.3f ", simTable[i][k]*100.0*0.8+ simTable2[i][k]*100*0.2);
+			for(unsigned int k = 0; k < simTable.size(); k++){
+				double simVal =  simTable[i][k]*100.0*0.70 + 
+				                simTable2[i][k]*100.0*0.15 + 
+				                simTable3[i][k]*100.0*0.15 ;
+				printf("%.3f ", simVal);
 
+			}
 			printf("\n");
 			//index++;
 		}
@@ -434,7 +443,8 @@ int main(int argc, char** argv){
 		}
 
 		return 1;
-		}
+
+	}
 
 		std::string create_yosys_script(std::string infile, std::string top){
 			//Create Yosys Script	
@@ -492,6 +502,33 @@ int main(int argc, char** argv){
 
 			ifs.close();
 		}
+		
+		void readFile(std::string file, std::vector<std::map<unsigned, unsigned> >& fingerprint){
+			std::ifstream ifs;
+			ifs.open(file.c_str());
+			
+			int numItems;
+			int size, count;
+			int numLines;
+
+			ifs>>numLines;
+			fingerprint.reserve(numLines);
+
+			for(int i = 0; i < numLines; i++){
+				ifs>>numItems;
+				std::map<unsigned, unsigned> fp;
+
+				for(int k = 0; k < numItems; k++){
+					ifs>>size>>count;
+					fp[size] = count;
+				}
+
+				fingerprint.push_back(fp);
+			}
+
+			ifs.close();
+		}
+
 
 		void readSeqFile(std::string file, std::list<std::string>& max, std::list<std::string>& min){
 			std::ifstream ifs;
@@ -544,3 +581,16 @@ int main(int argc, char** argv){
 
 			readSeqFile(".seq", max, min);
 		}
+
+
+double calculateSimilarity(std::map<unsigned, unsigned>& fingerprint1,
+		std::map<unsigned, unsigned>& fingerprint2){
+
+	double sim;
+	if(fingerprint1.size() == 0 and fingerprint2.size() == 0)
+		sim = 1.00;
+	else
+		sim = SIMILARITY::tanimotoWindow(fingerprint1, fingerprint2);
+
+	return sim;
+}

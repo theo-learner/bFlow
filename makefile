@@ -13,7 +13,7 @@ OBJS = \
 	sw/src/ssw.o \
 	sw/src/ssw_cpp.o \
 	similarity.o \
-	swalign.o \
+	print.o \
 	$
 
 all: main

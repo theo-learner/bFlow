@@ -120,7 +120,7 @@ double SIMILARITY::tanimotoWindow(std::map<unsigned, unsigned> data1, std::map<u
 	double N_f2 = data2.size();
 
 	//Count the number of 1's in the second fingerprint
-	const int windowSize = 5;
+	const int windowSize = 2;
 	double N_f1f2_ratio = 0.0;
 
 	std::map<unsigned, unsigned>::iterator iMap;
@@ -131,7 +131,8 @@ double SIMILARITY::tanimotoWindow(std::map<unsigned, unsigned> data1, std::map<u
 	std::set<unsigned> marked2;
 
 	const double multiplier[windowSize+1] = {
-		1.000, 0.9938, 0.9772, 0.9332, 0.8413, 0.6915
+		1.000, 0.9332, 0.6915
+		//1.000, 0.9938, 0.9772, 0.9332, 0.8413, 0.6915
 	};
 	
 	/*
@@ -283,3 +284,28 @@ double SIMILARITY::tanimoto(std::set<std::string>& data1, std::set<std::string>&
 }
 
 
+double SIMILARITY::tanimoto(std::map<unsigned, unsigned>& data1, std::map<unsigned, unsigned>& data2){
+	double N_f1 = data1.size();
+	double N_f2 = data2.size();
+
+	//Count the number of 1's in the second fingerprint
+	double N_f1f2_ratio = 0.0;
+
+	std::map<unsigned, unsigned>::iterator iMap;
+	std::map<unsigned, unsigned>::iterator iTemp;
+
+	//Count the number of bits that are the same
+	for(iMap = data1.begin(); iMap != data1.end(); iMap++){
+		iTemp = data2.find(iMap->first);	
+
+		if(iTemp != data2.end()){
+			N_f1f2_ratio += 1.000;
+		}
+	}
+	
+	
+	double denom = (N_f1+N_f2-N_f1f2_ratio);
+	if(denom == 0.0)	return 0.0;
+
+	return N_f1f2_ratio / denom;
+}
