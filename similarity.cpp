@@ -67,7 +67,7 @@ double SIMILARITY::tanimotoWindow_size(std::map<unsigned, unsigned>& data1, std:
 		iTemp = data2.find(iMap->first);	
 
 		if(iTemp != data2.end()){
-			printf("Both sets have : %d\n", iTemp->first); 
+			//printf("Both sets have : %d\n", iTemp->first); 
 			N_f1f2_ratio += 1.000;
 
 			marked1.insert(iMap->first);
@@ -135,34 +135,6 @@ double SIMILARITY::tanimotoWindow(std::map<unsigned, unsigned> data1, std::map<u
 		//1.000, 0.9938, 0.9772, 0.9332, 0.8413, 0.6915
 	};
 	
-	/*
-		 printf("\n\nBIT LOC1: ");
-		 for(iMap = data1.begin(); iMap != data1.end(); iMap++){
-		 printf("%d ", iMap->first);
-		 }
-		 printf("\t\tBIT CNT1: ");
-		 for(iMap = data1.begin(); iMap != data1.end(); iMap++){
-		 printf("%d ", iMap->second);
-		 }
-
-		 printf("\nBIT LOC2: ");
-		 for(iMap = data2.begin(); iMap != data2.end(); iMap++){
-		 printf("%d ", iMap->first);
-		 }
-		 printf("\t\tBIT CNT2: ");
-		 for(iMap = data2.begin(); iMap != data2.end(); iMap++){
-		 printf("%d ", iMap->second);
-		 }
-		 printf("\n");
-	
-	printf("Data 1:\n");
-	for(iMap = data1.begin(); iMap != data1.end(); iMap++)
-		printf("%d-bit - %d\n", iMap->first, iMap->second);
-	printf("Data 2:\n");
-	for(iMap = data2.begin(); iMap != data2.end(); iMap++)
-		printf("%d-bit - %d\n", iMap->first, iMap->second);
-	 */
-
 	//Count the number of bits that are the same
 	for(iMap = data1.begin(); iMap != data1.end(); iMap++){
 		iTemp = data2.find(iMap->first);	

@@ -16,6 +16,20 @@ void cprint(std::vector<std::map<unsigned, unsigned> >& str){
 	printf("\n");
 }
 
+void cprint(std::vector<double >& str){
+	if(str.size() == 0) {
+		printf("EMPTY\n");
+		return;
+
+	}
+	
+	for(unsigned int i = 0; i < str.size(); i++){
+		printf("%f ", str[i]);
+	}
+	printf("\n");
+
+}
+
 void cprint(std::map<unsigned, unsigned>& str){
 	if(str.size() == 0) {
 		printf("EMPTY\n");
@@ -37,5 +51,26 @@ void cprint(std::set<std::string>& str){
 	std::set<std::string>::iterator iSet;
 	for(iSet = str.begin(); iSet != str.end(); iSet++)
 		printf("%s ", iSet->c_str());
+	printf("\n");
+}
+
+
+void cprint(std::map<char, std::map<char, double> >& str){
+	if(str.size() == 0) {
+		printf("EMPTY\n");
+		return;
+	}
+
+	std::map<char, std::map<char, double> >::iterator iMap;
+	std::map<char, double>::iterator iMap2;
+	printf("          ");
+	for(iMap = str.begin(); iMap != str.end(); iMap++)
+		printf("%10c", iMap->first);
+	
+	for(iMap = str.begin(); iMap != str.end(); iMap++){
+		printf("\n%10c", iMap->first);
+		for(iMap2 = iMap->second.begin(); iMap2 != iMap->second.end(); iMap2++)
+			printf("%10.2f", iMap2->second);
+	}
 	printf("\n");
 }

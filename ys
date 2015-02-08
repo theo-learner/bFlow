@@ -1,10 +1,23 @@
 echo on
-read_verilog v/uart_rx_only3.v
+read_verilog v/usb1_core.d/timescale.v
+read_verilog v/usb1_core.d/usb1_core.v
+read_verilog v/usb1_core.d/usb1_crc16.v
+read_verilog v/usb1_core.d/usb1_crc5.v
+read_verilog v/usb1_core.d/usb1_ctrl.v
+read_verilog v/usb1_core.d/usb1_defines.v
+read_verilog v/usb1_core.d/usb1_fifo2.v
+read_verilog v/usb1_core.d/usb1_idma.v
+read_verilog v/usb1_core.d/usb1_pa.v
+read_verilog v/usb1_core.d/usb1_pd.v
+read_verilog v/usb1_core.d/usb1_pe.v
+read_verilog v/usb1_core.d/usb1_pl.v
+read_verilog v/usb1_core.d/usb1_rom1.v
+read_verilog v/usb1_core.d/usb1_utmi_if.v
 
 hierarchy -check
 proc; opt; fsm; opt; wreduce; opt
 
-flatten; opt
+flatten usb1_core; opt
 wreduce; opt
 
-show -width -format dot -prefix ./dot/uart_rx_only3_df uart_rx_only3
+show -width -format dot -prefix ./dot/usb1_core_df usb1_core

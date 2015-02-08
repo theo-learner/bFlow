@@ -19,3 +19,8 @@ Running hbflow
 
 hbflow depends on the Yosys open synthesis tools as well as the python
 library networkx. 
+
+
+NOTE: 
+ * File names for the verilog modules has to be the same name as top
+ * Directory name should be the same name as the top module

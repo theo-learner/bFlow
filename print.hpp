@@ -13,8 +13,10 @@
 
 
 void cprint(std::map<unsigned, unsigned>& str);
+void cprint(std::map<char, std::map<char, double> >& str);
 void cprint(std::vector<std::map<unsigned, unsigned> >& );
 void cprint(std::set<std::string>& str);
+void cprint(std::vector<double >& );
 
 
 #endif

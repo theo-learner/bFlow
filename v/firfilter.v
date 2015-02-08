@@ -19,14 +19,14 @@
 //
 //////////////////////////////////////////////////////////////////////////////////
 module firfilter(input CLK, input reset, // initialize registers                
-    input[7:0] Din, // Data input for load
+    input[3:0] Din, // Data input for load
 	 input[2:0] B0,
 	 input[2:0] B1,
 	 input[2:0] B2,
 	 input[2:0] B3,
     output reg [7:0] Dout);
 
-  reg [7:0] D0, D1, D2, D3; 
+  reg [3:0] D0, D1, D2, D3; 
   
   always @(posedge CLK) begin
     if (reset) begin

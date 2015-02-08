@@ -385,9 +385,9 @@ try:
 						addc[size] = 1;
 				elif ('sub' in operation):                        #Add or sub operation
 					if(size in subc):
-						subc[size] = subc[size] + 1;
+						addc[size] = subc[size] + 1;
 					else:
-						subc[size] = 1;
+						addc[size] = 1;
 				elif '$mul' in operation:
 					if(size in mulc):
 						mulc[size] = mulc[size] + 1;
@@ -395,9 +395,9 @@ try:
 						mulc[size] = 1;
 				elif '$div' in operation:
 					if(size in divc):
-						divc[size] = divc[size] + 1;
+						mulc[size] = divc[size] + 1;
 					else:
-						divc[size] = 1;
+						mulc[size] = 1;
 				elif '$mux' in operation or '$pmux' in operation:                          #Conditional
 					if(size in muxc):
 						muxc[size] = muxc[size] + 1;
@@ -415,10 +415,10 @@ try:
 					else:
 						eqc[size] = 1;
 				#elif '$sh' in operation or '$ssh' in operation:                            #Shift
-					if(size in shc):
-						shc[size] = shc[size] + 1;
-					else:
-						shc[size] = 1;
+				#	if(size in shc):
+				#		shc[size] = shc[size] + 1;
+				#	else:
+				#		shc[size] = 1;
 				elif '$gt' in operation or '$lt' in operation:                             #Comparator
 					if(size in cmpc):
 						cmpc[size] = cmpc[size] + 1;
@@ -506,6 +506,23 @@ try:
 			ffCc[count] = ffCc[count] + 1;
 		else:
 			ffCc[count] = 1;
+	
+	outCc = {};
+	for out in outNodeList:
+		count = 0;
+
+		for inNode in inNodeList:
+			if(nx.has_path(dfg, inNode, out)):
+				count = count + 1;
+
+		for constant in constantList:
+			if(nx.has_path(dfg, constant, out)):
+				count = count + 1;
+		
+		if(count in outCc):
+			outCc[count] = outCc[count] + 1;
+		else:
+			outCc[count] = 1;
 		
 		#print "COUNT:  " + repr(count);
 	
@@ -663,18 +680,20 @@ try:
 	
 	
 	#Output number for each component 
+	compstr = "";
 	fileStream = open(".component", 'w');
-	fileStream.write("9\n"+repr(len(addc)) + " ");
+	compstr = compstr + "9\n"+repr(len(addc)) + " ";
 	for k, v in addc.iteritems():		
-		fileStream.write(repr(k) + " " + repr(v) + "   ");
+		compstr = compstr +repr(k) + " " + repr(v) + "   ";
 
-	fileStream.write("\n" + repr(len(subc)) + " " );
-	for k, v in subc.iteritems():		
-		fileStream.write(repr(k) + " " + repr(v) + "   ");
 
-	fileStream.write("\n" + repr(len(mulc)) + " " );
+#	compstr = compstr + "\n"+repr(len(subc)) + " ";
+#	for k, v in subc.iteritems():		
+#		compstr = compstr +repr(k) + " " + repr(v) + "   ";
+
+	compstr = compstr + "\n"+repr(len(mulc)) + " ";
 	for k, v in mulc.iteritems():		
-		fileStream.write(repr(k) + " " + repr(v) + "   ");
+		compstr = compstr +repr(k) + " " + repr(v) + "   ";
 
 	#fileStream.write("\n" + repr(len(divc)) + " " );
 	#for k, v in divc.iteritems():		
@@ -684,34 +703,39 @@ try:
 #	for k, v in shc.iteritems():		
 #		fileStream.write(repr(k) + " " + repr(v) + "   ");
 
-	fileStream.write("\n" + repr(len(muxc)) + " " );
+	compstr = compstr + "\n"+repr(len(muxc)) + " ";
 	for k, v in muxc.iteritems():		
-		fileStream.write(repr(k) + " " + repr(v) + "   ");
+		compstr = compstr +repr(k) + " " + repr(v) + "   ";
 
-	fileStream.write("\n" + repr(len(eqc)) + " " );
+	compstr = compstr + "\n"+repr(len(eqc)) + " ";
 	for k, v in eqc.iteritems():		
-		fileStream.write(repr(k) + " " + repr(v) + "   ");
+		compstr = compstr +repr(k) + " " + repr(v) + "   ";
 
-	fileStream.write("\n" + repr(len(cmpc)) + " " );
+	compstr = compstr + "\n"+repr(len(cmpc)) + " ";
 	for k, v in cmpc.iteritems():		
-		fileStream.write(repr(k) + " " + repr(v) + "   ");
+		compstr = compstr +repr(k) + " " + repr(v) + "   ";
 
-	fileStream.write("\n" + repr(len(ffc)) + " " );
+	compstr = compstr + "\n"+repr(len(ffc)) + " ";
 	for k, v in ffc.iteritems():		
-		fileStream.write(repr(k) + " " + repr(v) + "   ");
+		compstr = compstr +repr(k) + " " + repr(v) + "   ";
 
-	fileStream.write("\n" + repr(len(lc)) + " " );
+	compstr = compstr + "\n"+repr(len(lc)) + " ";
 	for k, v in lc.iteritems():		
-		fileStream.write(repr(k) + " " + repr(v) + "   ");
+		compstr = compstr +repr(k) + " " + repr(v) + "   ";
 
 #	fileStream.write("\n" + repr(len(bc)) + " " );
 #	for k, v in bc.iteritems():		
 #		fileStream.write(repr(k) + " " + repr(v) + "   ");
 
-	fileStream.write("\n" + repr(len(ffCc)) + " " );
+	compstr = compstr + "\n"+repr(len(ffCc)) + " ";
 	for k, v in ffCc.iteritems():		
-		fileStream.write(repr(k) + " " + repr(v) + "   ");
+		compstr = compstr +repr(k) + " " + repr(v) + "   ";
 	
+	compstr = compstr + "\n"+repr(len(outCc)) + " ";
+	for k, v in outCc.iteritems():		
+		compstr = compstr +repr(k) + " " + repr(v) + "   ";
+	
+	fileStream.write(compstr);
 	fileStream.close();
 
 
