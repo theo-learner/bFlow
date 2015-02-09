@@ -1,37 +1,20 @@
 #!/usr/bin/python2.7
+'''
+	MKDB-GSPAN: 
+		Creates a database file for gSpan. Input files are dot files of synthesized 
+		verilog files given by YoSys. 
+
+		Used to find the most frequent subgraph that exists among a group of circutis
+'''
+
+
 import networkx as nx;
 import sys, traceback;
 import re;
 from os import listdir;
 
-def removeComponent(node, dfg, edgeAttr,):
-	#Get neighbors
-	succList = dfg.successors(node);
-	predList = dfg.predecessors(node);
-
-	#Make sure it is not a multiInput point
-	if len(predList) > 1:
-		#print "Traceback Error:  Multiinput point!!!!!";
-		#print "NODE: " + node;
-		#print "predList: ";
-		#print predList;
-		#sys.exit(1);
-		return;
-	if len(succList) < 1:
-		return;
-
-	#Get the size of the bus
-
-	size = edgeAttr[(node, succList[0])];
-
-	#Remove the node and passthrough the input
-	dfg.remove_node(node);
-	for dest in succList:
-		dfg.add_edge(predList[0], dest, label=size);
-
-
 def translate(dotfile):
-	print "[MDB-gSpan] -- Reading in dot File: " + dotfile;
+	print " -- Reading in dot File: " + dotfile;
 	dfg = nx.DiGraph(nx.read_dot(dotfile));
 
 	nodeList = dfg.nodes();
@@ -65,7 +48,6 @@ def translate(dotfile):
 
 		if 'v' in node:                          # Check to see if it is a  constant
 			circuit = circuit + "v " +   repr(index) + " 0\n";
-
 
 		elif shapeAttr[node] == "octagon":       # Check to see if it is a port node
 			inputs = dfg.predecessors(node);
@@ -133,6 +115,12 @@ def translate(dotfile):
 					sw = '24';                                     #...
 
 				circuit = circuit + "v " +  repr(index) + " " + sw+ "\n";
+			else:
+				if 'x' in node: 									 #check to see if the node is a splice
+					sw =  '4';
+					circuit = circuit + "v " +  repr(index) + " " + sw+ "\n";
+				else:
+					print "NODE: " + node + " LABEL: " + labelAttr[node];
 		index = index + 1;	
 	
 
@@ -187,7 +175,8 @@ try:
 	
 	#rint dbstr 
 	
-	fileStream = open("gSpan_dot_db", 'w');
+	print "[MDB-gSpan] -- Writing database file: db_gSpan" ;
+	fileStream = open("db_gSpan", 'w');
 	fileStream.write(dbstr);
 	fileStream.close();
 		
@@ -195,3 +184,6 @@ try:
 except:
 	print "Error: ", sys.exc_info()[0];
 	traceback.print_exc(file=sys.stdout);
+
+
+print "[MDB-gSpan] -- COMPLETE!";
