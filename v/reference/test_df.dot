@@ -1,0 +1,12 @@
+digraph "test" {
+label="test";
+rankdir="LR";
+remincross=true;
+n2 [ shape=octagon, label="A", color="black", fontcolor="black" ];
+n3 [ shape=octagon, label="B", color="black", fontcolor="black" ];
+n4 [ shape=octagon, label="out", color="black", fontcolor="black" ];
+c6 [ shape=record, label="{{<p2> A|<p3> B}|$1\n$and|{<p5> Y}}" ];
+n2:e -> c6:p2:w [color="black", label=""];
+n3:e -> c6:p3:w [color="black", label=""];
+c6:p5:e -> n4:w [color="black", label=""];
+}
