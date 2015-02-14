@@ -13,9 +13,12 @@
 
 std::string create_yosys_script(std::string, std::string, std::string);
 bool readDumpFile(std::string, std::string);
+std::string readFile(std::string);
 void readFile(std::string file, std::list<std::string>& list);
 void readFile(std::string file, std::set<std::string>& set);
 void readFile(std::string file, std::vector<std::map<unsigned, unsigned> >& );
+void readFile(std::string file, std::set<int>& set);
+void readFile(std::string file, std::vector<int>& set);
 void readSeqFile(std::string file, std::list<std::string>&, std::list<std::string>&);
 void readScoreMatrix(std::string file, std::map<char, std::map<char, double> >& scoreMatrix);
 const std::string g_YosysScript= "ys";
@@ -25,12 +28,17 @@ void optimizeWeights(std::vector<std::vector<double> >& sim1,
 										 std::vector<std::vector<double> >& sim3);
 void optimizeFSIMweights(std::map<std::string, std::vector<std::map<unsigned, unsigned> > >& fdata);
 
-double calculateSimilarity(std::map<unsigned, unsigned>&,
-                         std::map<unsigned, unsigned>& );
+double calculateSimilarity(std::map<unsigned, unsigned>&, std::map<unsigned, unsigned>& );
+
+void matlabTable(std::vector<std::string>& cktname,
+		std::map<std::string, std::vector<std::map<unsigned, unsigned> > >& fpDatabase,
+		std::map<std::string, std::set<int> >& constantDatabase
+);
 
 bool dle(double a, double b, double eps = 0.001){
 		return b-a > eps;
 }
+
 
 
 //Used to sort the id and name by the score
@@ -47,6 +55,13 @@ struct setCompare{
 	}
 };
 
+
+/*#############################################################################
+ *
+ * getFileProperties 
+ *   Given a file path, extracts the extension and the name of the file
+ *
+ *#############################################################################*/
 void getFileProperties(std::string file, std::string& name, std::string& ext){
 	//Get extension and top name
 	int lastSlashIndex = file.find_last_of("/") + 1;
@@ -57,6 +72,17 @@ void getFileProperties(std::string file, std::string& name, std::string& ext){
 	ext= file.substr(lastDotIndex+1, file.length()-lastDotIndex);
 }
 
+
+
+
+
+/*#############################################################################
+ *
+ * align 
+ *  given a list of sequences (REF and DB), align the sequences and extract
+ *  the similarity of the alignment (AVG SIM) 
+ *
+ *#############################################################################*/
 void align(std::list<std::string>& ref, std::list<std::string>& db, double& sim, double& score){
 	std::list<std::string>::iterator iSeq;	
 	std::list<std::string>::iterator iRef;	
@@ -201,37 +227,23 @@ void align(std::list<std::string>& ref, std::list<std::string>& db, double& sim,
 }
 
 
+
+
+
+
+
+
+
+
+
+/*#############################################################################
+ *
+ * MAIN FUNCTION 
+ *
+ *#############################################################################*/
 int main(int argc, char** argv){
 	try{
 		if(argc != 2) throw 4;
-
-/*
-		//Reference circuit name
-		std::string referenceCircuit = argv[1];
-		std::string topName = "", extension = "";
-		getFileProperties(referenceCircuit, topName, extension);
-
-		//Make sure the file is a verilog file
-		if(extension != "v" && extension != "vhd") throw 3;
-
-		printf("Extracting dataflow from reference design\n");	
-		std::list<std::string> refseqmax, refseqmin;
-		extractDataflow(referenceCircuit, topName, refseqmax, refseqmin);
-
-		std::set<std::string> refCnst;
-		readFile(".const", refCnst);
-		*/
-
-
-		
-		//Make sure database file is okay
-		std::ifstream infile;
-		infile.open(argv[1]);
-		if (!infile.is_open()) throw 5;
-
-		std::string file;
-		std::string topName = "", extension = "";
-		printf("Extracting dataflows from database\n");	
 
 		//File, sequence
 		std::map<std::string, std::list<std::string> > seqMaxDatabase;
@@ -242,14 +254,32 @@ int main(int argc, char** argv){
 		std::map<std::string, std::list<std::string> >::iterator iMax2;
 
 		//File, list of constants
-		std::map<std::string, std::set<std::string> > constantDatabase;
+		std::map<std::string, std::set<int> > constantDatabase;
 
 		//File, fingerprints 
 		std::map<std::string, std::vector<std::map<unsigned, unsigned> > > fpDatabase;
 
+		//Make sure database file is okay
+		std::ifstream infile;
+		infile.open(argv[1]);
+		if (!infile.is_open()) throw 5;
 
+
+
+
+
+		//#########################################################################
+		// Extract features from the verilog files and store them in memory
+		//#########################################################################
+			std::ofstream ofsconst;
+			ofsconst.open("const.csv");
+
+		std::string file;
 		std::vector<std::string> cktname;
+		printf("Extracting dataflows from database\n");	
+		std::vector<std::vector<double> >stat;
 		while(getline(infile, file)){
+			std::string topName = "", extension = "";
 			getFileProperties(file, topName, extension);
 
 			//Make sure the file is a verilog file
@@ -258,23 +288,62 @@ int main(int argc, char** argv){
 			std::list<std::string> seqMax;
 			std::list<std::string> seqMin;
 			extractDataflow(file, topName, extension, seqMax, seqMin);
-			seqMaxDatabase[file] = seqMax;
-			seqMinDatabase[file] = seqMin;
+			seqMaxDatabase[topName] = seqMax;
+			seqMinDatabase[topName] = seqMin;
 
-			std::set<std::string> cnst;
+			std::set<int> cnst;
 			readFile(".const", cnst);
-			cnst.erase("0");
-			cnst.erase("1");
-			constantDatabase[file] = cnst;
+			cprint(cnst);
+			//cnst.erase(0);
+			//cnst.erase(1);
+			constantDatabase[topName] = cnst;
 		
+			std::string constStr;
+			constStr = readFile(".const2");
+			ofsconst<<constStr<<"\n";
+			
+			std::ifstream ifs;
+			ifs.open(".stat");
+			std::vector<double> s;
+			double val;
+			ifs>>val;
+			printf("DIAMETER: %f\n", val);
+			s.push_back(val);
+			ifs>>val;
+			printf("RADIUS: %f\n", val);
+			s.push_back(val);
+			ifs>>val;
+			printf("COR COE: %f\n", val);
+			s.push_back(val);
+			stat.push_back(s);
+			
+		
+			if(fpDatabase.find(topName) != fpDatabase.end()){
+				printf("TOPNAME: %s\n", topName.c_str());
+				throw 7;
+			}
+
 			std::vector<std::map<unsigned, unsigned> > fingerprint;
 			readFile(".component", fingerprint);
-			fpDatabase[file] = fingerprint;
+			fpDatabase[topName] = fingerprint;
+		
 			
-			cktname.push_back(file);
+			cktname.push_back(topName);
 		}
+		ofsconst.close();
 
 
+		//#########################################################################
+		// MatlabTable 
+		//#########################################################################
+		matlabTable(cktname, fpDatabase, constantDatabase);
+		
+		return 0;
+
+
+		//#########################################################################
+		// Setup similarity tables 
+		//#########################################################################
 		std::set<Score, setCompare> resultsMax;
 		std::set<Score, setCompare> resultsMin;
 		std::set<Score, setCompare> resultsAvg;
@@ -313,7 +382,9 @@ int main(int argc, char** argv){
 		}
 
 
-		//iMin = seqMinDatabase.begin();
+		//#########################################################################
+		// Calculate the similarity of the birthmarks 
+		//#########################################################################
 		int index = 0; 
 		//for(iMax = seqMaxDatabase.begin(); iMax != seqMaxDatabase.end(); iMax++){
 		for(unsigned int i = 0; i < cktname.size(); i++){
@@ -336,6 +407,11 @@ int main(int argc, char** argv){
 				std::vector<double> simScore;
 				simScore.reserve(3);
 
+		
+		
+		//#########################################################################
+		// SEQUENCE ALIGNMENT OF DATAPATH 
+		//#########################################################################
 				//Two sequences...one max path, max path or shortestpaths
 				double maxSim= 0.0;
 				double minSim = 0.0;
@@ -365,16 +441,18 @@ int main(int argc, char** argv){
 				//printf(" -- MATCHED WITH MINREF score: %f\n", result2.score);
 
 
-				//Constant Calculation
+		//#########################################################################
+		// COMPARISON OF CONSTANT VALUES 
+		//#########################################################################
 				std::set<std::string>::iterator iSet;
-				std::map<std::string, std::set<std::string> >::iterator iCRef;
-				std::map<std::string, std::set<std::string> >::iterator iCQue;
+				std::map<std::string, std::set<int> >::iterator iCRef;
+				std::map<std::string, std::set<int> >::iterator iCQue;
 				iCQue = constantDatabase.find(iMax2->first);
 				iCRef = constantDatabase.find(iMax->first);
-				printf("CONST  DB: ");
-				cprint(iCQue->second);
-				printf("CONST REF: ");
-				cprint(iCRef->second);
+				//printf("CONST  DB: ");
+				//cprint(iCQue->second);
+				//printf("CONST REF: ");
+				//cprint(iCRef->second);
 
 				double csim = SIMILARITY::tanimoto(iCQue->second, iCRef->second);
 				if(iCQue->second.size() == 0 && iCRef->second.size() == 0)
@@ -382,6 +460,13 @@ int main(int argc, char** argv){
 				simTable2[index].push_back(csim);
 				printf("\nCSIM: %f\n", csim);
 
+
+		
+		
+		
+		//#########################################################################
+		// COMPARISON OF FINGERPRINT STATISTICS 
+		//#########################################################################
 				//Fingerprint  Calculation
 				std::map<std::string, std::vector<std::map<unsigned, unsigned> > >::iterator iFRef;
 				std::map<std::string, std::vector<std::map<unsigned, unsigned> > >::iterator iFQue;
@@ -389,7 +474,6 @@ int main(int argc, char** argv){
 				iFRef = fpDatabase.find(iMax->first);
 
 				//The more features both doesn't have, the less effect it has on the overall score
-
 				double weights[9] = {
 					0.12, 0.12, 0.05, 0.08, 0.08, 0.1, 0.05, 0.20, 0.20
 				};
@@ -509,6 +593,8 @@ int main(int argc, char** argv){
 				printf("[ERROR] -- Cannot open the database for import...exiting\n");
 			else if(e == 6)
 				printf("[ERROR] -- Smith Waterman Error\n");
+			else if(e == 7)
+				printf("[ERROR] -- Existing top module is found in the database\n");
 			else
 				printf("[ERROR] -- Error Occurred that was not mapped before\n");
 
@@ -519,6 +605,17 @@ int main(int argc, char** argv){
 
 		}
 
+
+
+
+
+
+/*#############################################################################
+ *
+ * create_yosys_script 
+ *   Creates the yosys script file for a given verilog file
+ *
+ *#############################################################################*/
 		std::string create_yosys_script(std::string infile, std::string top, std::string extension){
 			//Create Yosys Script	
 			std::string yosysScript = "";
@@ -563,11 +660,22 @@ int main(int argc, char** argv){
 			ofs.open(g_YosysScript.c_str());
 
 			ofs<< yosysScript;
+			ofs.close();
 			printf("Yosys script generated\n");
 			return g_YosysScript.c_str();
 
 		}
 
+
+
+
+
+/*#############################################################################
+ *
+ * readDumpFile
+ *  Reads the DMP file produced by yosys/python for error handling 
+ *
+ *#############################################################################*/
 		bool readDumpFile(std::string file, std::string errorString)	{
 			std::stringstream ss;
 			std::ifstream ifs;
@@ -581,6 +689,25 @@ int main(int argc, char** argv){
 			else return true;
 		}
 
+
+		std::string readFile(std::string file){
+			std::stringstream ss;
+			std::ifstream ifs;
+			ifs.open(file.c_str());
+			if (!ifs.is_open()) throw 5;
+
+			ss<<ifs.rdbuf();
+			ifs.close();
+			return ss.str();
+
+		}
+
+/*#############################################################################
+ *
+ * readFile
+ *  Reads file and stores content in a list 
+ *
+ *#############################################################################*/
 		void readFile(std::string file, std::list<std::string>& list){
 			std::ifstream ifs;
 			ifs.open(file.c_str());
@@ -593,6 +720,15 @@ int main(int argc, char** argv){
 			ifs.close();
 		}
 
+
+
+
+/*#############################################################################
+ *
+ * readFile
+ *  Reads file and stores content in a set 
+ *
+ *#############################################################################*/
 		void readFile(std::string file, std::set<std::string>& set){
 			std::ifstream ifs;
 			ifs.open(file.c_str());
@@ -604,7 +740,41 @@ int main(int argc, char** argv){
 
 			ifs.close();
 		}
+
+/*#############################################################################
+ *
+ * readFile
+ *  Reads file and stores content in a set 
+ *
+ *#############################################################################*/
+		void readFile(std::string file, std::set<int>& set){
+			std::ifstream ifs;
+			ifs.open(file.c_str());
+			if (!ifs.is_open()) throw 5;
+
+			long long number;
+			int numLines;
+			ifs>>numLines;
+
+			for(int i = 0; i < numLines; i++){
+				ifs>>number;
+				if(number > 0xFFFFFFFF)
+					set.insert(-2);
+				else
+					set.insert(number);
+			}
+			ifs.close();
+		}
 		
+
+
+
+/*#############################################################################
+ *
+ * readFile
+ *  Reads file and stores content in a fingerprint 
+ *
+ *#############################################################################*/
 		void readFile(std::string file, std::vector<std::map<unsigned, unsigned> >& fingerprint){
 			std::ifstream ifs;
 			ifs.open(file.c_str());
@@ -633,6 +803,12 @@ int main(int argc, char** argv){
 		}
 
 
+/*#############################################################################
+ *
+ * readSeqFile 
+ *  Reads the sequence file that contains a max path and a min path
+ *
+ *#############################################################################*/
 		void readSeqFile(std::string file, std::list<std::string>& max, std::list<std::string>& min){
 			std::ifstream ifs;
 			ifs.open(file.c_str());
@@ -657,6 +833,14 @@ int main(int argc, char** argv){
 			ifs.close();
 		}
 		
+
+
+/*#############################################################################
+ *
+ * readScoreMatrix
+ *  Reads the score matrix used for SWalign. For Penalty and matching scoring 
+ *
+ *#############################################################################*/
 		void readScoreMatrix(std::string file, std::map<char, std::map<char, double> >& scoreMatrix){
 			std::ifstream ifs;
 			ifs.open(file.c_str());
@@ -685,6 +869,16 @@ int main(int argc, char** argv){
 			ifs.close();
 		}
 
+
+
+
+
+/*#############################################################################
+ *
+ * extractDataFlow 
+ *   Extract the data flow from the verilog file 
+ *
+ *#############################################################################*/
 		void extractDataflow(std::string file, std::string top,  std::string extension, std::list<std::string>& max, std::list<std::string>& min){
 			if(extension == "v")
 				printf("\nVerilog File: %s\n", file.c_str());
@@ -823,6 +1017,11 @@ void optimizeWeights(std::vector<std::vector<double> >& simTable,
 			printf(" OPTPARAM %d: t1: %f   t2: %f   t3:%f\n",i,  t1v[i], t2v[i], t3v[i]);
 
 }
+
+
+
+
+
 
 void optimizeFSIMweights(std::map<std::string, std::vector<std::map<unsigned, unsigned> > >& fdata){
 	printf("OPTIMIZING FINGERPRINT WEIGHTS\n");
@@ -972,3 +1171,196 @@ void optimizeFSIMweights(std::map<std::string, std::vector<std::map<unsigned, un
 
 
 }
+
+
+void matlabTable(
+		std::vector<std::string>& cktname,
+		std::map<std::string, std::vector<std::map<unsigned, unsigned> > >& fpDatabase,
+		std::map<std::string, std::set<int> >& constantDatabase
+){
+		printf("Preparing Matlab Tables\n");
+		std::map<std::string, std::vector<std::map<unsigned, unsigned> > >::iterator iFP;
+		std::map<unsigned, unsigned>::iterator iVal;
+		iFP = fpDatabase.begin(); 
+		int numVec = iFP->second.size();
+
+		//SET UP THE VECTOR TABLE for fingerprint
+		//Vec of each circuit, vec of each fingerprint, vec of the count
+		//number of circuits,      13 types:add..       index = size, val = count 
+		std::vector<std::vector<std::vector<int> > > ftable;
+		ftable.reserve(fpDatabase.size());
+		for(unsigned int i = 0; i < fpDatabase.size(); i++){
+			std::vector<std::vector<int> >  v;
+			v.reserve(numVec);
+			for(int k = 0; k < numVec; k++){
+				std::vector<int> vv;
+				v.push_back(vv);
+			}
+			ftable.push_back(v);
+		}
+
+
+		//POPULATE THE VECTOR TABLE with fingerprint data
+		int cIndex = 0;
+		//printf("Number of circuits: %d\n", (int)fpDatabase.size());
+		//printf("Number of circuits: %d\n", (int)cktname.size());
+		for(cIndex = 0; cIndex < cktname.size(); cIndex++){
+			iFP = fpDatabase.find(cktname[cIndex]);
+			//printf(" CKT: %d* Number of features: %d\n",cIndex+1, (int)iFP->second.size());
+			for(unsigned int q = 0; q < iFP->second.size(); q++){
+				//printf(" * *  INDEXES: %d %d\n", cIndex, q);
+				for(iVal = iFP->second[q].begin(); iVal != iFP->second[q].end(); iVal++){
+					//If the size of the fingerprint is smaller than the table, resize table
+					if(iVal->first > ftable[cIndex][q].size()){
+						for(unsigned int w = 0; w < ftable.size(); w++)
+							ftable[w][q].resize(iVal->first);
+					}
+
+				  ftable[cIndex][q][iVal->first-1] = iVal->second;	
+				}
+			}
+		}
+		
+		
+		
+		
+		//POPULATE THE VECTOR TABLE with constant data
+		std::vector<std::vector<int> > ctable;
+		ctable.reserve(fpDatabase.size());
+		int numbin = 94;
+		for(unsigned int i = 0; i < fpDatabase.size(); i++){
+			std::vector<int> vv;
+			vv.resize(numbin);
+			ctable.push_back(vv);
+		}
+
+		std::map<std::string, std::set<int> >::iterator iC;
+		std::stringstream cstream;
+		for(cIndex = 0; cIndex < cktname.size(); cIndex++){
+			iC = constantDatabase.find(cktname[cIndex]);
+			std::set<int>::iterator iSet;
+			for(iSet = iC->second.begin(); iSet != iC->second.end(); iSet++){
+				cstream<<*iSet<<",";
+				//If the size of the fingerprint is smaller than the table, resize table
+
+				if((*iSet) < 0)
+					ctable[cIndex][numbin-1]	= 1;
+				else if((*iSet) <= 64)
+					ctable[cIndex][*iSet] = 1;
+				else{
+					unsigned startIndex = 65;
+					unsigned long base = 128;
+					bool binned = false;
+
+					for(;startIndex < (numbin-1); startIndex++){
+						if(startIndex % 2 == 1){
+							if(*iSet  < base ){
+								ctable[cIndex][startIndex] = 1;
+								binned = true;
+								break;
+							}
+						}
+						else{
+							if(*iSet == base ){
+								binned = true;
+								ctable[cIndex][startIndex] = 1;
+								break;
+							}
+
+							base = base<<1;
+						}
+					}
+					if(!binned){
+						ctable[cIndex][numbin-1]	= 1;
+					}
+
+				}
+			}
+			cstream<<"\n";
+		}
+	
+		std::stringstream tablestr;
+		std::stringstream cstr;
+		std::vector<std::string> fpstr;
+		for(unsigned int w = 0; w < ftable[0].size(); w++){
+			std::string ss = "";
+			fpstr.push_back(ss);
+		}
+			
+
+		for(unsigned int q = 0; q < ftable.size(); q++){
+			for(unsigned int w = 0; w < ftable[q].size(); w++){
+				std::stringstream ss;
+				for(unsigned int e = 0; e < ftable[q][w].size(); e++){
+					if(w != 0 || e != 0){
+						tablestr<<",";
+						ss<<",";
+					}
+
+					tablestr<<ftable[q][w][e];
+					ss<<ftable[q][w][e];
+				}
+				
+				ss<<"\n";
+				fpstr[w] = fpstr[w] + ss.str();
+			}
+
+			for(unsigned int w = 0; w < ctable[q].size(); w++){
+				//tablestr<<","<<ctable[q][w];
+				cstr<<ctable[q][w]<<",";
+			}
+			//for(unsigned int w = 0; w < stat[q].size(); w++)
+			//tablestr<<","<<stat[q][w];
+			
+			tablestr<<"\n";
+			std::string tmp = cstr.str();
+			tmp = tmp.substr(0, tmp.size()-1);
+			cstr.str("");
+			cstr<<tmp;
+			cstr<<"\n";
+		}
+		
+		std::ofstream ofs;
+		printf("Outputing fingerprint table to matlab.csv\n");
+		ofs.open("matlab.csv");
+		ofs<< tablestr.str();
+		ofs.close();
+
+		printf("Outputing constant table to constant_bin.csv\n");
+		ofs.open("constant_bin.csv");
+		ofs<< cstr.str();
+		ofs.close();
+
+		std::vector<std::string> fpname;
+		fpname.push_back("add.csv");
+		fpname.push_back("sub.csv");
+		fpname.push_back("mul.csv");
+		fpname.push_back("div.csv");
+		fpname.push_back("sh.csv");
+		fpname.push_back("mux.csv");
+		fpname.push_back("eq.csv");
+		fpname.push_back("cmp.csv");
+		fpname.push_back("ff.csv");
+		fpname.push_back("log.csv");
+		fpname.push_back("blk.csv");
+		fpname.push_back("ffC.csv");
+		fpname.push_back("outC.csv");
+
+		assert(fpname.size() == fpstr.size());
+		printf("Outputing Individual fingerprint statistics\n");
+		for(unsigned int i = 0; i < fpname.size(); i++){
+			ofs.open(fpname[i].c_str());	
+			ofs<<fpstr[i];
+			ofs.close();
+		}
+
+
+
+}
+
+
+
+
+
+
+

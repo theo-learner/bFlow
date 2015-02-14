@@ -16,7 +16,13 @@ OBJS = \
 	print.o \
 	$
 
-all: main
+OBJSERVER = \
+	database.o \
+	birthmark.o \
+	feature.o \
+	$
+
+all: main mainserver
 
 #build subdirectories
 	
@@ -25,6 +31,10 @@ main: $(OBJS) main.o
 
 mainopt: $(OBJS) swparam_opt.o
 	$(CXX) $(OBJS) swparam_opt.o -o opt_sswparam 
+
+mainserver: $(OBJS) $(OBJSERVER) mainserver.o
+	$(CXX) $(OBJSERVER) $(OBJS) mainserver.o -o serverMain
+	
 
 %.o: %.cpp 
 	$(CXX) $(CFLAGS) -c -o $@ $<

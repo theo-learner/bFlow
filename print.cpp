@@ -30,6 +30,22 @@ void cprint(std::vector<double >& str){
 
 }
 
+void cprint(std::vector<std::vector<int> >& str){
+	if(str.size() == 0) {
+		printf("EMPTY\n");
+		return;
+	}
+	
+	for(unsigned int i = 0; i < str.size(); i++){
+		for(unsigned int q = 0; q < str[i].size(); q++){
+			printf("%d ", str[i][q]);
+		}
+		printf("\n");
+	}
+	printf("\n");
+
+}
+
 void cprint(std::map<unsigned, unsigned>& str){
 	if(str.size() == 0) {
 		printf("EMPTY\n");
@@ -51,6 +67,18 @@ void cprint(std::set<std::string>& str){
 	std::set<std::string>::iterator iSet;
 	for(iSet = str.begin(); iSet != str.end(); iSet++)
 		printf("%s ", iSet->c_str());
+	printf("\n");
+}
+
+void cprint(std::set<int>& str){
+	if(str.size() == 0) {
+		printf("EMPTY\n");
+		return;
+	}
+
+	std::set<int>::iterator iSet;
+	for(iSet = str.begin(); iSet != str.end(); iSet++)
+		printf("%d ", *iSet);
 	printf("\n");
 }
 

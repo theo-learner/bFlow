@@ -13,7 +13,6 @@ reset       // reset input
 //----------Output Ports--------------
 output [7:0] out;
 //------------Input Ports-------------- 
-input [7:0] data;
 input up_down, clk, reset;
 //------------Internal Variables--------
 reg [7:0] out;

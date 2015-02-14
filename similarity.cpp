@@ -229,15 +229,15 @@ double SIMILARITY::tanimotoWindow(std::map<unsigned, unsigned> data1, std::map<u
 
 
 
-double SIMILARITY::tanimoto(std::set<std::string>& data1, std::set<std::string>& data2){
+double SIMILARITY::tanimoto(std::set<int>& data1, std::set<int>& data2){
 	double N_f1 = data1.size();
 	double N_f2 = data2.size();
 
 	//Count the number of 1's in the second fingerprint
 	double N_f1f2_ratio = 0.0;
 
-	std::set<std::string>::iterator iMap;
-	std::set<std::string>::iterator iTemp;
+	std::set<int>::iterator iMap;
+	std::set<int>::iterator iTemp;
 
 	//Count the number of bits that are the same
 	for(iMap = data1.begin(); iMap != data1.end(); iMap++){

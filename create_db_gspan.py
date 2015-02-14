@@ -14,7 +14,6 @@ import re;
 from os import listdir;
 
 def translate(dotfile):
-	print " -- Reading in dot File: " + dotfile;
 	dfg = nx.DiGraph(nx.read_dot(dotfile));
 
 	nodeList = dfg.nodes();
@@ -165,20 +164,29 @@ try:
 	index = 0;
 	dbstr= ""
 	for dotfile in listdir(dbdir):
+		print " -- Reading in dot File: " + dotfile;
+
+		if(".dot" not in dotfile):
+			print "[WARNING] -- Extension does not match that of dot. Skipping file";
+			continue;
+
 		graph = translate(dbdir+dotfile);
 		if(graph == ""):
 			print "[ERROR] -- Dot file returned empty string" 
 			print "        -- Skipping..."
 			continue;
+
 		dbstr = dbstr + "t # " + repr(index) + "\n" +  graph;
 		index = index + 1;
 	
 	#rint dbstr 
 	
-	print "[MDB-gSpan] -- Writing database file: db_gSpan" ;
-	fileStream = open("db_gSpan", 'w');
+	outFile = dbdir + "db_gspan";
+	fileStream = open(outFile, 'w');
 	fileStream.write(dbstr);
 	fileStream.close();
+	print "[MDB-gSpan] -- Writing database file: " + outFile;
+	print "[MDB-gSpan] -- Number of circuits processed: " + repr(index+1) ;
 		
 
 except:
