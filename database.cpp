@@ -10,6 +10,9 @@
 
 #include "database.hpp"
 using namespace rapidxml;
+Database::Database(){
+	
+}
 
 bool Database::importDatabase(std::string path){
 	printf("[DATABASE] -- Importing database from XML file\n");

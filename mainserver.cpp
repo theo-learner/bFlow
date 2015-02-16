@@ -40,7 +40,7 @@ int main( int argc, char *argv[] ){
 	//**************************************************************************
 	Database* db = new Database();
 	try{
-		Server* server = new Server(db->string2int(argv[1]));
+		Server* server = new Server((unsigned)db->string2int(argv[1]));
 		if(!server->waitForClient()) return 0;
 
 		if(!server->sendData("REQUEST_DB")) throw ServerSendException();

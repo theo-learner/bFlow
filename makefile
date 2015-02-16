@@ -22,6 +22,7 @@ OBJSERVER = \
 	feature.o \
 	similarity.o \
 	print.o \
+	server.o \
 	$
 
 all: main mainserver
