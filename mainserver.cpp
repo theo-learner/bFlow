@@ -26,6 +26,7 @@
 //Server Includes
 #include "similarity.hpp"
 #include "server.hpp"
+#include "database.hpp"
 #include "error.hpp"
 
 int main( int argc, char *argv[] ){
@@ -37,15 +38,15 @@ int main( int argc, char *argv[] ){
 	//**************************************************************************
 	//* MKR- CONECTING WITH FRONT END
 	//**************************************************************************
+	Database* db = new Database();
 	try{
-		Server* server = new Server(database->string2int(portNumber_str.c_str()));
+		Server* server = new Server(db->string2int(argv[1]));
 		if(!server->waitForClient()) return 0;
 
-
-		if(!server->sendData("REQUEST_DB")) throw ServerSendException
+		if(!server->sendData("REQUEST_DB")) throw ServerSendException();
 
 	}
-	catch(ServerSendException)(
+	catch(ServerSendException e){
 		printf("%s", e.what());
 	}
 
@@ -73,4 +74,5 @@ int main( int argc, char *argv[] ){
 
 	return 0;
 }
-	
+
+#endif

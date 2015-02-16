@@ -20,6 +20,8 @@ OBJSERVER = \
 	database.o \
 	birthmark.o \
 	feature.o \
+	similarity.o \
+	print.o \
 	$
 
 all: main mainserver
@@ -32,8 +34,8 @@ main: $(OBJS) main.o
 mainopt: $(OBJS) swparam_opt.o
 	$(CXX) $(OBJS) swparam_opt.o -o opt_sswparam 
 
-mainserver: $(OBJS) $(OBJSERVER) mainserver.o
-	$(CXX) $(OBJSERVER) $(OBJS) mainserver.o -o serverMain
+mainserver:  $(OBJSERVER) mainserver.o
+	$(CXX) -o serverMain $(OBJSERVER) mainserver.o 
 	
 
 %.o: %.cpp 

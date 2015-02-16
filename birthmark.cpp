@@ -56,7 +56,7 @@ void Birthmark::setConstants(std::set<int>& val){
 }
 
 void Birthmark::setFingerprint(std::map<std::string , Feature* >& val){
-	m_Fingerprint[featureName] = val;
+	m_Fingerprint = val;
 }
 
 void Birthmark::setName(std::string name){
@@ -92,11 +92,11 @@ void Birthmark::addFingerprint(std::string featureName, unsigned size, unsigned 
 	std::map<std::string, Feature*>::iterator it;
 	it = m_Fingerprint.find(featureName);
 	if(it == m_Fingerprint.end()){
-		Feature* feature = new Feature(size, count)
+		Feature* feature = new Feature(size, count);
 		m_Fingerprint[featureName] = feature;	
 	}
 	else
-		it->second.addEntr(size, count);
+		it->second->addEntry(size, count);
 }
 		
 void Birthmark::print(){

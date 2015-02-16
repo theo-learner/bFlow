@@ -18,15 +18,15 @@ Feature::Feature(std::vector<unsigned>& size, std::vector<unsigned>& count){
 	assert(count.size() == size.size());
 
 	m_Sizes= size;
-	m_Count= count;
+	m_Counts= count;
 }
 
 Feature::Feature(unsigned size, unsigned count){
 
-	assert(size.size() != 0);
+	assert(size != 0);
 
-	m_Sizes= size;
-	m_Count= count;
+	m_Sizes.push_back(size);
+	m_Counts.push_back(count);
 }
 
 
@@ -34,34 +34,34 @@ Feature::Feature(unsigned size, unsigned count){
 
 
 
-void getSizes(std::vector<unsigned>& rVal){
+void Feature::getSizes(std::vector<unsigned>& rVal){
 	rVal = m_Sizes;
 }
 
-void getCounts(std::vector<unsigned>& rVal){
+void Feature::getCounts(std::vector<unsigned>& rVal){
 	rVal = m_Counts;
 }
 
 
-unsigned getSize(unsigned index){
+unsigned Feature::getSize(unsigned index){
 	return m_Sizes[index];
 }
-unsigned getCount(unsigned index){
+unsigned Feature::getCount(unsigned index){
 	return m_Counts[index];
 }
 		
 
-void setSizes(std::vector<unsigned>& val){
-	m_Sizes = val:
+void Feature::setSizes(std::vector<unsigned>& val){
+	m_Sizes = val;
 }
 
-void setCounts(std::vector<unsigned>& val){
-	m_Count = val:
+void Feature::setCounts(std::vector<unsigned>& val){
+	m_Counts = val;
 
 }
 		
 
-void addEntry(unsigned size, unsigned count, unsigned index){
+void Feature::addEntry(unsigned size, unsigned count){
 	m_Sizes.push_back(size);
 	m_Counts.push_back(count);
 }
