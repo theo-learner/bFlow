@@ -10,8 +10,15 @@
 
 #include "database.hpp"
 using namespace rapidxml;
+
 Database::Database(){
 	
+}
+
+Database::~Database(){
+	std::list<Birthmark*>::iterator it;
+	for(it = m_Database.begin(); it != m_Database.end(); it++)
+		delete *it;
 }
 
 bool Database::importDatabase(std::string path){

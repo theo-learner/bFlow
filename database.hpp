@@ -45,12 +45,13 @@ struct setCompare{
 class Database{
 	private:
 		rapidxml::xml_document<> m_XML;
-		rapidxml::xml_node<>* m_Root;
+		//rapidxml::xml_node<>* m_Root;
 		
 		std::list<Birthmark*> m_Database;
 
 	public:
 		Database();
+		~Database();
 		bool importDatabase(std::string);   //PARAM: File Name
 
 		int string2int(const char*);

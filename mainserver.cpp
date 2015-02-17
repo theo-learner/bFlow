@@ -28,9 +28,12 @@
 #include "server.hpp"
 #include "database.hpp"
 #include "error.hpp"
+	enum Error{
+		eCLIENT_READY,
+	};
 
 int main( int argc, char *argv[] ){
-	if(argc != 3){
+	if(argc != 2){
 		printf("./server <port number>\n\n\n");
 		return 0;
 	}
@@ -43,11 +46,22 @@ int main( int argc, char *argv[] ){
 		Server* server = new Server((unsigned)db->string2int(argv[1]));
 		if(!server->waitForClient()) return 0;
 
-		if(!server->sendData("REQUEST_DB")) throw ServerSendException();
+		std::string ready = server->receiveAllData();
+
+		if(ready != "CLIENT_READY") throw eCLIENT_READY;
+		if(!server->sendData("SERVER_READY")) throw ServerSendException();
+
+
+		while(1){
+		}
 
 	}
 	catch(ServerSendException e){
 		printf("%s", e.what());
+	}
+	catch(Error e){
+		if(e == eCLIENT_READY)
+			printf("[ERROR] -- CLient did not send RDY Signal\n");
 	}
 
 

@@ -28,13 +28,14 @@ class Birthmark{
 		std::string m_Name;
 		std::list<std::string> m_MaxSequence;
 		std::list<std::string> m_MinSequence;
-		std::set<int> m_Constants	;
+		std::set<int> m_Constants;
 
 		//Name of feature, map of the size of the feature and how many there are
 		std::map<std::string, Feature*> m_Fingerprint;
 
 	public:
 		Birthmark();
+		~Birthmark();
 		void getMaxSequence(std::list<std::string>&);
 		void getMinSequence(std::list<std::string>&);
 		void getConstants(std::set<int>&);

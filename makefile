@@ -6,7 +6,6 @@ CFLAGS = \
 		-Wno-unused-function \
 		-Wno-write-strings \
 		-Wno-sign-compare \
-		-Wno-unused-but-set-variable \
 		-Iyosys
 
 OBJS = \

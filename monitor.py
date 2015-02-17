@@ -12,14 +12,49 @@ import time;
 import datetime;
 import yosys;
 import traceback;
+import socket;
 
 
-if len(sys.argv) != 2:
+def skt_receive(csocket,timeout=2):
+    #make socket non blocking
+    csocket.setblocking(0)
+     
+    total_data=[];
+    data='';
+    begin=time.time()
+
+    while 1:
+        #if you got some data, then break after timeout
+        if total_data and time.time()-begin > timeout:
+            break
+         
+        #if you got no data at all, wait a little longer, twice the timeout
+        elif time.time()-begin > timeout*2:
+            break
+         
+        try:
+            data = csocket.recv(8192)
+            if data:
+                total_data.append(data)
+                begin=time.time()
+            else:
+                time.sleep(0.1)
+        except:
+            pass
+     
+	return ''.join(total_data)
+ 
+ 
+#Check Argument Length
+if len(sys.argv) != 4:
 	print "[ERROR] -- Not enough argument. Provide Verilog file to monitor";
 	exit();
 
-
 verilogFile = sys.argv[1];
+ipaddr = sys.argv[2];
+port = int(sys.argv[3]);
+
+
 if(".v" not in verilogFile):
 	print "[ERROR] -- File does not have verilog extension";
 	exit();
@@ -31,7 +66,21 @@ print "Monitoring Verilog File: " + fileName[0] + fileName[1] + "." + fileName[2
 
 #Preprocess yosys script
 scriptName = "yoscript_ref"
-yosys.create_yosys_script(verilogFile, fileName[0], fileName[1], scriptName)
+yosys.create_yosys_script(verilogFile, scriptName)
+
+#Set up communication with server
+try:
+	print "[MONITOR] -- Setting up socket- IP: " + ipaddr + "\tPORT: " + repr(port);
+	csocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM);
+	csocket.connect((ipaddr, port));
+except:
+	print "[ERROR] -- Make sure server size is running. Check IP and PORT"
+	exit();
+
+
+csocket.send("CLIENT_READY");
+rVal = skt_receive(csocket);
+print "[MONITOR] -- CONNECTED!";
 
 
 #Start Monitoring
@@ -46,7 +95,7 @@ try:
 		if(prevTime != curTime ):
 			print "[" + st + "] -- -- Reference has been modified: " + repr(curTime);
 			prevTime = curTime;
-			status = yosys.execute(scriptName);
+			#status = yosys.execute(scriptName);
 				
 
 		time.sleep(5);

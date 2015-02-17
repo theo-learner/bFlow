@@ -13,6 +13,13 @@
 Birthmark::Birthmark(){
 }
 
+Birthmark::~Birthmark(){
+	std::map<std::string, Feature*>::iterator it;
+	for(it = m_Fingerprint.begin(); it != m_Fingerprint.end(); it++)
+		delete it->second;
+
+}
+
 //GETTERS
 void Birthmark::getMaxSequence(std::list<std::string>& rVal){
 	rVal = m_MaxSequence;
