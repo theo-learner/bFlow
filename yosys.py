@@ -35,14 +35,14 @@ def create_yosys_script(fileName, scriptName):
 	script = script + "proc; opt; fsm; opt; wreduce; opt\n\n";
 	script = script + "flatten "+ top +"; opt\n";
 	script = script + "wreduce; opt\n\n";
-	script = script + "show -width -format dot -prefix " + path + top + "_df " + top + "\n";
+	script = script + "show -width -format dot -prefix ./dot/" + top + "_df " + top + "\n";
 
 
 	fileStream = open(scriptName, 'w');
 	fileStream.write(script);
 	fileStream.close();
 
-	dotFile = path+top+"_df.dot";
+	dotFile = "./dot/"+top+"_df.dot";
 	return (dotFile, top);
 
 
@@ -63,7 +63,11 @@ def execute(scriptFile):
 
 
 	if hasError:
-		raise error.YosysError(msg);
+		print msg;
+		return msg;
+	
+	return "";
+
 
 
 

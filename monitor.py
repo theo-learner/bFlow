@@ -13,14 +13,20 @@ import datetime;
 import yosys;
 import traceback;
 import socket;
+import dataflow as dfx
+from bs4 import BeautifulSoup
 
 
 def skt_receive(csocket,timeout=2):
+    #make socket blocking
+    csocket.setblocking(1);
+
+    total_data=[];
+    data = csocket.recv(8192)
+    total_data.append(data)
+
     #make socket non blocking
     csocket.setblocking(0)
-     
-    total_data=[];
-    data='';
     begin=time.time()
 
     while 1:
@@ -47,7 +53,8 @@ def skt_receive(csocket,timeout=2):
  
 #Check Argument Length
 if len(sys.argv) != 4:
-	print "[ERROR] -- Not enough argument. Provide Verilog file to monitor";
+	print "[ERROR] -- Not enough arguments";
+	print "        -- python monitor.py <verilog file> <IP ADDR> <PORT>"
 	exit();
 
 verilogFile = sys.argv[1];
@@ -60,13 +67,15 @@ if(".v" not in verilogFile):
 	exit();
 
 
-fileName = yosys.getFileData(verilogFile);
-print "Monitoring Verilog File: " + fileName[0] + fileName[1] + "." + fileName[2];
-
-
 #Preprocess yosys script
+fileName = yosys.getFileData(verilogFile);
 scriptName = "yoscript_ref"
-yosys.create_yosys_script(verilogFile, scriptName)
+print "Monitoring Verilog File: " + fileName[0] + fileName[1] + "." + fileName[2];
+scriptResult = yosys.create_yosys_script(verilogFile, scriptName)
+dotfile = scriptResult[0];
+
+
+
 
 #Set up communication with server
 try:
@@ -78,9 +87,18 @@ except:
 	exit();
 
 
+#INITIAL HANDSHAKE
 csocket.send("CLIENT_READY");
-rVal = skt_receive(csocket);
+val = skt_receive(csocket);
+
+if(val != 'SERVER_READY'):
+	print "[ERROR] -- Server did not send ready signal"
+	exit()
+
 print "[MONITOR] -- CONNECTED!";
+
+
+
 
 
 #Start Monitoring
@@ -95,9 +113,73 @@ try:
 		if(prevTime != curTime ):
 			print "[" + st + "] -- -- Reference has been modified: " + repr(curTime);
 			prevTime = curTime;
-			#status = yosys.execute(scriptName);
-				
 
+			rVal = yosys.execute(scriptName);
+			if(rVal != ""):
+				print "Continuing to monitor..."
+				time.sleep(5);
+				continue;
+
+			result = dfx.extractDataflow(dotfile);
+
+
+#######################################################
+			soup = BeautifulSoup();
+			ckttag = soup.new_tag("CIRCUIT");
+			ckttag['name'] = fileName[1];
+			ckttag['id'] = -1 
+			soup.append(ckttag);
+
+			#Store the max seq
+			maxList = result[0];
+			for seq in maxList:
+				seqtag = soup.new_tag("MAXSEQ");
+				seqtag.string =seq 
+				ckttag.append(seqtag);
+				
+			minList = result[1];
+			for seq in maxList:
+				seqtag = soup.new_tag("MINSEQ");
+				seqtag.string =seq 
+				ckttag.append(seqtag);
+			
+			constSet= result[2];
+			for const in constSet:
+				consttag = soup.new_tag("CONSTANT");
+				consttag.string = const
+				ckttag.append(consttag);
+			
+			fpDict= result[3];
+			name = result[4];
+			if(len(fpDict) != len(name)):
+				raise error.SizeError("Fingerprint Dictionary and Name size do not match");
+	
+			i = 0;
+			for fp in fpDict:
+				fptag = soup.new_tag("FP");
+				fptag['type'] = name[i];
+				for k, v in fp.iteritems():
+					attrTag = soup.new_tag("DATA");
+					attrTag['size'] = k;
+					attrTag['count'] = v;
+					fptag.append(attrTag);
+				i = i + 1;
+	
+				ckttag.append(fptag);
+			#print soup.prettify();
+#######################################################
+		
+			print "Sending XML Representation of Birthmark to server..."
+			xmldata = soup.prettify().replace('\n', '');
+			csocket.send(xmldata);
+			
+			print "Waiting for response..."
+			val = skt_receive(csocket);
+			if(val != 'SERVER_READY'):
+				print "[ERROR] -- Server did not send ready signal"
+				exit()
+			print "Finished! Continue monitoring..."
+								 
 		time.sleep(5);
 
 except:

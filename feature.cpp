@@ -68,6 +68,11 @@ void Feature::addEntry(unsigned size, unsigned count){
 
 
 
+void Feature::print(){
+	for(unsigned int i = 0; i < m_Sizes.size(); i++){
+		printf("%d : %d   ", m_Sizes[i], m_Counts[i]);
+	}
+}
 /*void setNames(std::string name){
 	m_FeatureName = name;
 }

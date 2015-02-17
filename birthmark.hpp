@@ -22,6 +22,9 @@
 
 #include "feature.hpp"
 
+#include "rapidxml/rapidxml.hpp"
+#include "rapidxml/rapidxml_print.hpp"
+
 class Birthmark{
 	private: 
 		int m_ID;
@@ -35,7 +38,9 @@ class Birthmark{
 
 	public:
 		Birthmark();
+		Birthmark(rapidxml::xml_node<>*);
 		~Birthmark();
+
 		void getMaxSequence(std::list<std::string>&);
 		void getMinSequence(std::list<std::string>&);
 		void getConstants(std::set<int>&);
@@ -55,6 +60,8 @@ class Birthmark{
 		void addConstant(int);
 		void addFingerprint(std::string, Feature*);
 		void addFingerprint(std::string, unsigned , unsigned);
+		
+		bool importXML(rapidxml::xml_node<>*);
 		
 		void print();
 };

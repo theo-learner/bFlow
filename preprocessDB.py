@@ -14,7 +14,7 @@ from bs4 import BeautifulSoup
 import sqlite3 as sql
 import error;
 import yosys;
-import extractDataflow as dfx
+import dataflow as dfx
 import traceback
 
 

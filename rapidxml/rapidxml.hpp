@@ -338,6 +338,8 @@ namespace rapidxml
     }
     //! \endcond
 
+
+
     ///////////////////////////////////////////////////////////////////////
     // Memory pool
     
@@ -2594,3 +2596,21 @@ namespace rapidxml
 #endif
 
 #endif
+
+
+#ifndef CUSTOM_GUARD
+#define CUSTOM_GUARD
+
+namespace s2i{
+	static inline	int string2int(const char* string){
+		char *end;
+    long  l;
+    l = strtol(string, &end, 10);
+    if (*string == '\0' || *end != '\0') 
+        return -2;
+
+   	return (int) l;
+	};
+}
+#endif
+

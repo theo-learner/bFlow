@@ -51,10 +51,10 @@ class Database{
 
 	public:
 		Database();
+		Database(std::string);
 		~Database();
 		bool importDatabase(std::string);   //PARAM: File Name
 
-		int string2int(const char*);
 		void printXML();
 };
 

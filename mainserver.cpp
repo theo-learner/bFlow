@@ -28,41 +28,85 @@
 #include "server.hpp"
 #include "database.hpp"
 #include "error.hpp"
-	enum Error{
-		eCLIENT_READY,
-	};
+
+#include "rapidxml/rapidxml.hpp"
+#include "rapidxml/rapidxml_print.hpp"
+using namespace rapidxml;
+
+
 
 int main( int argc, char *argv[] ){
-	if(argc != 2){
-		printf("./server <port number>\n\n\n");
-		return 0;
-	}
-	
-	//**************************************************************************
-	//* MKR- CONECTING WITH FRONT END
-	//**************************************************************************
-	Database* db = new Database();
+	enum Error{
+		eARGS,
+		eBIRTHMARK,
+		eCLIENT_READY
+	};
+
+	Database* db = NULL;
+	Server* server = NULL;
+
 	try{
-		Server* server = new Server((unsigned)db->string2int(argv[1]));
-		if(!server->waitForClient()) return 0;
+		if(argc != 3) throw eARGS;
 
+
+
+		//**************************************************************************
+		//* MKR- CONECTING WITH FRONT END
+		//**************************************************************************
+		std::string xmlFile = argv[2];
+		unsigned port = (unsigned)s2i::string2int(argv[1]);
+		db = new Database(xmlFile);
+		server = new Server(port);
+		server->waitForClient();
+		
+
+		//INITIAL HANDSHAKE
+		printf(" -- Performing initial handshake\n" );
 		std::string ready = server->receiveAllData();
-
 		if(ready != "CLIENT_READY") throw eCLIENT_READY;
-		if(!server->sendData("SERVER_READY")) throw ServerSendException();
-
+		server->sendData("SERVER_READY");
+		printf(" -- Server is ready and running!\n\n");
 
 		while(1){
-		}
+			printf(" -- Waiting for reference birthmark...\n");
+			std::string xmldata = server->receiveAllData();
 
+			xml_document<> xmldoc;
+			char* cstr = new char[xmldata.size() + 1];
+			strcpy(cstr, xmldata.c_str());
+
+			//Parse the XML Data
+			xmldoc.parse<0>(cstr);
+			xml_node<>* cktNode= xmldoc.first_node();
+			Birthmark* refBirthmark = new Birthmark();
+			if(!refBirthmark->importXML(cktNode)) throw eBIRTHMARK;
+			refBirthmark->print(); 
+
+
+			delete refBirthmark;
+			server->sendData("SERVER_READY");
+		}
+		
+		server->closeSocket();
 	}
-	catch(ServerSendException e){
+	catch(ServerException e){
 		printf("%s", e.what());
 	}
-	catch(Error e){
-		if(e == eCLIENT_READY)
-			printf("[ERROR] -- CLient did not send RDY Signal\n");
+	catch(int e){
+		switch(e){
+			case eCLIENT_READY: 	
+				printf("Error\n[ERROR] -- Client did not send RDY Signal\n");
+			case eARGS:  
+				printf("[ERROR] -- Invalid Arguments\n\t./server <port number> <XML Database File>\n\n");
+			case eBIRTHMARK:  
+				printf("[ERROR] -- Invalid Arguments\n\t./server <port number> <XML Database File>\n\n\n");
+			default:
+				printf("[ERROR] -- Exception occured\n"); 
+		}
 	}
+	
+	if(db != NULL) delete db;
+	if(server != NULL) delete server;
 
 
 

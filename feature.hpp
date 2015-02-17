@@ -45,6 +45,7 @@ class Feature{
 
 		//std::string getName(unsigned);
 		//void setName(std::string);
+		void print();
 
 	
 };

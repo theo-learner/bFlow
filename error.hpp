@@ -7,12 +7,13 @@
 #include <stdio.h>
 #include <exception>
 
-class ServerSendException: public std::exception
+class ServerException: public std::exception
 {
 public:
- 	ServerSendException(
-		std::string m="[ERROR] -- Exception occured when trying to send data over s        erver\n") : msg(m) {}
-  	~ServerSendException() throw() {}
+ 	ServerException(
+		std::string m="Exception occured in server\n") : 
+					msg("\n\n[ERROR] -- " + m + "\n") {}
+  	~ServerException() throw() {}
   	const char* what() const throw() { 
 		return msg.c_str(); 
 	}

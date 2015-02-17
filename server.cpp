@@ -25,10 +25,9 @@ bool Server::waitForClient(){
 	printf("[SERVER] -- Preparing TCP/IP connection with client front-end\n");
 	printf("[SERVER] -- Opening Socket...");
 	m_ServerSktID= socket(AF_INET, SOCK_STREAM, 0);
-	if(m_ServerSktID< 0){
-		printf("[ERROR] -- Server socket cannot be opened\n");
-		return false;
-	}
+	if(m_ServerSktID< 0)
+		throw ServerException("LIST: Server socket cannot be opened");
+
 	printf("ID: %d\n", m_ServerSktID);
 
 	printf("[SERVER] -- Preparing to bind...\n");
@@ -40,10 +39,8 @@ bool Server::waitForClient(){
 	server_addr.sin_port= htons(m_Port);
 
 	if (bind(m_ServerSktID, (struct sockaddr *) &server_addr, 
-				sizeof(server_addr)) < 0){
-			printf("[ERROR] -- Error has occured during binding\n");
-			return false;
-	}
+				sizeof(server_addr)) < 0)
+		throw ServerException("LIST: Binding error");
 
 	print();
 
@@ -52,10 +49,7 @@ bool Server::waitForClient(){
 
 	clientLength = sizeof(client_addr);
 	m_ClientSktID= accept(m_ServerSktID, (struct sockaddr*) &client_addr, &clientLength);
-	if(m_ClientSktID< 0){
-		printf("[ERROR] -- Error has occured accepting the client\n");
-		return false;
-	}
+	if(m_ClientSktID< 0) throw ServerException("LIST: Error accepting client");
 
 	printf(" * Client found!\n");
 
@@ -70,10 +64,8 @@ bool Server::waitForClient(){
 	 Timeout in seconds
  */
 std::string Server::receiveAllData(){
-	if(m_ClientSktID < 0){
-		printf("[SERVER] -- Please wait for connected client before receiving data\n");
-		return "";
-	}
+	if(m_ClientSktID < 0) 
+		throw ServerException("RECV: ClientID is not set");
 
 	int size_recv , total_size= 0;
 	struct timeval begin , now;
@@ -86,18 +78,12 @@ std::string Server::receiveAllData(){
 	//Blocking Receive to wait for the first data sent by the client
 	printf("[SERVER] -- Waiting for data from client...\n");
 	bzero(buffer, m_bufferLength);
-	if((size_recv = recv(m_ClientSktID, buffer, m_bufferLength-1, 0) ) < 0){
-		printf("[ERROR] -- Error occured when attempting to receive blocking\n");
-		return "";
-	}
-	else if(size_recv == 0){
-		closeSocket();
-		return "SOCKET_CLOSE";
-	}
+	if((size_recv = recv(m_ClientSktID, buffer, m_bufferLength-1, 0) ) <= 0)
+		throw ServerException("RECV: Failed to receive message. Client might have disconnected");
+
 	buffer[m_bufferLength] = '\0';
 	data += buffer ;
 	
-
 	//make socket non blocking
 	int option = fcntl(m_ClientSktID, F_GETFL);
 	option = option | O_NONBLOCK;
@@ -106,7 +92,7 @@ std::string Server::receiveAllData(){
 
 	//beginning time
 	gettimeofday(&begin , NULL);
-	printf("[SERVER] -- Initial packet received. Retrieving all data\n");
+	//printf("[SERVER] -- Initial packet received. Retrieving all data\n");
 
 	while(1){
 		gettimeofday(&now , NULL);
@@ -146,15 +132,13 @@ std::string Server::receiveAllData(){
 
 bool Server::sendData(std::string data){
 	if(m_ClientSktID < 0){
-		printf("[SERVER] -- Please wait for connected client before sending data\n");
-		return false;
+		throw ServerException("SEND: ClientID is not set");
 	}
+
 	int result = write(m_ClientSktID, data.c_str(), data.length());	
 
 	if(result < 0){
-		printf("[SERVER] -- Writing to client seemed to have encountered an error...\n");
-		closeSocket();
-		return false;
+		throw ServerException("SEND: Failed to receive message");
 	}
 
 	return true;
@@ -163,7 +147,6 @@ bool Server::sendData(std::string data){
 
 void Server::closeSocket(){
 	if(m_ServerSktID < 0){
-		printf("[SERVER] -- There is no socket to close\n");
 		return;
 	}
 
