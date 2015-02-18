@@ -24,3 +24,32 @@ library networkx.
 NOTE: 
  * File names for the verilog modules has to be the same name as top
  * Directory name should be the same name as the top module
+
+
+Dependencies
+------------
+	1. Yosys synthesis tools for analyzing verilog files
+	2. BeautifulSoup for xml parsing
+	3. NetworkX for reading dot files produced by yosys tools
+	4. Smith waterman python library (swalign)
+	
+	OPTIONAL:
+	1. Autosave plugin for vim
+
+
+Preprocess Verilog file database:
+	1. Have a collection of existing verilog files
+			A. Verilog in a directory has a .d extension
+			B. The name of the verilog files should be the top module
+			C. Have a file with the list of all the verilog files
+	2. Run python preprocessDB.py <list of .v> <output xml file name>
+	3. Outputs a xml file with the birthmark extracted
+
+
+Monitor Verilog File:
+	1. Run ./serverMain <port number> <database xml>
+		A. This will read in the database and then listen for the client to connect
+	2. Run python monitor.py <reference verilog> <server IP> <port>
+	  A. This will monitor for changes in the reference design. 
+		B. If using vim, install Autosave plugin to autosave reference
+
