@@ -170,8 +170,8 @@ try:
 #######################################################
 		
 			print "Sending XML Representation of Birthmark to server..."
-			xmldata = soup.prettify().replace('\n', '');
-			csocket.send(xmldata);
+			#xmldata = soup.prettify().replace('\n', '').replace("  ", "").replace(" <","<");
+			csocket.send(repr(soup));
 			
 			print "Waiting for response..."
 			val = skt_receive(csocket);

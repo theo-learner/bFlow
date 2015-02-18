@@ -20,7 +20,7 @@ import traceback
 
 if len(sys.argv) != 3: 
 	print "[ERROR] -- Not enough argument. Provide direction of DOT files to process";
-	print "        -- ARG1: circuit file, ARG2: Name of sql database";
+	print "        -- ARG1: list of .v, ARG2: Name of sql database";
 	exit();
 	
 #xmlFile= sys.argv[1];
@@ -112,7 +112,7 @@ try:
 		
 	#print soup.prettify()
 	fileStream = open(dbFile, 'w');
-	fileStream.write(soup.prettify());
+	fileStream.write(repr(soup));
 	fileStream.close();
 	
 	print " -- XML File saved  : " + dbFile;

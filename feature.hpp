@@ -24,22 +24,26 @@
 class Feature{
 	private: 
 		//std::string m_FeatureName;
-		std::vector<unsigned> m_Sizes;
-		std::vector<unsigned> m_Counts;
+		//std::vector<unsigned> m_Sizes;
+		//std::vector<unsigned> m_Counts;
+
+		std::map<unsigned, unsigned> m_SizeCount;
 
 	public:
 		Feature();
 		Feature(std::vector<unsigned>&, std::vector<unsigned>&);
 		Feature(unsigned, unsigned);
 
-		void getSizes(std::vector<unsigned>&);
-		void getCounts(std::vector<unsigned>&);
+		//void getSizes(std::vector<unsigned>&);
+		//void getCounts(std::vector<unsigned>&);
+		void getFeature(std::map<unsigned, unsigned>&);
 
-		unsigned getSize(unsigned);
+		//unsigned getSize(unsigned);
 		unsigned getCount(unsigned);
 		
-		void setSizes(std::vector<unsigned>&);
-		void setCounts(std::vector<unsigned>&);
+		//void setSizes(std::vector<unsigned>&);
+		//void setCounts(std::vector<unsigned>&);
+		void setFeatures(std::map<unsigned, unsigned>&);
 		
 		void addEntry(unsigned, unsigned); //PARAM: size, count
 

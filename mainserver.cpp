@@ -80,7 +80,9 @@ int main( int argc, char *argv[] ){
 			xml_node<>* cktNode= xmldoc.first_node();
 			Birthmark* refBirthmark = new Birthmark();
 			if(!refBirthmark->importXML(cktNode)) throw eBIRTHMARK;
-			refBirthmark->print(); 
+
+			//refBirthmark->print(); 
+			db->searchDatabase(refBirthmark);
 
 
 			delete refBirthmark;

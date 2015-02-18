@@ -281,3 +281,108 @@ double SIMILARITY::tanimoto(std::map<unsigned, unsigned>& data1, std::map<unsign
 
 	return N_f1f2_ratio / denom;
 }
+
+
+
+/*#############################################################################
+ *
+ * align 
+ *  given a list of sequences (REF and DB), align the sequences and extract
+ *  the similarity of the alignment (AVG SIM) 
+ *
+ *#############################################################################*/
+double SIMILARITY::align(std::list<std::string>& ref, std::list<std::string>& db){
+	std::list<std::string>::iterator iSeq;	
+	std::list<std::string>::iterator iRef;	
+	double maxSim = 0.0;
+
+	for(iRef= ref.begin(); iRef!= ref.end(); iRef++){
+		for(iSeq = db.begin(); iSeq != db.end(); iSeq++){
+			//RUN PYTHON SCRIPT TO EXTRACT DATAFLOW FROM DOT FILE THAT IS GENERATED
+			//printf(" * COMPARING REF: #%s# \tDB: #%s#\n", iRef->c_str(), iSeq->c_str());
+			std::string cmd = "python ssw.py " + *iRef + " " + *iSeq;// > .pscript.dmp";
+			system(cmd.c_str());
+
+			std::ifstream ifs;
+			ifs.open(".align");
+			if (!ifs.is_open()) throw 5;
+
+			std::string questr, refstr, dummy;
+			getline(ifs, questr);
+			getline(ifs, refstr);
+			
+			int qlen, rlen, score, matches;
+			double psim;
+			ifs>>dummy>>qlen;
+			ifs>>dummy>>rlen;
+			ifs>>dummy>>score;
+			ifs>>dummy>>matches;
+			ifs>>dummy>>psim;
+			ifs.close();
+
+			double penalty = 0.0;
+			double wildcard = 0.0;
+			for(unsigned int i = 0; i < questr.length(); i++){
+				if(questr[i] == '-'){
+					if(refstr[i] == 'N')
+						wildcard += 0.80;	
+					else
+						penalty += 0.01	;
+				}
+				else if(refstr[i] == '-'){
+					if(questr[i] == 'N')
+						wildcard += 0.80;	
+					else
+						penalty += 0.01	;
+				}
+				else if(refstr[i] != questr[i]){
+/*
+		
+					std::map<char, std::map<char, double> > scoreMatrix;
+					readScoreMatrix("scoreMatrix", scoreMatrix);
+
+					double scoreRef = scoreMatrix[refstr[i]][questr[i]];
+					if(scoreRef < -1.00)
+						penalty += 0.25;
+					else if (scoreRef < -0.50)
+						penalty += 0.1;
+					else if (scoreRef > 0)
+						penalty -= 0.75;
+						*/
+						penalty -= 0.75;
+				}
+			}
+
+
+			double cursim= ((double)(matches - penalty) + wildcard) / (double) rlen;
+			//double curscore = (double) score;
+			if(cursim> maxSim) maxSim = cursim;
+
+
+/*
+			printf("REFLENGTH:  %d", rlen);
+			printf("\t\tQUERY: %d\t", qlen);
+			printf("\t\tMATCH: %d\t", matches);
+			printf("\t\tWILD: %f\t", wildcard);
+			printf("\t\tPEN: %f\n", penalty);
+			printf(" -- Best Smith-Waterman score:\t%f\t\tSIM: %f\n", curscore, cursim);
+			*/
+		}
+		//printf("***************************************************\n");
+	}
+	return maxSim;
+
+}
+
+double SIMILARITY::calculateSimilarity(std::map<unsigned, unsigned>& fingerprint1,
+		std::map<unsigned, unsigned>& fingerprint2){
+
+	double sim;
+	if(fingerprint1.size() == 0 and fingerprint2.size() == 0)
+		sim = -1.00;
+	else
+		sim = tanimotoWindow_size(fingerprint1, fingerprint2);
+
+	return sim;
+}
+

@@ -19,4 +19,3 @@ alignment = sw.align(seq1, seq2);
 
 fileStream = open(".align", 'w');
 alignment.dump(fileStream)
-alignment.dump()

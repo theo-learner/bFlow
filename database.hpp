@@ -23,20 +23,21 @@
 #include <iostream>
 
 #include "birthmark.hpp"
+#include "similarity.hpp"
 
 #include "rapidxml/rapidxml.hpp"
 #include "rapidxml/rapidxml_print.hpp"
 
 //Used to sort the id and name by the score
-struct cScore{
+struct Score{
 	double score;
 	unsigned id;
-	std::string cName;
+	std::string name;
 };
 
 //Used to compare the cScore so that it is sorted by the score
 struct setCompare{
-	bool operator()(const cScore& lhs, const cScore& rhs) const{
+	bool operator()(const Score& lhs, const Score& rhs) const{
 		return lhs.score >= rhs.score;
 	}
 };
@@ -54,8 +55,10 @@ class Database{
 		Database(std::string);
 		~Database();
 		bool importDatabase(std::string);   //PARAM: File Name
+	  void searchDatabase(Birthmark*);
 
 		void printXML();
+		void print();
 };
 
 

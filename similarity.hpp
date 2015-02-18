@@ -18,6 +18,7 @@
 #include <map>
 #include <vector>
 #include <set>
+#include <list>
 #include <math.h>
 
 
@@ -35,6 +36,11 @@ namespace SIMILARITY{
 	double euclideanDistanceWNorm(std::vector<double>& , std::vector<double>&);
 	double euclideanDistance(std::vector<double>& , std::vector<double>&);
 	unsigned hammingDistance(unsigned long , unsigned long );
+
+
+	double align(std::list<std::string>&, std::list<std::string>&);
+	double calculateSimilarity(std::map<unsigned, unsigned>&,
+		std::map<unsigned, unsigned>&);
 }
 
 

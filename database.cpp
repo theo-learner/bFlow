@@ -111,7 +111,119 @@ bool Database::importDatabase(std::string path){
 
 }
 
+void Database::searchDatabase(Birthmark* reference){
+	//Get FComponent
+	std::list<std::string> maxRef, minRef;
+	reference->getMaxSequence(maxRef);
+	reference->getMinSequence(minRef);
+	
+	//Get SComponent
+	std::map<std::string, Feature*> featureRef;
+	reference->getFingerprint(featureRef);
+	
+	//Get CComponent
+	std::set<int> constantRef;
+	reference->getConstants(constantRef);
+
+	std::set<Score, setCompare> results;
+
+	std::list<Birthmark*>::iterator iList;
+	for(iList = m_Database.begin(); iList != m_Database.end(); iList++){
+		printf("[SRCH] -- Comparing reference to #%s#\n", (*iList)->getName().c_str());
+		//Align the max sequences
+		printf("       -- Comparing functional components...");
+		std::list<std::string> maxDB;
+		(*iList)->getMaxSequence(maxDB);
+		double maxScore = SIMILARITY::align(maxRef, maxDB);
+
+		//Align the min sequences
+		std::list<std::string> minDB;
+		(*iList)->getMinSequence(minDB);
+		double minScore = SIMILARITY::align(minRef, minDB);
+
+		double fScore = (maxScore*0.650 + minScore* 0.350);
+		printf("-- FSCORE: %f\n",fScore);
+		
+
+
+		printf("       -- Comparing Structural Components...");
+		std::map<std::string, Feature*> featureDB;
+		std::map<std::string, Feature*>::iterator iFeat;
+		std::map<std::string, Feature*>::iterator iFeatRef;
+		(*iList)->getFingerprint(featureDB);
+
+		double sScore= 0.0;
+		double tsim;
+		for(iFeat = featureDB.begin(); iFeat != featureDB.end(); iFeat++){
+			std::string type = iFeat->first;
+
+			std::map<unsigned, unsigned> featRef;
+			std::map<unsigned, unsigned> featDB;
+			iFeat->second->getFeature(featDB);
+
+			iFeatRef = featureRef.find(type);
+			if(iFeatRef == featureRef.end()) continue;
+			featureRef[type]->getFeature(featRef);
+
+			tsim = SIMILARITY::calculateSimilarity(featRef, featDB);
+			if(tsim >= 0)
+				sScore += tsim;
+			else
+				sScore += (-1.0 * tsim);
+		}
+
+		sScore /= featureDB.size(); 
+		printf(" -- SSCORE: %f\n", sScore);
+
+
+
+
+
+
+
+
+		printf("       -- Comparing Constant Components....");
+		std::set<int> constantDB;
+		(*iList)->getConstants(constantDB);
+
+		double cScore;
+		if(constantRef.size() == 0 && constantDB.size() == 0) cScore = 1.0;
+		else cScore = SIMILARITY::tanimoto(constantRef, constantDB);
+		printf(" -- CSCORE: %f\n", cScore);
+
+
+
+		Score result;
+		result.id = (*iList)->getID();
+		result.name = (*iList)->getName();
+		result.score = fScore*100.0*0.67 +
+		               sScore*100.0*0.21 + 
+									 cScore*100.0*0.12;
+
+		results.insert(result);
+		printf("       SCORE: %f\n\n", result.score);
+	}
+	printf("###############################################################\n");
+	printf("###                    SEARCH COMPLETE                      ###\n");
+	printf("###############################################################\n");
+	int count = 1;
+	std::set<Score, setCompare>::iterator iSet;
+	for(iSet = results.begin(); iSet != results.end(); iSet++){
+		printf("RANK: %2d\tID: %2d\tSCR: %6.2f\tCKT:%s\n", count, iSet->id, iSet->score, iSet->name.c_str());
+		count++;
+	}
+
+}
+
 
 void Database::printXML(){
 	std::cout << m_XML << "\n";
+}
+
+
+void Database::print(){
+	std::list<Birthmark*>::iterator iList;
+	for(iList = m_Database.begin(); iList != m_Database.end(); iList++){
+		(*iList)->print();
+	}
 }
