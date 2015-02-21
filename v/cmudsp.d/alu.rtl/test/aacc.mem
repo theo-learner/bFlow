@@ -1,0 +1,41 @@
+00000000000000
+00000000000000
+00000000000000
+00000000000000	//  move #$0,r0
+00000000000000	//  move #$3,m0
+00000000000000	//  move #$0,r4
+00000000000000	//  move #$3,m4
+00000000000000	//  move #>$100,r1
+00000000000000	//  move #>$100,r1 (cont)
+00000000000000	//  move #>$300,r5
+00000000000000	//  move #>$300,r5 (cont)
+00000000000000	//  do #<$100,$110 ; p:endp
+00000000000000	//  do #<$100,$110 ; p:endp (cont)
+00000000000000	//  move y:(r1)+,x0 ; y:datin
+00000000000000	//  clr a x0,x:(r0)+ y:(r4)+,y0 ; x:states y:coef
+00000000000000	//  rep #<$3
+fffbfc9a098c02	//  mac y0,x0,a x:(r0)+,x0 y:(r4)+,y0 ; x:(states+1) y:(coef+1)
+fffbfc9a098c02	//  mac y0,x0,a x:(r0)+,x0 y:(r4)+,y0 ; x:(states+2) y:(coef+2)
+fffbfc9a098c02	//  mac y0,x0,a x:(r0)+,x0 y:(r4)+,y0 ; x:(states+3) y:(coef+3)
+fffbfc9a000000	//  macr y0,x0,a (r0)-
+fffbfc9a000000	//  move a,y:(r5)+ ; y:datout
+fffbfc9a000000	//  move y:(r1)+,x0 ; y:(datin+1)
+00000000000000	//  clr a x0,x:(r0)+ y:(r4)+,y0 ; x:(states+3) y:coef
+00000000000000	//  rep #<$3
+000132c704cb1c	//  mac y0,x0,a x:(r0)+,x0 y:(r4)+,y0 ; x:states y:(coef+1)
+fff5289571b318	//  mac y0,x0,a x:(r0)+,x0 y:(r4)+,y0 ; x:(states+1) y:(coef+2)
+fff5289571b318	//  mac y0,x0,a x:(r0)+,x0 y:(r4)+,y0 ; x:(states+2) y:(coef+3)
+fff52895000000	//  macr y0,x0,a (r0)-
+fff52895000000	//  move a,y:(r5)+ ; y:(datout+1)
+fff52895000000	//  move y:(r1)+,x0 ; y:(datin+2)
+00000000000000	//  clr a x0,x:(r0)+ y:(r4)+,y0 ; x:(states+2) y:coef
+00000000000000	//  rep #<$3
+000482dbf871d6	//  mac y0,x0,a x:(r0)+,x0 y:(r4)+,y0 ; x:(states+3) y:(coef+1)
+00081b30eedb9e	//  mac y0,x0,a x:(r0)+,x0 y:(r4)+,y0 ; x:states y:(coef+2)
+000c1e96e54f9c	//  mac y0,x0,a x:(r0)+,x0 y:(r4)+,y0 ; x:(states+1) y:(coef+3)
+000c1e97000000	//  macr y0,x0,a (r0)-
+000c1e97000000	//  move a,y:(r5)+ ; y:(datout+2)
+000c1e97000000	//  move y:(r1)+,x0 ; y:(datin+3)
+00000000000000	//  clr a x0,x:(r0)+ y:(r4)+,y0 ; x:(states+1) y:coef
+00000000000000	//  rep #<$3
+0000fa5750b62a	//  mac y0,x0,a x:(r0)+,x0 y:(r4)+,y0 ; x:(states+2) y:(coef+1)

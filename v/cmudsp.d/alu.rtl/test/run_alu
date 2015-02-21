@@ -1,0 +1,5 @@
+verilog +libext+.v+ -y $CASCADE/models/cmos/verilog globals.v ctl_def.v \
+XYreg.v mult.v addsub.v round.v shift1.v logic_unit.v \
+check_imm.v control.v decode.v \
+control_p.v limit.v alu_struc.v async_ramb.v alu_test.v
+

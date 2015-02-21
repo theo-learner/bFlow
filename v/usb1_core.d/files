@@ -1,0 +1,14 @@
+v/usb1_core.d/timescale.v
+v/usb1_core.d/usb1_core.v
+v/usb1_core.d/usb1_crc16.v
+v/usb1_core.d/usb1_crc5.v
+v/usb1_core.d/usb1_ctrl.v
+v/usb1_core.d/usb1_defines.v
+v/usb1_core.d/usb1_fifo2.v
+v/usb1_core.d/usb1_idma.v
+v/usb1_core.d/usb1_pa.v
+v/usb1_core.d/usb1_pd.v
+v/usb1_core.d/usb1_pe.v
+v/usb1_core.d/usb1_pl.v
+v/usb1_core.d/usb1_rom1.v
+v/usb1_core.d/usb1_utmi_if.v
