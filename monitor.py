@@ -105,6 +105,8 @@ print "[MONITOR] -- CONNECTED!";
 prevTime = os.stat(verilogFile).st_mtime
 
 try:
+	sleepTime = 3;
+
 	while(True):
 		curTime = os.stat(verilogFile).st_mtime
 		st = datetime.datetime.fromtimestamp(time.time()).strftime('%H:%M:%S');
@@ -117,7 +119,7 @@ try:
 			rVal = yosys.execute(scriptName);
 			if(rVal != ""):
 				print "Continuing to monitor..."
-				time.sleep(5);
+				time.sleep(sleepTime);
 				continue;
 
 			result = dfx.extractDataflow(dotfile);
@@ -180,7 +182,7 @@ try:
 				exit()
 			print "Finished! Continue monitoring..."
 								 
-		time.sleep(5);
+		time.sleep(sleepTime);
 
 except:
 	print "Error: ", sys.exc_info()[0];

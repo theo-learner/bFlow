@@ -60,7 +60,10 @@ try:
 		val  = yosys.create_yosys_script(line, scriptName)
 		top = val[1];
 
-		yosys.execute(scriptName);
+		rVal = yosys.execute(scriptName);
+		if(rVal != ""):
+			raise error.YosysError(rVal);
+
 
 		#(maxList, minList, constSet, fp) 
 		result = dfx.extractDataflow(val[0]);
@@ -127,6 +130,9 @@ except error.YosysError as e:
 	print e.msg;
 except error.SizeError as e:
 	print "[ERROR] -- Sizing Error...";
+	print "        -- " +  e.msg;
+except error.YosysError as e:
+	print "[ERROR] -- Yosys Error...";
 	print "        -- " +  e.msg;
 except Exception as e:
 	print e;

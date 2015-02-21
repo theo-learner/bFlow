@@ -29,9 +29,9 @@ x6:e -> c23:p16:w [arrowhead=odiamond, arrowtail=odiamond, dir=both, color="blac
 c24 [ shape=record, label="{{<p15> A|<p16> B}|$17\n$add|{<p17> Y}}" ];
 x7 [ shape=record, style=rounded, label="<s0> 7:7 - 0:0 " ];
 x7:e -> c24:p16:w [arrowhead=odiamond, arrowtail=odiamond, dir=both, color="black", label=""];
-v8 [ label="3'011" ];
+v8 [ label="8'00000011" ];
 c25 [ shape=record, label="{{<p15> A|<p16> B}|$18\n$eq|{<p17> Y}}" ];
-v9 [ label="3'010" ];
+v9 [ label="8'00000010" ];
 c26 [ shape=record, label="{{<p15> A|<p16> B}|$21\n$eq|{<p17> Y}}" ];
 c27 [ shape=record, label="{{<p15> A|<p16> B}|$22\n$and|{<p17> Y}}" ];
 c28 [ shape=record, label="{{<p15> A|<p16> B}|$23\n$or|{<p17> Y}}" ];
@@ -57,6 +57,6 @@ c18:p17:e -> c19:p15:w [color="black", style="setlinewidth(3)", label="<2>"];
 c19:p17:e -> c20:p15:w [color="black", style="setlinewidth(3)", label="<3>"];
 c20:p17:e -> c21:p15:w [color="black", style="setlinewidth(3)", label="<4>"];
 c21:p17:e -> c22:p15:w [color="black", style="setlinewidth(3)", label="<5>"];
-v8:e -> c25:p16:w [color="black", style="setlinewidth(3)", label="<3>"];
-v9:e -> c26:p16:w [color="black", style="setlinewidth(3)", label="<3>"];
+v8:e -> c25:p16:w [color="black", style="setlinewidth(3)", label="<8>"];
+v9:e -> c26:p16:w [color="black", style="setlinewidth(3)", label="<8>"];
 }

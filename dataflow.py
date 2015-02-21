@@ -58,6 +58,8 @@ def extractSWString(dataflowList_node, labelAttr, shapeAttr):
 				sw = sw + 'C';
 			elif '$dlatch' in operation or '$sr' in operation:                         #memory
 				sw = sw + 'F';
+			elif '$mem' in operation:                         #memory
+				sw = sw + 'R';
 			elif '$' in operation:
 				sw = sw + 'L';                                                           #Logic
 			else:
@@ -153,9 +155,6 @@ def extractDataflow(fileName):
 	nodeList = dfg.nodes();
 	edgeList = dfg.edges();
 	
-	outNodeList= [];
-	inNodeList= [];
-	constantList= [];
 
 ###############################################################################
 # Get the shape and label attributes
@@ -182,7 +181,7 @@ def extractDataflow(fileName):
 	###############################################################################
 	# Preprocess nodes
 	###############################################################################
-	name = ["add", "sub", "mul", "div", "sh", "mux", "eq", "cmp", "ff", "log", "bb", "ffC", "outC" ];
+	name = ["add", "sub", "mul", "div", "sh", "mux", "eq", "cmp", "ff", "mem", "log", "bb", "ffC", "outC" ];
 	addc= {};
 	muxc= {};
 	ffc= {};
@@ -191,11 +190,16 @@ def extractDataflow(fileName):
 	divc= {};
 	eqc= {};
 	cmpc= {};
+	memc= {};
 	shc= {};
 	lc= {};
 	bc= {};
 	fflist = [];
 
+	outNodeList= [];
+	inNodeList= [];
+	constantList= [];
+	memorywrList= [];
 	for node in nodeList:
 		if 'v' in node:                          # Check to see if it is a  constant
 			constantList.append(node);
@@ -215,11 +219,18 @@ def extractDataflow(fileName):
 	
 			if label != None:
 				labelAttr[node] = label.group(1);
+				operation = labelAttr[node];
+
+				if("$memwr" in operation):
+					memorywrList.append(node);
+					continue;
+				
 				sucList = dfg.successors(node);
+				#print "SIZE OF SUCC: " + repr(len(sucList)) + " LABEL: " + label.group(1);
+
 				size = edgeAttr[(node, sucList[0])];
 				size = int(size);
 
-				operation = labelAttr[node];
 
 				#Count the number of components
 				if ('$add' in operation):
@@ -253,6 +264,11 @@ def extractDataflow(fileName):
 					else:
 						ffc[size] = 1;
 					fflist.append(node);
+				elif '$mem' in operation:
+					if(size in memc):
+						memc[size] = memc[size] + 1;
+					else:
+						memc[size] = 1;
 				elif '$eq' in operation or '$ne' in operation:	                           #Equality Operation
 					if(size in eqc):
 						eqc[size] = eqc[size] + 1;
@@ -422,11 +438,17 @@ def extractDataflow(fileName):
 		else:
 			cnstVal = cnstVal.group(1);
 			if('x' in cnstVal):
+				cnstVal = -2;
 				continue;
-			cnstVal = repr(int(cnstVal, 2));
-			cnstVal.replace("L", "")
-			if(len(cnstVal) > 19):
-				cnstVal = "9999999999999999";
+			elif('z' in cnstVal):
+				cnstVal = -3;
+				continue;
+			else:
+				cnstVal = repr(int(cnstVal, 2));
+				cnstVal.replace("L", "")
+				if(len(cnstVal) > 19):
+					cnstVal = "9999999999999999";
+
 			constSet.add(cnstVal);
 			constStr = constStr + cnstVal + ",";
 
@@ -486,6 +508,10 @@ def extractDataflow(fileName):
 	for k, v in ffc.iteritems():		
 		compstr = compstr +repr(k) + " " + repr(v) + "   ";
 
+	compstr = compstr + "\n"+repr(len(memc)) + " ";
+	for k, v in memc.iteritems():		
+		compstr = compstr +repr(k) + " " + repr(v) + "   ";
+
 	compstr = compstr + "\n"+repr(len(lc)) + " ";
 	for k, v in lc.iteritems():		
 		compstr = compstr +repr(k) + " " + repr(v) + "   ";
@@ -502,8 +528,8 @@ def extractDataflow(fileName):
 	for k, v in outCc.iteritems():		
 		compstr = compstr +repr(k) + " " + repr(v) + "   ";
 	
-	fileStream.write(compstr);
-	fileStream.close();
+	#fileStream.write(compstr);
+	#fileStream.close();
 
 	fp = [];
 	fp.append(addc)
@@ -515,6 +541,7 @@ def extractDataflow(fileName):
 	fp.append(eqc)
 	fp.append(cmpc)
 	fp.append(ffc)
+	fp.append(memc)
 	fp.append(lc)
 	fp.append(bc)
 	fp.append(ffCc)
@@ -524,8 +551,15 @@ def extractDataflow(fileName):
 
 
 
+def main():
+	if len(sys.argv) != 2: 
+		print "[ERROR] -- Not enough argument. Provide DOT File to process";
+		print "        -- ARG1: dot file";
+		exit();
+	
+	dotfile = sys.argv[1];
+	extractDataflow(dotfile);
 
 
-
-
-
+if __name__ == '__main__':
+	main();

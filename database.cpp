@@ -131,7 +131,7 @@ void Database::searchDatabase(Birthmark* reference){
 	for(iList = m_Database.begin(); iList != m_Database.end(); iList++){
 		printf("[SRCH] -- Comparing reference to #%s#\n", (*iList)->getName().c_str());
 		//Align the max sequences
-		printf("       -- Comparing functional components...");
+		printf("       -- Comparing functional components...\n");
 		std::list<std::string> maxDB;
 		(*iList)->getMaxSequence(maxDB);
 		double maxScore = SIMILARITY::align(maxRef, maxDB);
@@ -209,7 +209,7 @@ void Database::searchDatabase(Birthmark* reference){
 	int count = 1;
 	std::set<Score, setCompare>::iterator iSet;
 	for(iSet = results.begin(); iSet != results.end(); iSet++){
-		printf("RANK: %2d\tID: %2d\tSCR: %6.2f\tCKT:%s\n", count, iSet->id, iSet->score, iSet->name.c_str());
+		printf("RANK: %2d   ID: %2d   SCR: %6.2f   CKT:%s\n", count, iSet->id, iSet->score, iSet->name.c_str());
 		count++;
 	}
 

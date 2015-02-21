@@ -53,3 +53,8 @@ Monitor Verilog File:
 	  A. This will monitor for changes in the reference design. 
 		B. If using vim, install Autosave plugin to autosave reference
 
+
+Troubleshooting
+---------------
+
+* If you get the nothing to show error, this usually means that your file name is not the same as the verilog file name. Change either the name of the top module or the file name to fix. 

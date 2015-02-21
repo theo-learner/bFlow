@@ -32,7 +32,8 @@ def create_yosys_script(fileName, scriptName):
 
 	script = script + "\n\n";
 	script = script + "hierarchy -check\n";
-	script = script + "proc; opt; fsm; opt; wreduce; opt\n\n";
+	script = script + "proc; opt; fsm; opt;\n\n";
+	script = script + "memory_dff; opt; memory_share; opt;\n\n";
 	script = script + "flatten "+ top +"; opt\n";
 	script = script + "wreduce; opt\n\n";
 	script = script + "show -width -format dot -prefix ./dot/" + top + "_df " + top + "\n";
