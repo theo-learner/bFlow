@@ -141,7 +141,8 @@ reg [DATA_WIDTH-1:0] mem [0:RAM_DEPTH-1];
 //--------------Code Starts Here------------------ 
 // Memory Write Block 
 // Write Operation : When we_0 = 1, cs_0 = 1
-always @(address_0 or cs_0 or we_0 or data_0 or address_1 or cs_1 or we_1 or data_1)
+always @ (address_0 or cs_0 or we_0 or data_0
+or address_1 or cs_1 or we_1 or data_1)
 begin : MEM_WRITE
   if ( cs_0 && we_0 ) begin
      mem[address_0] <= data_0;
@@ -156,7 +157,7 @@ assign data_0 = (cs_0 && oe_0 && !we_0) ? data_0_out : 8'bz;
 
 // Memory Read Block 
 // Read Operation : When we_0 = 0, oe_0 = 1, cs_0 = 1
-always @(address_0 or cs_0 or we_1 or oe_0)
+always @ (address_0 or cs_0 or we_1 or oe_0)
 begin : MEM_READ_0
   if (cs_0 && !we_0 && oe_0) begin
     data_0_out <= mem[address_0]; 

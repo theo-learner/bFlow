@@ -588,7 +588,7 @@ int main(int argc, char** argv){
 			else if(e == 3)
 				printf("[ERROR] -- Unknown File extension. Expecting Verilog or VHDL File\n");
 			else if(e == 4)
-				printf("[ERROR] -- Not enough arguments <Verilog File> <Database File> \n");
+				printf("[ERROR] -- Not enough arguments <Database File> \n");
 			else if(e == 5)
 				printf("[ERROR] -- Cannot open the database for import...exiting\n");
 			else if(e == 6)
@@ -1281,6 +1281,7 @@ void matlabTable(
 	
 		std::stringstream tablestr;
 		std::stringstream cstr;
+		std::stringstream bstr;
 		std::vector<std::string> fpstr;
 		for(unsigned int w = 0; w < ftable[0].size(); w++){
 			std::string ss = "";
@@ -1288,41 +1289,47 @@ void matlabTable(
 		}
 			
 
+		
 		for(unsigned int q = 0; q < ftable.size(); q++){
+			printf("ftable[q].size(): %d\n", ftable.size());
 			for(unsigned int w = 0; w < ftable[q].size(); w++){
 				std::stringstream ss;
 				for(unsigned int e = 0; e < ftable[q][w].size(); e++){
 					if(w != 0 || e != 0){
 						tablestr<<",";
 						ss<<",";
+						bstr<<",";
 					}
 
 					tablestr<<ftable[q][w][e];
 					ss<<ftable[q][w][e];
+					bstr<<ftable[q][w][e];
 				}
 				
 				ss<<"\n";
 				fpstr[w] = fpstr[w] + ss.str();
 			}
 
+			std::stringstream ss;
 			for(unsigned int w = 0; w < ctable[q].size(); w++){
 				//tablestr<<","<<ctable[q][w];
-				cstr<<ctable[q][w]<<",";
+				ss<<ctable[q][w]<<",";
 			}
 			//for(unsigned int w = 0; w < stat[q].size(); w++)
 			//tablestr<<","<<stat[q][w];
 			
 			tablestr<<"\n";
-			std::string tmp = cstr.str();
+			std::string tmp = ss.str();
 			tmp = tmp.substr(0, tmp.size()-1);
-			cstr.str("");
+			bstr<<","<<tmp<<"\n";
+
 			cstr<<tmp;
 			cstr<<"\n";
 		}
 		
 		std::ofstream ofs;
 		printf("Outputing fingerprint table to matlab.csv\n");
-		ofs.open("matlab.csv");
+		ofs.open("fingerprint.csv");
 		ofs<< tablestr.str();
 		ofs.close();
 
@@ -1330,6 +1337,12 @@ void matlabTable(
 		ofs.open("constant_bin.csv");
 		ofs<< cstr.str();
 		ofs.close();
+		
+		printf("Outputing birthmark to birthmark.csv\n");
+		ofs.open("birthmark.csv");
+		ofs<< bstr.str();
+		ofs.close();
+
 
 		std::vector<std::string> fpname;
 		fpname.push_back("add.csv");
@@ -1341,6 +1354,7 @@ void matlabTable(
 		fpname.push_back("eq.csv");
 		fpname.push_back("cmp.csv");
 		fpname.push_back("ff.csv");
+		fpname.push_back("mem.csv");
 		fpname.push_back("log.csv");
 		fpname.push_back("blk.csv");
 		fpname.push_back("ffC.csv");

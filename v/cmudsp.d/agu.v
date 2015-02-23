@@ -1,3 +1,17 @@
+/*-------------*/
+/* buses width */
+/*-------------*/
+
+`define		databus			23:0			/* data bus width */
+
+`define		addrbus			15:0			/* address bus width */
+
+`define		ext				 7:0			/* accumulator extention portion */
+
+`define		acc				55:0			/* data ALU accumulator width */
+
+`define		rfbus			 1:0			/* register file address width */
+
 /*	File:	agu.v	  					*/
 
 /*	module name: agu					*/

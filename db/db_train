@@ -34,6 +34,7 @@ v/lfsr.v
 v/lfsr_updown.v
 v/shifter.v
 v/altera_shift_1x64.v
+v/altera_shift_8x64_taps.v
 v/clk_div_45.v
 v/clk_div.v
 v/divide_by_3.v
@@ -55,7 +56,15 @@ v/IIR6_18bit_parallel.v
 v/arbiter.v
 v/parallel_crc.v
 v/serial_crc.v
-v/arbiter.v
+v/aFifo.v
+v/cam.v
+v/ramchip.v
+v/altera_single_port_ram.v
+v/altera_true_dpram_sclk.v
+v/altera_ram_dual.v
+v/altera_ram_infer.v
+v/ram_sp_ar_sw.v
+v/ram_sp_sr_sw.v
 v/uart_simple.v
 v/uart2.v
 v/uart_tx_only.v
@@ -77,8 +86,6 @@ v/altera_addsub.v
 v/altera_ternary_adder_tree.v
 v/altera_binary_adder_tree.v
 v/altera_mealy_mac.v
-v/altera_more_mac.v
+v/altera_moore_mac.v
 v/altera_safe_state_machine.v
 v/altera_fsm.v
-v/altera_behav_dffe.v
-v/cmudsp.v

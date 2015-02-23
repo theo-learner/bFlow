@@ -40,4 +40,4 @@ mainserver:  $(OBJSERVER) mainserver.o
 
 
 clean: 
-	rm *.o hbflow  .yosys.dmp .yscript.seq *.pyc
+	rm *.o hbflow  .yosys.dmp .yscript.seq *.pyc opt*

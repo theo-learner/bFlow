@@ -16,6 +16,7 @@ import error;
 import yosys;
 import dataflow as dfx
 import traceback
+import timeit
 
 
 if len(sys.argv) != 3: 
@@ -54,6 +55,7 @@ try:
 	flines = fstream.readlines();
 
 	for line in flines:
+		start_time = timeit.default_timer();
 		line= re.sub(r"\s+", "", line);
 		print "[PPDB] -- Extracting feature from verilog file: " + line;
 
@@ -111,6 +113,8 @@ try:
 			i = i + 1;
 
 			ckttag.append(fptag);
+		elapsed = timeit.default_timer() - start_time;
+		print "ELASPED TIME: " + repr(elapsed);
 		print
 		
 	#print soup.prettify()

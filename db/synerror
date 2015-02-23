@@ -3,20 +3,17 @@ v/altera_gray_count.v
 
 v/aFifo.v
 v/altera_shift_8x64_taps.v
-v/ram_dp_sr_sw.v
 
 //Big
 v/syn_fifo.v
-v/cam.v
 v/ram_dp_ar_aw.v
 v/ram_sp_ar_aw.v
 v/ram_sp_ar_sw.v
 v/ram_sp_sr_sw.v
-v/ramchip.v
-v/altera_single_port_ram.v
-v/altera_true_dpram_sclk.v.v
-v/altera_ram_dual.v
-v/altera_ram_infer.v
 
 //bb
 v/multiplier_6x6_version2.v
+
+
+
+v/aFifo.v
