@@ -35,6 +35,7 @@ void matlabTable(std::vector<std::string>& cktname,
 		std::map<std::string, std::set<int> >& constantDatabase
 );
 
+
 bool dle(double a, double b, double eps = 0.001){
 		return b-a > eps;
 }
@@ -288,6 +289,8 @@ int main(int argc, char** argv){
 			std::list<std::string> seqMax;
 			std::list<std::string> seqMin;
 			extractDataflow(file, topName, extension, seqMax, seqMin);
+			assert(seqMax.size() != 0);
+			assert(seqMin.size() != 0);
 			seqMaxDatabase[topName] = seqMax;
 			seqMinDatabase[topName] = seqMin;
 
@@ -332,10 +335,20 @@ int main(int argc, char** argv){
 		}
 		ofsconst.close();
 
+		
+
+
 
 		//#########################################################################
 		// MatlabTable 
 		//#########################################################################
+		std::ofstream fastaout;
+		fastaout.open("dataflow.fasta");
+		for(iMax = seqMaxDatabase.begin(); iMax != seqMaxDatabase.end(); iMax++){
+			fastaout<<">"<<iMax->first<<"\n"<<*(iMax->second.begin())<<"\n";
+		}
+		fastaout.close();
+
 		matlabTable(cktname, fpDatabase, constantDatabase);
 		
 		return 0;
