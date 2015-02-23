@@ -3,10 +3,7 @@ CXX = g++
 CFLAGS = \
 		-Wall \
 		-g \
-		-Wno-unused-function \
-		-Wno-write-strings \
-		-Wno-sign-compare \
-		-Iyosys
+		$
 
 OBJS = \
 	sw/src/ssw.o \
@@ -24,7 +21,7 @@ OBJSERVER = \
 	server.o \
 	$
 
-all: main mainserver
+all: mainserver
 
 #build subdirectories
 	
