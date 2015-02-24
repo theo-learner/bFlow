@@ -868,10 +868,10 @@ int main(int argc, char** argv){
 
 			char ch;
 			double score;
-			for(int i = 0; i < alphabet.size(); i++){
+			for(unsigned int i = 0; i < alphabet.size(); i++){
 				std::map<char,double> alphaScore;
 				ifs>>ch;
-				for(int k = 0; k < alphabet.size(); k++){
+				for(unsigned int k = 0; k < alphabet.size(); k++){
 					ifs>>score;
 					alphaScore[alphabet[k]] = score/100.00;
 				}
@@ -940,95 +940,206 @@ double calculateSimilarity(std::map<unsigned, unsigned>& fingerprint1,
 }
 
 
-void optimizeWeights(std::vector<std::vector<double> >& simTable,
-                     std::vector<std::vector<double> >& simTable2,
-										 std::vector<std::vector<double> >& simTable3){
-		int arrangeSize	= 7;
-		int arrangement[7] = {
-			3, 3, 2, 2, 2, 3, 4
-		};
 
 
 
-		bool pos;
-		std::vector<double> diffmaxv, t1v, t2v, t3v;
-		for(int i = 0; i < arrangeSize; i++) {
-			diffmaxv.push_back(0.0);
-			t1v.push_back(0.0);
-			t2v.push_back(0.0);
-			t3v.push_back(0.0);
+
+
+
+
+void matlabTable(
+		std::vector<std::string>& cktname,
+		std::map<std::string, std::vector<std::map<unsigned, unsigned> > >& fpDatabase,
+		std::map<std::string, std::set<int> >& constantDatabase
+){
+		printf("Preparing Matlab Tables\n");
+		std::map<std::string, std::vector<std::map<unsigned, unsigned> > >::iterator iFP;
+		std::map<unsigned, unsigned>::iterator iVal;
+		iFP = fpDatabase.begin(); 
+		int numVec = iFP->second.size();
+
+		//SET UP THE VECTOR TABLE for fingerprint
+		//Vec of each circuit, vec of each fingerprint, vec of the count
+		//number of circuits,      13 types:add..       index = size, val = count 
+		std::vector<std::vector<std::vector<int> > > ftable;
+		ftable.reserve(fpDatabase.size());
+		for(unsigned int i = 0; i < fpDatabase.size(); i++){
+			std::vector<std::vector<int> >  v;
+			v.reserve(numVec);
+			for(int k = 0; k < numVec; k++){
+				std::vector<int> vv;
+				v.push_back(vv);
+			}
+			ftable.push_back(v);
 		}
 
-		for(double t1 = 0.55; t1 <0.95; t1=t1+0.01){
-			for(double t2 = 0.01; t2 < 1.0-t1-0.02 ; t2=t2+0.01){
-				double t3 = 1.0-t1-t2;
-				assert(t1+t2+t3 == 1.0);
-				//printf(" CHECKING t1: %f   t2: %f   t3:%f\n", t1, t2, t3);
 
-				double posval = 0.0, negval = 0.0;
-				int numpos = 0, numneg = 0;
-
-				int startp = 0;
-				int endp = 0;
-
-				pos = false;
-				std::vector<double> diffv;
-
-				for(int q = 0 ; q < arrangeSize; q++){
-					//printf("ARRANGEMENT: %d\n", q);
-					endp = endp + arrangement[q];	
-
-					for(unsigned int i = 0; i < simTable.size(); i++){
-						for(unsigned int k = 0; k < simTable.size(); k++){
-							if((i < endp && i >= startp) || 
-									(k < endp && k >= startp)){
-								double simVal = simTable[i][k]*100.0*t1 + 
-									simTable2[i][k]*100.0*t2 + 
-									simTable3[i][k]*100.0*t3 ;
-
-								if(i < endp && k < endp &&
-										i >= startp && k >= startp){
-									numpos++;
-									posval+=simVal;
-
-								}
-								else{
-									numneg++;
-									negval+=simVal;
-								}
-									//printf("checking %d %d S: %d  E: %d P %d N %d\n", i, k, startp, endp, numpos, numneg);
-
-							}
-						}
+		//POPULATE THE VECTOR TABLE with fingerprint data
+		unsigned int cIndex = 0;
+		//printf("Number of circuits: %d\n", (int)fpDatabase.size());
+		//printf("Number of circuits: %d\n", (int)cktname.size());
+		for(cIndex = 0; cIndex < cktname.size(); cIndex++){
+			iFP = fpDatabase.find(cktname[cIndex]);
+			//printf(" CKT: %d* Number of features: %d\n",cIndex+1, (int)iFP->second.size());
+			for(unsigned int q = 0; q < iFP->second.size(); q++){
+				//printf(" * *  INDEXES: %d %d\n", cIndex, q);
+				for(iVal = iFP->second[q].begin(); iVal != iFP->second[q].end(); iVal++){
+					//If the size of the fingerprint is smaller than the table, resize table
+					if(iVal->first > ftable[cIndex][q].size()){
+						for(unsigned int w = 0; w < ftable.size(); w++)
+							ftable[w][q].resize(iVal->first);
 					}
 
-					//printf("NUMPOS: %d\tNUMNEG: %d\n", numpos, numneg);
-					diffv.push_back( posval/(double)numpos - negval/(double)numneg);
-
-					startp = endp;
-				}
-				//printf("checking %d %d S: %d  E: %d POS?:%d\n", i, k, startp, endp, pos);
-
-
-
-				printf(" PARAM: t1: %f %f %f ", t1, t2, t3);
-				for(unsigned int i = 0; i < diffv.size(); i++) printf("%f ", diffv[i]);
-				printf("\n");
-				for(unsigned int i = 0; i < diffv.size(); i++){
-					 if(diffv[i] > diffmaxv[i]){
-						 diffmaxv[i] = diffv[i];
-						 t1v[i] = t1;
-						 t2v[i] = t2;
-						 t3v[i] = t3;
-					 }
+				  ftable[cIndex][q][iVal->first-1] = iVal->second;	
 				}
 			}
 		}
+		
+		
+		
+		
+		//POPULATE THE VECTOR TABLE with constant data
+		std::vector<std::vector<int> > ctable;
+		ctable.reserve(fpDatabase.size());
+		unsigned int numbin = 94;
+		for(unsigned int i = 0; i < fpDatabase.size(); i++){
+			std::vector<int> vv;
+			vv.resize(numbin);
+			ctable.push_back(vv);
+		}
 
-		printf("DONE\n");
-		for(unsigned int i = 0; i < t1v.size(); i++)
-			printf(" OPTPARAM %d: t1: %f   t2: %f   t3:%f\n",i,  t1v[i], t2v[i], t3v[i]);
+		std::map<std::string, std::set<int> >::iterator iC;
+		std::stringstream cstream;
+		for(cIndex = 0; cIndex < cktname.size(); cIndex++){
+			iC = constantDatabase.find(cktname[cIndex]);
+			std::set<int>::iterator iSet;
+			for(iSet = iC->second.begin(); iSet != iC->second.end(); iSet++){
+				cstream<<*iSet<<",";
+				//If the size of the fingerprint is smaller than the table, resize table
 
+				if((*iSet) < 0)
+					ctable[cIndex][numbin-1]	= 1;
+				else if((*iSet) <= 64)
+					ctable[cIndex][*iSet] = 1;
+				else{
+					unsigned startIndex = 65;
+					unsigned base = 128;
+					bool binned = false;
+
+					for(;startIndex < (numbin-1); startIndex++){
+						if(startIndex % 2 == 1){
+							if(*iSet  < (int)base ){
+								ctable[cIndex][startIndex] = 1;
+								binned = true;
+								break;
+							}
+						}
+						else{
+							if(*iSet == (int)base ){
+								binned = true;
+								ctable[cIndex][startIndex] = 1;
+								break;
+							}
+
+							base = base<<1;
+						}
+					}
+					if(!binned){
+						ctable[cIndex][numbin-1]	= 1;
+					}
+
+				}
+			}
+			cstream<<"\n";
+		}
+	
+		std::stringstream tablestr;
+		std::stringstream cstr;
+		std::stringstream bstr;
+		std::vector<std::string> fpstr;
+		for(unsigned int w = 0; w < ftable[0].size(); w++){
+			std::string ss = "";
+			fpstr.push_back(ss);
+		}
+			
+
+		
+		for(unsigned int q = 0; q < ftable.size(); q++){
+			for(unsigned int w = 0; w < ftable[q].size(); w++){
+				std::stringstream ss;
+				for(unsigned int e = 0; e < ftable[q][w].size(); e++){
+					if(w != 0 || e != 0){
+						tablestr<<",";
+						ss<<",";
+						bstr<<",";
+					}
+
+					tablestr<<ftable[q][w][e];
+					ss<<ftable[q][w][e];
+					bstr<<ftable[q][w][e];
+				}
+				
+				ss<<"\n";
+				fpstr[w] = fpstr[w] + ss.str();
+			}
+
+			std::stringstream ss;
+			for(unsigned int w = 0; w < ctable[q].size(); w++){
+				//tablestr<<","<<ctable[q][w];
+				ss<<ctable[q][w]<<",";
+			}
+			//for(unsigned int w = 0; w < stat[q].size(); w++)
+			//tablestr<<","<<stat[q][w];
+			
+			tablestr<<"\n";
+			std::string tmp = ss.str();
+			tmp = tmp.substr(0, tmp.size()-1);
+			bstr<<","<<tmp<<"\n";
+
+			cstr<<tmp;
+			cstr<<"\n";
+		}
+		
+		std::ofstream ofs;
+		printf("Outputing fingerprint table to matlab.csv\n");
+		ofs.open("fingerprint.csv");
+		ofs<< tablestr.str();
+		ofs.close();
+
+		printf("Outputing constant table to constant_bin.csv\n");
+		ofs.open("constant_bin.csv");
+		ofs<< cstr.str();
+		ofs.close();
+		
+		printf("Outputing birthmark to birthmark.csv\n");
+		ofs.open("birthmark.csv");
+		ofs<< bstr.str();
+		ofs.close();
+
+
+		std::vector<std::string> fpname;
+		fpname.push_back("add.csv");
+		fpname.push_back("sub.csv");
+		fpname.push_back("mul.csv");
+		fpname.push_back("div.csv");
+		fpname.push_back("sh.csv");
+		fpname.push_back("mux.csv");
+		fpname.push_back("eq.csv");
+		fpname.push_back("cmp.csv");
+		fpname.push_back("ff.csv");
+		fpname.push_back("mem.csv");
+		fpname.push_back("log.csv");
+		fpname.push_back("blk.csv");
+		fpname.push_back("ffC.csv");
+		fpname.push_back("outC.csv");
+
+		assert(fpname.size() == fpstr.size());
+		printf("Outputing Individual fingerprint statistics\n");
+		for(unsigned int i = 0; i < fpname.size(); i++){
+			ofs.open(fpname[i].c_str());	
+			ofs<<fpstr[i];
+			ofs.close();
+		}
 }
 
 
@@ -1036,6 +1147,15 @@ void optimizeWeights(std::vector<std::vector<double> >& simTable,
 
 
 
+
+
+
+
+
+
+
+
+/*
 void optimizeFSIMweights(std::map<std::string, std::vector<std::map<unsigned, unsigned> > >& fdata){
 	printf("OPTIMIZING FINGERPRINT WEIGHTS\n");
 		
@@ -1048,11 +1168,9 @@ void optimizeFSIMweights(std::map<std::string, std::vector<std::map<unsigned, un
 				std::map<std::string, std::vector<std::map<unsigned, unsigned> > >::iterator iFRef;
 				std::map<std::string, std::vector<std::map<unsigned, unsigned> > >::iterator iFQue;
 				//The more features both doesn't have, the less effect it has on the overall score
-				/*
-				double weights[9] = {
-					0.12, 0.12, 0.05, 0.08, 0.08, 0.1, 0.05, 0.20, 0.20
-				};
-				*/
+				//double weights[9] = {
+			//		0.12, 0.12, 0.05, 0.08, 0.08, 0.1, 0.05, 0.20, 0.20
+			//	};
 
 				std::map<int, std::vector<double> > wOpt;
 				for(int i = 0; i < arrangeSize; i++){
@@ -1065,7 +1183,6 @@ void optimizeFSIMweights(std::map<std::string, std::vector<std::map<unsigned, un
 		for(int i = 0; i < arrangeSize; i++) 
 			diffmaxv.push_back(0.0);
 
-				double pt1 = 0.00;
 				for(double t1 = 0.05; dle(t1, 1.0-0.05*8.0+0.01); t1=t1+0.05){
 					for(double t2 = 0.05; dle(t2, 1.0-t1); t2=t2+0.05){
 						for(double t3 = 0.05; dle(t3, 1.0-t1-t2); t3=t3+0.05){
@@ -1186,208 +1303,94 @@ void optimizeFSIMweights(std::map<std::string, std::vector<std::map<unsigned, un
 }
 
 
-void matlabTable(
-		std::vector<std::string>& cktname,
-		std::map<std::string, std::vector<std::map<unsigned, unsigned> > >& fpDatabase,
-		std::map<std::string, std::set<int> >& constantDatabase
-){
-		printf("Preparing Matlab Tables\n");
-		std::map<std::string, std::vector<std::map<unsigned, unsigned> > >::iterator iFP;
-		std::map<unsigned, unsigned>::iterator iVal;
-		iFP = fpDatabase.begin(); 
-		int numVec = iFP->second.size();
 
-		//SET UP THE VECTOR TABLE for fingerprint
-		//Vec of each circuit, vec of each fingerprint, vec of the count
-		//number of circuits,      13 types:add..       index = size, val = count 
-		std::vector<std::vector<std::vector<int> > > ftable;
-		ftable.reserve(fpDatabase.size());
-		for(unsigned int i = 0; i < fpDatabase.size(); i++){
-			std::vector<std::vector<int> >  v;
-			v.reserve(numVec);
-			for(int k = 0; k < numVec; k++){
-				std::vector<int> vv;
-				v.push_back(vv);
-			}
-			ftable.push_back(v);
+void optimizeWeights(std::vector<std::vector<double> >& simTable,
+                     std::vector<std::vector<double> >& simTable2,
+										 std::vector<std::vector<double> >& simTable3){
+		int arrangeSize	= 7;
+		int arrangement[7] = {
+			3, 3, 2, 2, 2, 3, 4
+		};
+
+
+
+		std::vector<double> diffmaxv, t1v, t2v, t3v;
+		for(int i = 0; i < arrangeSize; i++) {
+			diffmaxv.push_back(0.0);
+			t1v.push_back(0.0);
+			t2v.push_back(0.0);
+			t3v.push_back(0.0);
 		}
 
+		for(double t1 = 0.55; t1 <0.95; t1=t1+0.01){
+			for(double t2 = 0.01; t2 < 1.0-t1-0.02 ; t2=t2+0.01){
+				double t3 = 1.0-t1-t2;
+				assert(t1+t2+t3 == 1.0);
+				//printf(" CHECKING t1: %f   t2: %f   t3:%f\n", t1, t2, t3);
 
-		//POPULATE THE VECTOR TABLE with fingerprint data
-		int cIndex = 0;
-		//printf("Number of circuits: %d\n", (int)fpDatabase.size());
-		//printf("Number of circuits: %d\n", (int)cktname.size());
-		for(cIndex = 0; cIndex < cktname.size(); cIndex++){
-			iFP = fpDatabase.find(cktname[cIndex]);
-			//printf(" CKT: %d* Number of features: %d\n",cIndex+1, (int)iFP->second.size());
-			for(unsigned int q = 0; q < iFP->second.size(); q++){
-				//printf(" * *  INDEXES: %d %d\n", cIndex, q);
-				for(iVal = iFP->second[q].begin(); iVal != iFP->second[q].end(); iVal++){
-					//If the size of the fingerprint is smaller than the table, resize table
-					if(iVal->first > ftable[cIndex][q].size()){
-						for(unsigned int w = 0; w < ftable.size(); w++)
-							ftable[w][q].resize(iVal->first);
-					}
+				double posval = 0.0, negval = 0.0;
+				int numpos = 0, numneg = 0;
 
-				  ftable[cIndex][q][iVal->first-1] = iVal->second;	
-				}
-			}
-		}
-		
-		
-		
-		
-		//POPULATE THE VECTOR TABLE with constant data
-		std::vector<std::vector<int> > ctable;
-		ctable.reserve(fpDatabase.size());
-		int numbin = 94;
-		for(unsigned int i = 0; i < fpDatabase.size(); i++){
-			std::vector<int> vv;
-			vv.resize(numbin);
-			ctable.push_back(vv);
-		}
+				int startp = 0;
+				int endp = 0;
 
-		std::map<std::string, std::set<int> >::iterator iC;
-		std::stringstream cstream;
-		for(cIndex = 0; cIndex < cktname.size(); cIndex++){
-			iC = constantDatabase.find(cktname[cIndex]);
-			std::set<int>::iterator iSet;
-			for(iSet = iC->second.begin(); iSet != iC->second.end(); iSet++){
-				cstream<<*iSet<<",";
-				//If the size of the fingerprint is smaller than the table, resize table
+				pos = false;
+				std::vector<double> diffv;
 
-				if((*iSet) < 0)
-					ctable[cIndex][numbin-1]	= 1;
-				else if((*iSet) <= 64)
-					ctable[cIndex][*iSet] = 1;
-				else{
-					unsigned startIndex = 65;
-					unsigned long base = 128;
-					bool binned = false;
+				for(int q = 0 ; q < arrangeSize; q++){
+					//printf("ARRANGEMENT: %d\n", q);
+					endp = endp + arrangement[q];	
 
-					for(;startIndex < (numbin-1); startIndex++){
-						if(startIndex % 2 == 1){
-							if(*iSet  < base ){
-								ctable[cIndex][startIndex] = 1;
-								binned = true;
-								break;
+					for(unsigned int i = 0; i < simTable.size(); i++){
+						for(unsigned int k = 0; k < simTable.size(); k++){
+							if((i < endp && i >= startp) || 
+									(k < endp && k >= startp)){
+								double simVal = simTable[i][k]*100.0*t1 + 
+									simTable2[i][k]*100.0*t2 + 
+									simTable3[i][k]*100.0*t3 ;
+
+								if(i < endp && k < endp &&
+										i >= startp && k >= startp){
+									numpos++;
+									posval+=simVal;
+
+								}
+								else{
+									numneg++;
+									negval+=simVal;
+								}
+									//printf("checking %d %d S: %d  E: %d P %d N %d\n", i, k, startp, endp, numpos, numneg);
+
 							}
 						}
-						else{
-							if(*iSet == base ){
-								binned = true;
-								ctable[cIndex][startIndex] = 1;
-								break;
-							}
-
-							base = base<<1;
-						}
-					}
-					if(!binned){
-						ctable[cIndex][numbin-1]	= 1;
 					}
 
+					//printf("NUMPOS: %d\tNUMNEG: %d\n", numpos, numneg);
+					diffv.push_back( posval/(double)numpos - negval/(double)numneg);
+
+					startp = endp;
+				}
+				//printf("checking %d %d S: %d  E: %d POS?:%d\n", i, k, startp, endp, pos);
+
+
+
+				printf(" PARAM: t1: %f %f %f ", t1, t2, t3);
+				for(unsigned int i = 0; i < diffv.size(); i++) printf("%f ", diffv[i]);
+				printf("\n");
+				for(unsigned int i = 0; i < diffv.size(); i++){
+					 if(diffv[i] > diffmaxv[i]){
+						 diffmaxv[i] = diffv[i];
+						 t1v[i] = t1;
+						 t2v[i] = t2;
+						 t3v[i] = t3;
+					 }
 				}
 			}
-			cstream<<"\n";
-		}
-	
-		std::stringstream tablestr;
-		std::stringstream cstr;
-		std::stringstream bstr;
-		std::vector<std::string> fpstr;
-		for(unsigned int w = 0; w < ftable[0].size(); w++){
-			std::string ss = "";
-			fpstr.push_back(ss);
-		}
-			
-
-		
-		for(unsigned int q = 0; q < ftable.size(); q++){
-			printf("ftable[q].size(): %d\n", ftable.size());
-			for(unsigned int w = 0; w < ftable[q].size(); w++){
-				std::stringstream ss;
-				for(unsigned int e = 0; e < ftable[q][w].size(); e++){
-					if(w != 0 || e != 0){
-						tablestr<<",";
-						ss<<",";
-						bstr<<",";
-					}
-
-					tablestr<<ftable[q][w][e];
-					ss<<ftable[q][w][e];
-					bstr<<ftable[q][w][e];
-				}
-				
-				ss<<"\n";
-				fpstr[w] = fpstr[w] + ss.str();
-			}
-
-			std::stringstream ss;
-			for(unsigned int w = 0; w < ctable[q].size(); w++){
-				//tablestr<<","<<ctable[q][w];
-				ss<<ctable[q][w]<<",";
-			}
-			//for(unsigned int w = 0; w < stat[q].size(); w++)
-			//tablestr<<","<<stat[q][w];
-			
-			tablestr<<"\n";
-			std::string tmp = ss.str();
-			tmp = tmp.substr(0, tmp.size()-1);
-			bstr<<","<<tmp<<"\n";
-
-			cstr<<tmp;
-			cstr<<"\n";
-		}
-		
-		std::ofstream ofs;
-		printf("Outputing fingerprint table to matlab.csv\n");
-		ofs.open("fingerprint.csv");
-		ofs<< tablestr.str();
-		ofs.close();
-
-		printf("Outputing constant table to constant_bin.csv\n");
-		ofs.open("constant_bin.csv");
-		ofs<< cstr.str();
-		ofs.close();
-		
-		printf("Outputing birthmark to birthmark.csv\n");
-		ofs.open("birthmark.csv");
-		ofs<< bstr.str();
-		ofs.close();
-
-
-		std::vector<std::string> fpname;
-		fpname.push_back("add.csv");
-		fpname.push_back("sub.csv");
-		fpname.push_back("mul.csv");
-		fpname.push_back("div.csv");
-		fpname.push_back("sh.csv");
-		fpname.push_back("mux.csv");
-		fpname.push_back("eq.csv");
-		fpname.push_back("cmp.csv");
-		fpname.push_back("ff.csv");
-		fpname.push_back("mem.csv");
-		fpname.push_back("log.csv");
-		fpname.push_back("blk.csv");
-		fpname.push_back("ffC.csv");
-		fpname.push_back("outC.csv");
-
-		assert(fpname.size() == fpstr.size());
-		printf("Outputing Individual fingerprint statistics\n");
-		for(unsigned int i = 0; i < fpname.size(); i++){
-			ofs.open(fpname[i].c_str());	
-			ofs<<fpstr[i];
-			ofs.close();
 		}
 
-
+		printf("DONE\n");
+		for(unsigned int i = 0; i < t1v.size(); i++)
+			printf(" OPTPARAM %d: t1: %f   t2: %f   t3:%f\n",i,  t1v[i], t2v[i], t3v[i]);
 
 }
-
-
-
-
-
-
-
+*/

@@ -34,7 +34,6 @@ v/lfsr.v
 v/lfsr_updown.v
 v/shifter.v
 v/altera_shift_1x64.v
-v/altera_shift_8x64_taps.v
 v/clk_div_45.v
 v/clk_div.v
 v/divide_by_3.v

@@ -13,6 +13,16 @@ import copy;
 import error;
 
 
+def getTopSequence(maxSeq, seqList):
+	slist = [];
+	numSeq = 0;
+	for seq in seqList:
+		slist.append(seq);
+		numSeq = numSeq + 1;
+		if(maxSeq == numSeq):
+			return slist;
+
+	return slist;
 
 
 
@@ -142,6 +152,8 @@ def extractDataflow(fileName):
 	print "[DFX] -- Extracting features..."# from : " + fileName;
 	dfg = nx.DiGraph(nx.read_dot(fileName));
 	g = nx.Graph(nx.read_dot(fileName));
+	print nx.info(dfg)
+	print nx.degree_histogram(dfg)
 
 	nc = nx.number_connected_components(g);
 	if nc == 1:
@@ -384,43 +396,16 @@ def extractDataflow(fileName):
 	swMax = extractSWString(dataflowMaxList_node, labelAttr, shapeAttr);
 	swMin = extractSWString(dataflowMinList_node, labelAttr, shapeAttr);
 
+	maxSeq = 3;
 	swMax = list(swMax);
 	swMax.sort(lambda x, y: -1*(cmp(len(x), len(y))));
-
-	seqOutput = "";
-	numMaxSeq = 3;
-	numSeq = 0;
-	sequence = "";
-	maxLength = 0;
-	maxList = [];
-	for sw_str in swMax:
-		sequence = sequence + sw_str + "\n";
-		maxList.append(sw_str);
-		numSeq = numSeq + 1;
-		if(numMaxSeq == numSeq):
-			break;
-
-	sequence = repr(numSeq) + "\n" + sequence;
-	seqOutput = sequence;
-
-	
+	maxList = getTopSequence(maxSeq, swMax)
+	print maxList;
 
 	swMin = list(swMin);
 	swMin.sort(lambda x, y: -1*(cmp(len(x), len(y))));
-
-	numSeq = 0;
-	sequence = "";
-	maxLength = 0;
-	minList = [];
-	for sw_str in swMin:
-		sequence = sequence + sw_str + "\n";
-		minList.append(sw_str);
-		numSeq = numSeq + 1;
-		if(numMaxSeq == numSeq):
-			break;
-
-	sequence = repr(numSeq) + "\n" + sequence;
-	seqOutput = seqOutput +  sequence;
+	minList = getTopSequence(maxSeq, swMin)
+	print minList;
 
 
 

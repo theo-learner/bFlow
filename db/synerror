@@ -14,6 +14,7 @@ v/ram_sp_sr_sw.v
 //bb
 v/multiplier_6x6_version2.v
 
-
+//no path from in to out
+v/altera_shift_8x64_taps.v
 
 v/aFifo.v
