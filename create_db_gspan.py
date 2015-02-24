@@ -66,8 +66,6 @@ def translate(dotfile):
 			if label != None:
 				labelAttr[node] = label.group(1);
 				sucList = dfg.successors(node);
-				size = edgeAttr[(node, sucList[0])];
-				size = int(size);
 
 				operation = labelAttr[node];
 				if 'x' in node: 									 #check to see if the node is a splice
@@ -94,6 +92,8 @@ def translate(dotfile):
 					sw = '14';
 				elif '$dff' in operation or '$adff' in operation:                          #memory
 					sw = '15';
+				elif '$mem' in operation or '$adff' in operation:                          #memory
+					sw = '25';
 				elif '$eq' in operation: 
 					sw = '16';
 				elif '$ne' in operation:	                           #equality operation

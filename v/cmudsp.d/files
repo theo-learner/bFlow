@@ -1,0 +1,10 @@
+v/cmudsp.d/agu.v
+v/cmudsp.d/bus_switch.v
+v/cmudsp.d/cmudsp.v
+v/cmudsp.d/core_test.v
+v/cmudsp.d/data_alu.v
+v/cmudsp.d/globals.v
+v/cmudsp.d/pcu.v
+v/cmudsp.d/rf_M.v
+v/cmudsp.d/rf_N.v
+v/cmudsp.d/rf_R.v
