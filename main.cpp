@@ -1012,6 +1012,7 @@ void matlabTable(
 
 		std::map<std::string, std::set<int> >::iterator iC;
 		std::stringstream cstream;
+		std::string nameTable = "";
 		for(cIndex = 0; cIndex < cktname.size(); cIndex++){
 			iC = constantDatabase.find(cktname[cIndex]);
 			std::set<int>::iterator iSet;
@@ -1053,6 +1054,7 @@ void matlabTable(
 				}
 			}
 			cstream<<"\n";
+			nameTable += cktname[cIndex] + ",";
 		}
 	
 		std::stringstream tablestr;
@@ -1097,42 +1099,41 @@ void matlabTable(
 		for(unsigned int i = 0; i < 1; i++) labels.push_back(26);
 		for(unsigned int i = 0; i < 10; i++) labels.push_back(27);
 		for(unsigned int i = 0; i < 4; i++) labels.push_back(28);
-		/*
-		std::vector<std::string> labels;
-		for(unsigned int i = 0; i < 6; i++) labels.push_back("dec");
-		for(unsigned int i = 0; i < 3; i++) labels.push_back("mux");
-		for(unsigned int i = 0; i < 7; i++) labels.push_back("life");
-		for(unsigned int i = 0; i < 4; i++) labels.push_back("img");
-		for(unsigned int i = 0; i < 2; i++) labels.push_back("med");
-		for(unsigned int i = 0; i < 5; i++) labels.push_back("fir");
-		for(unsigned int i = 0; i < 5; i++) labels.push_back("counter");
-		for(unsigned int i = 0; i < 3; i++) labels.push_back("cic");
-		for(unsigned int i = 0; i < 6; i++) labels.push_back("iirfix");
-		for(unsigned int i = 0; i < 3; i++) labels.push_back("iirsos");
-		for(unsigned int i = 0; i < 3; i++) labels.push_back("iirpar");
-		for(unsigned int i = 0; i < 1; i++) labels.push_back("arb");
-		for(unsigned int i = 0; i < 2; i++) labels.push_back("crc");
-		for(unsigned int i = 0; i < 7; i++) labels.push_back("fifo");
-		for(unsigned int i = 0; i < 3; i++) labels.push_back("lfsr");
-		for(unsigned int i = 0; i < 2; i++) labels.push_back("sh");
-		for(unsigned int i = 0; i < 3; i++) labels.push_back("clkdiv");
-		for(unsigned int i = 0; i < 8; i++) labels.push_back("ram");
-		for(unsigned int i = 0; i < 4; i++) labels.push_back("spi");
-		for(unsigned int i = 0; i < 17; i++) labels.push_back("uart");
-		for(unsigned int i = 0; i < 1; i++) labels.push_back("edge");
-		for(unsigned int i = 0; i < 1; i++) labels.push_back("brg");
-		for(unsigned int i = 0; i < 2; i++) labels.push_back("addTree");
-		for(unsigned int i = 0; i < 3; i++) labels.push_back("addsub");
-		for(unsigned int i = 0; i < 2; i++) labels.push_back("div");
-		for(unsigned int i = 0; i < 1; i++) labels.push_back("2comp");
-		for(unsigned int i = 0; i < 10; i++) labels.push_back("mult");
-		for(unsigned int i = 0; i < 4; i++) labels.push_back("mult");
-		*/
+		std::string labeltable;
+		labeltable = ("dec");
+		for(unsigned int i = 0; i < 5; i++) labeltable += (",dec");
+		for(unsigned int i = 0; i < 3; i++) labeltable += (",mux");
+		for(unsigned int i = 0; i < 7; i++) labeltable += (",life");
+		for(unsigned int i = 0; i < 4; i++) labeltable += (",img");
+		for(unsigned int i = 0; i < 2; i++) labeltable += (",med");
+		for(unsigned int i = 0; i < 5; i++) labeltable += (",fir");
+		for(unsigned int i = 0; i < 5; i++) labeltable += (",counter");
+		for(unsigned int i = 0; i < 3; i++) labeltable += (",cic");
+		for(unsigned int i = 0; i < 6; i++) labeltable += (",iirfix");
+		for(unsigned int i = 0; i < 3; i++) labeltable += (",iirsos");
+		for(unsigned int i = 0; i < 3; i++) labeltable += (",iirpar");
+		for(unsigned int i = 0; i < 1; i++) labeltable += (",arb");
+		for(unsigned int i = 0; i < 2; i++) labeltable += (",crc");
+		for(unsigned int i = 0; i < 7; i++) labeltable += (",fifo");
+		for(unsigned int i = 0; i < 3; i++) labeltable += (",lfsr");
+		for(unsigned int i = 0; i < 2; i++) labeltable += (",sh");
+		for(unsigned int i = 0; i < 3; i++) labeltable += (",clkdiv");
+		for(unsigned int i = 0; i < 8; i++) labeltable += (",ram");
+		for(unsigned int i = 0; i < 4; i++) labeltable += (",spi");
+		for(unsigned int i = 0; i < 17; i++) labeltable += (",uart");
+		for(unsigned int i = 0; i < 1; i++) labeltable += (",edge");
+		for(unsigned int i = 0; i < 1; i++) labeltable += (",brg");
+		for(unsigned int i = 0; i < 2; i++) labeltable += (",addTree");
+		for(unsigned int i = 0; i < 3; i++) labeltable += (",addsub");
+		for(unsigned int i = 0; i < 2; i++) labeltable += (",div");
+		for(unsigned int i = 0; i < 1; i++) labeltable += (",2comp");
+		for(unsigned int i = 0; i < 10; i++) labeltable += (",mult");
+		for(unsigned int i = 0; i < 4; i++) labeltable += (",fsm");
 
 		//Form the output string
 		assert(labels.size() == ftable.size());
 		for(unsigned int q = 0; q < ftable.size(); q++){
-			bstr<<labels[q]<<",";
+			//bstr<<labels[q]<<",";
 			for(unsigned int w = 0; w < ftable[q].size(); w++){
 				std::stringstream ss;
 				for(unsigned int e = 0; e < ftable[q][w].size(); e++){
@@ -1166,6 +1167,7 @@ void matlabTable(
 
 			cstr<<tmp;
 			cstr<<"\n";
+
 		}
 		
 		std::ofstream ofs;
@@ -1183,6 +1185,24 @@ void matlabTable(
 		ofs.open("birthmark.csv");
 		ofs<< bstr.str();
 		ofs.close();
+	
+		printf("Outputing labels to labels.csv\n");
+		ofs.open("labels.csv");
+		ofs<< labels[0];
+		for(unsigned int i = 1; i < labels.size(); i++)
+			ofs<< ","<<labels[i];
+		ofs.close();
+	/*
+		printf("Outputing typename table to typename.csv\n");
+		ofs.open("typename.csv");
+		ofs<< labeltable;
+		ofs.close();
+		
+		printf("Outputing name table to name.csv\n");
+		ofs.open("name.csv");
+		ofs<< nameTable;
+		ofs.close();
+		*/
 
 
 		std::vector<std::string> fpname;
