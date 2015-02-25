@@ -11,7 +11,6 @@ import re;
 import time;
 import datetime;
 from bs4 import BeautifulSoup
-import sqlite3 as sql
 import error;
 import yosys;
 import dataflow as dfx
@@ -126,9 +125,6 @@ try:
 	print " -- Files processed : " + repr(ID);
 	
 
-except sql.Error, e:
-	print "[ERROR] -- %s:" % e.args[0];
-	sys.exit(1);
 except error.YosysError as e:
 	print "[ERROR] -- Yosys has encountered an error...";
 	print e.msg;

@@ -152,7 +152,6 @@ def extractDataflow(fileName):
 	print "[DFX] -- Extracting features..."# from : " + fileName;
 	dfg = nx.DiGraph(nx.read_dot(fileName));
 	g = nx.Graph(nx.read_dot(fileName));
-	print nx.info(dfg)
 	print nx.degree_histogram(dfg)
 
 	nc = nx.number_connected_components(g);
@@ -190,9 +189,9 @@ def extractDataflow(fileName):
 	
 	
 	
-	###############################################################################
+	##########################################################################
 	# Preprocess nodes
-	###############################################################################
+	##########################################################################
 	name = ["add", "sub", "mul", "div", "sh", "mux", "eq", "cmp", "ff", "mem", "log", "bb", "ffC", "outC" ];
 	addc= {};
 	muxc= {};
@@ -212,26 +211,55 @@ def extractDataflow(fileName):
 	inNodeList= [];
 	constantList= [];
 	memorywrList= [];
+	totalFanin = 0;
+	totalFanout = 0;
+	maxFanin = 0;
+	maxFanout = 0;
+
+	count = 0;
 	for node in nodeList:
 		if 'v' in node:                          # Check to see if it is a  constant
 			constantList.append(node);
 		elif shapeAttr[node] == "octagon":       # Check to see if it is a port node
 			inputs = dfg.predecessors(node);
+			outputs = dfg.successors(node);
+			totalFanin = totalFanin + len(inputs)
+			totalFanout = totalFanout + len(outputs)
+			count = count + 1;
+
 			if len(inputs) == 0:
 				inNodeList.append(node);
 			else:
 				outNodeList.append(node);
-		elif shapeAttr[node] == "point":         # Check to see if it is a point node
-			continue;
-		elif shapeAttr[node] == "diamond":         # Check to see if it is a point node
+		elif shapeAttr[node] == "point" or shapeAttr[node] == "diamond":         # Check to see if it is a point node
+			inputs = dfg.predecessors(node);
+			outputs = dfg.successors(node);
+			totalFanin = totalFanin + len(inputs)
+			totalFanout = totalFanout + len(outputs)
+			count = count + 1;
+			if(len(inputs) > maxFanin):
+				maxFanin = len(inputs)
+			if(len(outputs) > maxFanout):
+				maxFanout = len(outputs)
 			continue;
 		else:                                    # Process the Combinational blocks
 			label = labelAttr[node];
 			label = re.search('\\\\n(.*)\|', label);
 	
 			if label != None:
+				inputs = dfg.predecessors(node);
+				outputs = dfg.successors(node);
+				totalFanin = totalFanin + len(inputs)
+				totalFanout = totalFanout + len(outputs)
+				count = count + 1;
+				if(len(inputs) > maxFanin):
+					maxFanin = len(inputs)
+				if(len(outputs) > maxFanout):
+					maxFanout = len(outputs)
+
 				labelAttr[node] = label.group(1);
 				operation = labelAttr[node];
+				#print operation + " " + repr(len(inputs));
 
 				if("$memwr" in operation):
 					memorywrList.append(node);
@@ -313,11 +341,21 @@ def extractDataflow(fileName):
 					else:
 						bc[size] = 1;
 	
-		
+	avgFanin = totalFanin / count;	
+	avgFanout = totalFanout / count;	
+	#print "TOT Fanin: " + repr(totalFanin)
+	#print "TOT Fanout: " + repr(totalFanout)
+	#print "count: " + repr(count)
+	#print "Avg Fanin: " + repr(avgFanin)
+	#print "Avg Fanout: " + repr(avgFanout)
+	#print "Max Fanin: " + repr(maxFanin)
+	#print "Max Fanout: " + repr(maxFanout)
+	#print "Num Nodes: " + repr(len(nodeList))
+	#print "Num Edges: " + repr(len(edgeList))
 	
-	###############################################################################
+	##########################################################################
 	# FF and input correspondence
-	###############################################################################
+	##########################################################################
 	ffCc = {};
 	for ff in fflist:
 		count = 0;
@@ -349,9 +387,9 @@ def extractDataflow(fileName):
 			outCc[count] = 1;
 		
 
-	###############################################################################
+	###########################################################################
 	# Dataflow extraction Vectorized
-	###############################################################################
+	###########################################################################
 	dataflowMaxList_node = [];
 	dataflowMinList_node = [];
 	for out in outNodeList:
@@ -390,9 +428,9 @@ def extractDataflow(fileName):
 
 
 
-	###############################################################################
+	###########################################################################
 	# Extract the sequence 
-	###############################################################################
+	###########################################################################
 	swMax = extractSWString(dataflowMaxList_node, labelAttr, shapeAttr);
 	swMin = extractSWString(dataflowMinList_node, labelAttr, shapeAttr);
 
@@ -531,7 +569,15 @@ def extractDataflow(fileName):
 	fp.append(bc)
 	fp.append(ffCc)
 	fp.append(outCc)
-	result = (maxList, minList, constSet, fp, name);
+
+	#num node, num edge, num input, num output, max fanin, max fanout
+	statstr = repr(len(nodeList)) + "," + repr(len(edgeList)) + ","
+	statstr = statstr + repr(len(inNodeList)) + "," + repr(len(outNodeList)) + ","
+	statstr = statstr + repr(maxFanin) + "," + repr(maxFanout);
+	for freq in nx.degree_histogram(dfg):
+		statstr = statstr + "," + repr(freq);
+	print statstr
+	result = (maxList, minList, constSet, fp, name, statstr);
 	return result;
 
 

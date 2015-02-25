@@ -362,6 +362,11 @@ try:
 			compstr = compstr + " " + repr(k) + " " + repr(v) + "   ";
 	fileStream.write(compstr);
 	fileStream.close();
+	
+	statstr= result[5];
+	fileStream = open(".stat", 'w');
+	fileStream.write(statstr);
+	fileStream.close();
 
 
 

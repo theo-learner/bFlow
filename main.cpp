@@ -272,8 +272,8 @@ int main(int argc, char** argv){
 		//#########################################################################
 		// Extract features from the verilog files and store them in memory
 		//#########################################################################
-			std::ofstream ofsconst;
-			ofsconst.open("const.csv");
+			std::ofstream ofsstat;
+			ofsstat.open("stat.csv");
 
 		std::string file;
 		std::vector<std::string> cktname;
@@ -303,7 +303,7 @@ int main(int argc, char** argv){
 		
 			std::string constStr;
 			constStr = readFile(".const2");
-			ofsconst<<constStr<<"\n";
+			//ofsconst<<constStr<<"\n";
 			
 			std::ifstream ifs;
 			ifs.open(".stat");
@@ -330,10 +330,12 @@ int main(int argc, char** argv){
 			readFile(".component", fingerprint);
 			fpDatabase[topName] = fingerprint;
 		
+			std::string statstr = readFile(".stat");
+			ofsstat<<statstr<<"\n";
 			
 			cktname.push_back(topName);
 		}
-		ofsconst.close();
+		ofsstat.close();
 
 		
 
