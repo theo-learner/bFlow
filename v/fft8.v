@@ -118,7 +118,7 @@
 //Coeficient 0.707 bit width is increased
 `define USFFT64bitwidth_0707_high
 
-module FFT8 ( DOR ,DII ,RST ,ED ,CLK ,DOI ,START ,DIR ,RDY );
+module fft8 ( DOR ,DII ,RST ,ED ,CLK ,DOI ,START ,DIR ,RDY );
 	`USFFT64paramnb	
 	
 	input ED ;

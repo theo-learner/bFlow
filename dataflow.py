@@ -11,6 +11,7 @@ import sys, traceback;
 import re;
 import copy;
 import error;
+import timeit
 
 
 def getTopSequence(maxSeq, seqList):
@@ -38,10 +39,7 @@ def extractSWString(dataflowList_node, labelAttr, shapeAttr):
 				continue;
 			elif shapeAttr[node] == "diamond":         # Check to see if it is a point node
 				continue;
-
-			if shapeAttr[node] == "point":         # Check to see if it is a point node
-				continue;
-			elif shapeAttr[node] == "diamond":         # Check to see if it is a point node
+			elif shapeAttr[node] == "point":         # Check to see if it is a point node
 				continue;
 
 			operation = labelAttr[node];
@@ -75,9 +73,6 @@ def extractSWString(dataflowList_node, labelAttr, shapeAttr):
 			else:
 				sw = sw + 'B';                                     #...
 				
-
-				
-					
 		swList.add(sw);
 
 	return swList;
@@ -87,11 +82,7 @@ def extractSWString(dataflowList_node, labelAttr, shapeAttr):
 def findMaxPath(dfg, node, dst, marked, path, maxPath, maxPathList):
 	if node == dst:
 		path.append(node);
-		if len(path) > len(maxPath):
-			#maxPathList = [];
-			maxPath = copy.deepcopy(path);
-			maxPathList.append(maxPath);
-		elif len(path) == len(maxPath):
+		if len(path) >= len(maxPath):
 			maxPath = copy.deepcopy(path);
 			maxPathList.append(maxPath);
 			
@@ -106,26 +97,19 @@ def findMaxPath(dfg, node, dst, marked, path, maxPath, maxPathList):
 		if pred not in marked:
 			maxPath = findMaxPath(dfg, pred, dst,  marked, path, maxPath, maxPathList);
 		else:
-			length = len(maxPathList)
-			for index in xrange(length):
-				start = False;
-				for i in maxPathList[index]:
-					if i == pred:
-						start = True;
-						tempPath = copy.deepcopy(path);
+			for mp in maxPathList:
+				try:
+					index = mp.index(pred);
+					newLen = len(path) + len(mp) - index
+					
+					if newLen >= len(maxPath):
+						tempPath = path + mp[index:]
+						maxPath = copy.deepcopy(tempPath);
+						maxPathList.append(maxPath);
 
-					if start:
-						tempPath.append(i);
-	
-				if start == True:
-					if len(tempPath) > len(maxPath):
-						#maxPathList = [];
-						maxPath = copy.deepcopy(tempPath);
-						maxPathList.append(maxPath);
-					elif len(tempPath) == len(maxPath):
-						maxPath = copy.deepcopy(tempPath);
-						maxPathList.append(maxPath);
 					break;
+				except ValueError:
+					continue;
 				
 
 
@@ -143,24 +127,30 @@ def findMaxPath(dfg, node, dst, marked, path, maxPath, maxPathList):
 
 
 
-
+def longest_path(G):
+    dist = {} # stores [node, distance] pair
+    for node in nx.topological_sort(G):
+        # pairs of dist,node for all incoming edges
+        pairs = [(dist[v][0]+1,v) for v in G.pred[node]] 
+        if pairs:
+            dist[node] = max(pairs)
+        else:
+            dist[node] = (0, node)
+    node,(length,_)  = max(dist.items(), key=lambda x:x[1])
+    path = []
+    while length > 0:
+        path.append(node)
+        length,node = dist[node]
+    return list(reversed(path))
 
 
 
 def extractDataflow(fileName):
 	# Read in dot file of the dataflow
 	print "[DFX] -- Extracting features..."# from : " + fileName;
-	dfg = nx.DiGraph(nx.read_dot(fileName));
-	g = nx.Graph(nx.read_dot(fileName));
-	print nx.degree_histogram(dfg)
 
-	nc = nx.number_connected_components(g);
-	if nc == 1:
-		fileStream = open(".stat", 'w');
-		fileStream.write(repr(nx.diameter(g)) + "\n");
-		fileStream.write(repr(nx.radius(g))+ "\n");
-		fileStream.write(repr(nx.degree_pearson_correlation_coefficient(g))+ "\n");
-		fileStream.close();
+	start_time = timeit.default_timer();
+	dfg = nx.DiGraph(nx.read_dot(fileName));
 
 	#Get the nodes and edges of the graph
 	nodeList = dfg.nodes();
@@ -174,10 +164,10 @@ def extractDataflow(fileName):
 	labelAttr = nx.get_node_attributes(dfg, 'label');
 
 
-
 ###############################################################################
 # Preprocess edges 
 ###############################################################################
+	print "[DFX] -- Preprocessing edges..."
 	edgeAttr = nx.get_edge_attributes(dfg, 'label');
 	for edge in edgeList:
 		if edge not in edgeAttr:
@@ -217,6 +207,7 @@ def extractDataflow(fileName):
 	maxFanout = 0;
 
 	count = 0;
+	print "[DFX] -- Preprocessing nodes..."
 	for node in nodeList:
 		if 'v' in node:                          # Check to see if it is a  constant
 			constantList.append(node);
@@ -352,6 +343,8 @@ def extractDataflow(fileName):
 	#print "Max Fanout: " + repr(maxFanout)
 	#print "Num Nodes: " + repr(len(nodeList))
 	#print "Num Edges: " + repr(len(edgeList))
+	#num node, num edge, num input, num output, max fanin, max fanout num cycle, 
+
 	
 	##########################################################################
 	# FF and input correspondence
@@ -368,60 +361,47 @@ def extractDataflow(fileName):
 			ffCc[count] = ffCc[count] + 1;
 		else:
 			ffCc[count] = 1;
-	
+
 	outCc = {};
-	for out in outNodeList:
-		count = 0;
-
-		for inNode in inNodeList:
-			if(nx.has_path(dfg, inNode, out)):
-				count = count + 1;
-
-		for constant in constantList:
-			if(nx.has_path(dfg, constant, out)):
-				count = count + 1;
-		
-		if(count in outCc):
-			outCc[count] = outCc[count] + 1;
-		else:
-			outCc[count] = 1;
-		
-
+	
 	###########################################################################
 	# Dataflow extraction Vectorized
 	###########################################################################
 	dataflowMaxList_node = [];
 	dataflowMinList_node = [];
+	totalPathLen = 0;
+	pathCount = 0;
 	for out in outNodeList:
+		count = 0;
+		for constant in constantList:
+			if(nx.has_path(dfg, constant, out)):
+				count = count + 1;
+
 		for inNode in inNodeList:
-			#t = nx.dfs_postorder_nodes(dfg, inNode);
 			if(not nx.has_path(dfg, inNode, out)):
 				continue;
-			
+
+			shortestPaths = nx.all_shortest_paths(dfg, inNode, out)
+			for s in shortestPaths:
+				dataflowMinList_node.append(list(reversed(s)));
+				totalPathLen = totalPathLen + len(s);
+				pathCount = pathCount + 1;
+
 			marked = [];
 			path= [];
 			maxPath= [];
 			maxPathList= [];
 			findMaxPath(dfg, out, inNode, marked, path, maxPath, maxPathList);
 
-			for s in nx.all_shortest_paths(dfg, inNode, out):
-				dataflowMinList_node.append(list(reversed(s)));
-
-			#Store the path of node names into list
-			maxLength = 0;
+			maxPathList.sort(lambda x, y: -1*(cmp(len(x), len(y))));
+			dataflowMaxList_node = dataflowMaxList_node + maxPathList[:3];
 			
-			tempMaxList = []
-			for p in maxPathList:
-				if len(p) > maxLength:
-					maxLength = len(p);
-					tempMaxList= [];
-					tempMaxList.append(p);
+			count = count + 1;
 
-				elif len(p) == maxLength:
-					tempMaxList.append(p);
-
-			for p in tempMaxList:
-				dataflowMaxList_node.append(p);
+		if(count in outCc):
+			outCc[count] = outCc[count] + 1;
+		else:
+			outCc[count] = 1;
 
 
 
@@ -444,6 +424,24 @@ def extractDataflow(fileName):
 	swMin.sort(lambda x, y: -1*(cmp(len(x), len(y))));
 	minList = getTopSequence(maxSeq, swMin)
 	print minList;
+	
+
+	statstr = repr(len(nodeList)) + "," + repr(len(edgeList)) + ","
+	statstr = statstr + repr(len(inNodeList)) + "," + repr(len(outNodeList)) + ","
+	statstr = statstr + repr(maxFanin) + "," + repr(maxFanout) + ",";
+
+	#print "[DFX] -- stat extraction...cycle"
+	#start_time = timeit.default_timer();
+	#statstr = statstr + repr(len(list(nx.simple_cycles(dfg)))) + ",";
+	#elapsed = timeit.default_timer() - start_time;
+	#print elapsed;
+	#print
+	statstr = statstr + repr(float(totalPathLen)/float(pathCount));
+	for freq in nx.degree_histogram(dfg):
+		statstr = statstr + "," + repr(freq);
+
+
+	print statstr
 
 
 
@@ -570,13 +568,10 @@ def extractDataflow(fileName):
 	fp.append(ffCc)
 	fp.append(outCc)
 
-	#num node, num edge, num input, num output, max fanin, max fanout
-	statstr = repr(len(nodeList)) + "," + repr(len(edgeList)) + ","
-	statstr = statstr + repr(len(inNodeList)) + "," + repr(len(outNodeList)) + ","
-	statstr = statstr + repr(maxFanin) + "," + repr(maxFanout);
-	for freq in nx.degree_histogram(dfg):
-		statstr = statstr + "," + repr(freq);
-	print statstr
+	elapsed = timeit.default_timer() - start_time;
+	print "[DFX] -- ELAPSED: " +  repr(elapsed);
+	print
+
 	result = (maxList, minList, constSet, fp, name, statstr);
 	return result;
 

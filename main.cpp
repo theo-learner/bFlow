@@ -301,8 +301,8 @@ int main(int argc, char** argv){
 			//cnst.erase(1);
 			constantDatabase[topName] = cnst;
 		
-			std::string constStr;
-			constStr = readFile(".const2");
+			//std::string constStr;
+			//constStr = readFile(".const2");
 			//ofsconst<<constStr<<"\n";
 			
 			std::ifstream ifs;
@@ -310,13 +310,13 @@ int main(int argc, char** argv){
 			std::vector<double> s;
 			double val;
 			ifs>>val;
-			printf("DIAMETER: %f\n", val);
+			//printf("DIAMETER: %f\n", val);
 			s.push_back(val);
 			ifs>>val;
-			printf("RADIUS: %f\n", val);
+			//printf("RADIUS: %f\n", val);
 			s.push_back(val);
 			ifs>>val;
-			printf("COR COE: %f\n", val);
+			//printf("COR COE: %f\n", val);
 			s.push_back(val);
 			stat.push_back(s);
 			
@@ -665,7 +665,7 @@ int main(int argc, char** argv){
 			}
 
 			yosysScript += "hierarchy -check\n";
-			yosysScript += "proc; opt; fsm; opt; wreduce; opt\n\n";
+			yosysScript += "proc; opt; fsm;\n\n";
 			yosysScript += "flatten "+ top +"; opt\n";
 			yosysScript += "wreduce; opt\n\n";
 
@@ -925,9 +925,7 @@ int main(int argc, char** argv){
 			//Check to see if yosys encountered an error
 			//readDumpFile(".pscript.dmp", "Traceback");
 
-			printf("READING SEQ FILE\n");
 			readSeqFile(".seq", max, min);
-			printf("DONE READING SEQ FILE\n");
 		}
 
 
@@ -1103,7 +1101,7 @@ void matlabTable(
 		for(unsigned int i = 0; i < 1; i++) labels.push_back(28); //2comp
 		for(unsigned int i = 0; i < 10; i++) labels.push_back(29); //mult
 		for(unsigned int i = 0; i < 4; i++) labels.push_back(30); //fsm
-		for(unsigned int i = 0; i < 14; i++) labels.push_back(31); //fft
+		for(unsigned int i = 0; i < 10; i++) labels.push_back(31); //fft
 		/*
 		std::string labeltable;
 

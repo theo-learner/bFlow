@@ -1,10 +1,10 @@
 echo on
-read_verilog v/cf_fft_512_16.v
+read_verilog v/spiraldft_4_4_iter_jacm.v
 
 hierarchy -check
 proc; opt; fsm; opt; wreduce; opt
 
-flatten cf_fft_512_16; opt
+flatten spiraldft_4_4_iter_jacm; opt
 wreduce; opt
 
-show -width -format dot -prefix ./dot/cf_fft_512_16_df cf_fft_512_16
+show -width -format dot -prefix ./dot/spiraldft_4_4_iter_jacm_df spiraldft_4_4_iter_jacm

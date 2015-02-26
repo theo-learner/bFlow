@@ -141,7 +141,7 @@
 //Rounding butterfly results
 //`define FFT256round 	
 
-module FFT16 ( DOR ,DII ,RST ,ED ,CLK ,DOI ,START ,DIR ,RDY );
+module fft16 ( DOR ,DII ,RST ,ED ,CLK ,DOI ,START ,DIR ,RDY );
 	`FFT256paramnb	
 	
 	input ED ;		  //slowdown impulse

@@ -137,11 +137,7 @@ v/altera_mealy_mac.v
 v/altera_moore_mac.v
 v/altera_safe_state_machine.v
 v/altera_fsm.v
-v/cf_fft_256_18.v
-v/cf_fft_256_16.v
 v/cf_fft_256_8.v
-v/cf_fft_512_18.v
-v/cf_fft_512_16.v
 v/cf_fft_512_8.v
 v/pipelined_fft_64.d
 v/pipelined_fft_256.d
