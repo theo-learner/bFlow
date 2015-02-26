@@ -1,1 +1,0 @@
-verilog globals.v ctl_def.v XYreg.v mult.v addsub.v round.v shift1.v logic_unit.v decode.v check_imm.v control.v control_p.v limit.v alu_struc.v

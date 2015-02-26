@@ -895,10 +895,12 @@ int main(int argc, char** argv){
  *
  *#############################################################################*/
 		void extractDataflow(std::string file, std::string top,  std::string extension, std::list<std::string>& max, std::list<std::string>& min){
+			printf("\n########################################################################\n");
 			if(extension == "v")
-				printf("\nVerilog File: %s\n", file.c_str());
-			else if(extension == "v")
-				printf("\nDirectory File: %s\n", file.c_str());
+				printf("Verilog File: %s\n", file.c_str());
+			else if(extension == "d")
+				printf("Directory File: %s\n", file.c_str());
+			printf("########################################################################\n");
 
 			//printf("VNAME: %s\tVEXT: %s\n", cname.c_str(), extension.c_str());
 
@@ -1071,35 +1073,40 @@ void matlabTable(
 
 
 		std::vector<unsigned> labels;
-		for(unsigned int i = 0; i < 6; i++) labels.push_back(1);
-		for(unsigned int i = 0; i < 3; i++) labels.push_back(2);
-		for(unsigned int i = 0; i < 7; i++) labels.push_back(3);
-		for(unsigned int i = 0; i < 4; i++) labels.push_back(4);
-		for(unsigned int i = 0; i < 2; i++) labels.push_back(5);
-		for(unsigned int i = 0; i < 5; i++) labels.push_back(6);
-		for(unsigned int i = 0; i < 5; i++) labels.push_back(7);
-		for(unsigned int i = 0; i < 3; i++) labels.push_back(8);
-		for(unsigned int i = 0; i < 6; i++) labels.push_back(9);
-		for(unsigned int i = 0; i < 3; i++) labels.push_back(10);
-		for(unsigned int i = 0; i < 3; i++) labels.push_back(11);
-		for(unsigned int i = 0; i < 1; i++) labels.push_back(12);
-		for(unsigned int i = 0; i < 2; i++) labels.push_back(13);
-		for(unsigned int i = 0; i < 7; i++) labels.push_back(14);
-		for(unsigned int i = 0; i < 3; i++) labels.push_back(15);
-		for(unsigned int i = 0; i < 2; i++) labels.push_back(16);
-		for(unsigned int i = 0; i < 3; i++) labels.push_back(17);
-		for(unsigned int i = 0; i < 8; i++) labels.push_back(18);
-		for(unsigned int i = 0; i < 4; i++) labels.push_back(19);
-		for(unsigned int i = 0; i < 17; i++) labels.push_back(20);
-		for(unsigned int i = 0; i < 1; i++) labels.push_back(21);
-		for(unsigned int i = 0; i < 1; i++) labels.push_back(22);
-		for(unsigned int i = 0; i < 2; i++) labels.push_back(23);
-		for(unsigned int i = 0; i < 3; i++) labels.push_back(24);
-		for(unsigned int i = 0; i < 2; i++) labels.push_back(25);
-		for(unsigned int i = 0; i < 1; i++) labels.push_back(26);
-		for(unsigned int i = 0; i < 10; i++) labels.push_back(27);
-		for(unsigned int i = 0; i < 4; i++) labels.push_back(28);
+		for(unsigned int i = 0; i < 6; i++) labels.push_back(1); //dec
+		for(unsigned int i = 0; i < 3; i++) labels.push_back(2); //mux
+		for(unsigned int i = 0; i < 7; i++) labels.push_back(3); //life
+		for(unsigned int i = 0; i < 4; i++) labels.push_back(4); //img
+		for(unsigned int i = 0; i < 2; i++) labels.push_back(5); //med
+		for(unsigned int i = 0; i < 5; i++) labels.push_back(6); //fir
+		for(unsigned int i = 0; i < 6; i++) labels.push_back(7); //cnt
+		for(unsigned int i = 0; i < 3; i++) labels.push_back(8); //cic
+		for(unsigned int i = 0; i < 8; i++) labels.push_back(9); //iirfix
+		for(unsigned int i = 0; i < 3; i++) labels.push_back(10); //iirsos
+		for(unsigned int i = 0; i < 3; i++) labels.push_back(11); //iirpar
+		for(unsigned int i = 0; i < 6; i++) labels.push_back(12); //arbiter
+		for(unsigned int i = 0; i < 3; i++) labels.push_back(13); //crc
+		for(unsigned int i = 0; i < 8; i++) labels.push_back(14); //fifo
+		for(unsigned int i = 0; i < 4; i++) labels.push_back(15); //lfsr
+		for(unsigned int i = 0; i < 2; i++) labels.push_back(16); //shift
+		for(unsigned int i = 0; i < 4; i++) labels.push_back(17); //clkdiv
+		for(unsigned int i = 0; i < 3; i++) labels.push_back(18); //regfile
+		for(unsigned int i = 0; i < 2; i++) labels.push_back(19); //mem
+		for(unsigned int i = 0; i < 9; i++) labels.push_back(20); //ram
+		for(unsigned int i = 0; i < 4; i++) labels.push_back(21); //spi
+		for(unsigned int i = 0; i < 17; i++) labels.push_back(21); //uart
+		for(unsigned int i = 0; i < 1; i++) labels.push_back(23); //edgedet
+		for(unsigned int i = 0; i < 3; i++) labels.push_back(24); //brg
+		for(unsigned int i = 0; i < 2; i++) labels.push_back(25); //addtree
+		for(unsigned int i = 0; i < 3; i++) labels.push_back(26); //add
+		for(unsigned int i = 0; i < 3; i++) labels.push_back(27); //div
+		for(unsigned int i = 0; i < 1; i++) labels.push_back(28); //2comp
+		for(unsigned int i = 0; i < 10; i++) labels.push_back(29); //mult
+		for(unsigned int i = 0; i < 4; i++) labels.push_back(30); //fsm
+		for(unsigned int i = 0; i < 14; i++) labels.push_back(31); //fft
+		/*
 		std::string labeltable;
+
 		labeltable = ("dec");
 		for(unsigned int i = 0; i < 5; i++) labeltable += (",dec");
 		for(unsigned int i = 0; i < 3; i++) labeltable += (",mux");
@@ -1118,7 +1125,7 @@ void matlabTable(
 		for(unsigned int i = 0; i < 3; i++) labeltable += (",lfsr");
 		for(unsigned int i = 0; i < 2; i++) labeltable += (",sh");
 		for(unsigned int i = 0; i < 3; i++) labeltable += (",clkdiv");
-		for(unsigned int i = 0; i < 8; i++) labeltable += (",ram");
+		for(unsigned int i = 0; i < 9; i++) labeltable += (",ram");
 		for(unsigned int i = 0; i < 4; i++) labeltable += (",spi");
 		for(unsigned int i = 0; i < 17; i++) labeltable += (",uart");
 		for(unsigned int i = 0; i < 1; i++) labeltable += (",edge");
@@ -1129,6 +1136,7 @@ void matlabTable(
 		for(unsigned int i = 0; i < 1; i++) labeltable += (",2comp");
 		for(unsigned int i = 0; i < 10; i++) labeltable += (",mult");
 		for(unsigned int i = 0; i < 4; i++) labeltable += (",fsm");
+		*/
 
 		//Form the output string
 		assert(labels.size() == ftable.size());
