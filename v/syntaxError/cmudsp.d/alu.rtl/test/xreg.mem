@@ -1,0 +1,41 @@
+000000000000
+000000000000
+000000000000
+000000000000	//  move #$0,r0
+000000000000	//  move #$3,m0
+000000000000	//  move #$0,r4
+000000000000	//  move #$3,m4
+000000000000	//  move #>$100,r1
+000000000000	//  move #>$100,r1 (cont)
+000000000000	//  move #>$300,r5
+000000000000	//  move #>$300,r5 (cont)
+000000000000	//  do #<$100,$110 ; p:endp
+000000000000	//  do #<$100,$110 ; p:endp (cont)
+000000d7de05	//  move y:(r1)+,x0 ; y:datin
+000000d7de05	//  clr a x0,x:(r0)+ y:(r4)+,y0 ; x:states y:coef
+000000d7de05	//  rep #<$3
+000000000000	//  mac y0,x0,a x:(r0)+,x0 y:(r4)+,y0 ; x:(states+1) y:(coef+1)
+000000000000	//  mac y0,x0,a x:(r0)+,x0 y:(r4)+,y0 ; x:(states+2) y:(coef+2)
+000000000000	//  mac y0,x0,a x:(r0)+,x0 y:(r4)+,y0 ; x:(states+3) y:(coef+3)
+000000000000	//  macr y0,x0,a (r0)-
+000000000000	//  move a,y:(r5)+ ; y:datout
+0000000bfbc6	//  move y:(r1)+,x0 ; y:(datin+1)
+0000000bfbc6	//  clr a x0,x:(r0)+ y:(r4)+,y0 ; x:(states+3) y:coef
+0000000bfbc6	//  rep #<$3
+000000d7de05	//  mac y0,x0,a x:(r0)+,x0 y:(r4)+,y0 ; x:states y:(coef+1)
+000000000000	//  mac y0,x0,a x:(r0)+,x0 y:(r4)+,y0 ; x:(states+1) y:(coef+2)
+000000000000	//  mac y0,x0,a x:(r0)+,x0 y:(r4)+,y0 ; x:(states+2) y:(coef+3)
+000000000000	//  macr y0,x0,a (r0)-
+000000000000	//  move a,y:(r5)+ ; y:(datout+1)
+0000002d1c97	//  move y:(r1)+,x0 ; y:(datin+2)
+0000002d1c97	//  clr a x0,x:(r0)+ y:(r4)+,y0 ; x:(states+2) y:coef
+0000002d1c97	//  rep #<$3
+0000000bfbc6	//  mac y0,x0,a x:(r0)+,x0 y:(r4)+,y0 ; x:(states+3) y:(coef+1)
+000000d7de05	//  mac y0,x0,a x:(r0)+,x0 y:(r4)+,y0 ; x:states y:(coef+2)
+000000000000	//  mac y0,x0,a x:(r0)+,x0 y:(r4)+,y0 ; x:(states+1) y:(coef+3)
+000000000000	//  macr y0,x0,a (r0)-
+000000000000	//  move a,y:(r5)+ ; y:(datout+2)
+00000009c769	//  move y:(r1)+,x0 ; y:(datin+3)
+00000009c769	//  clr a x0,x:(r0)+ y:(r4)+,y0 ; x:(states+1) y:coef
+00000009c769	//  rep #<$3
+0000002d1c97	//  mac y0,x0,a x:(r0)+,x0 y:(r4)+,y0 ; x:(states+2) y:(coef+1)
