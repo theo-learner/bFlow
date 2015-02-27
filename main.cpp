@@ -1101,7 +1101,7 @@ void matlabTable(
 		for(unsigned int i = 0; i < 1; i++) labels.push_back(28); //2comp
 		for(unsigned int i = 0; i < 10; i++) labels.push_back(29); //mult
 		for(unsigned int i = 0; i < 4; i++) labels.push_back(30); //fsm
-		for(unsigned int i = 0; i < 10; i++) labels.push_back(31); //fft
+		for(unsigned int i = 0; i < 14; i++) labels.push_back(31); //fft
 		/*
 		std::string labeltable;
 
