@@ -56,6 +56,7 @@ class Database{
 		~Database();
 		bool importDatabase(std::string);   //PARAM: File Name
 	  void searchDatabase(Birthmark*);
+		void searchDatabase(Birthmark*, std::vector<double>&);
 
 		void printXML();
 		void print();

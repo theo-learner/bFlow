@@ -111,6 +111,32 @@ bool Database::importDatabase(std::string path){
 
 }
 
+void Database::searchDatabase(Birthmark* reference, std::vector<double>& fsim){
+	//Get FComponent
+	std::list<std::string> maxRef, minRef;
+	reference->getMaxSequence(maxRef);
+	reference->getMinSequence(minRef);
+
+	std::list<Birthmark*>::iterator iList;
+	for(iList = m_Database.begin(); iList != m_Database.end(); iList++){
+		printf("[SRCH] -- Comparing reference to #%s#\n", (*iList)->getName().c_str());
+		//Align the max sequences
+		printf("       -- Comparing functional components...\n");
+		std::list<std::string> maxDB;
+		(*iList)->getMaxSequence(maxDB);
+		double maxScore = SIMILARITY::align(maxRef, maxDB);
+
+		//Align the min sequences
+		std::list<std::string> minDB;
+		(*iList)->getMinSequence(minDB);
+		double minScore = SIMILARITY::align(minRef, minDB);
+
+		double fScore = (maxScore*0.650 + minScore* 0.350);
+		printf("-- FSCORE: %f\n",fScore);
+		fsim.push_back(fScore);
+	}
+}
+
 void Database::searchDatabase(Birthmark* reference){
 	//Get FComponent
 	std::list<std::string> maxRef, minRef;

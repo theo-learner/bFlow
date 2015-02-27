@@ -32,7 +32,8 @@ double calculateSimilarity(std::map<unsigned, unsigned>&, std::map<unsigned, uns
 
 void matlabTable(std::vector<std::string>& cktname,
 		std::map<std::string, std::vector<std::map<unsigned, unsigned> > >& fpDatabase,
-		std::map<std::string, std::set<int> >& constantDatabase
+		std::map<std::string, std::set<int> >& constantDatabase,
+		int labelCount
 );
 
 
@@ -262,9 +263,40 @@ int main(int argc, char** argv){
 
 		//Make sure database file is okay
 		std::ifstream infile;
-		infile.open(argv[1]);
+		std::string dbfile = argv[1];
+		infile.open(dbfile.c_str());
 		if (!infile.is_open()) throw 5;
 
+
+		std::ifstream ifs2;
+		std::string labelFile = dbfile + "l";
+		ifs2.open(labelFile.c_str());
+		if (!ifs2.is_open()) throw 5;
+		int labelCount;
+		ifs2>>labelCount;
+
+		printf("Outputing labels to labels.csv\n");
+		std::ofstream ofs2;
+		ofs2.open("labels.csv");
+
+		std::string dummy;
+		int labelItem;
+
+		ifs2>> labelItem;
+		ifs2>>dummy;
+		ofs2<<1;
+		int numLabels = labelItem;
+		for(int k = 1; k < labelItem; k++)
+			ofs2<< ","<<1;
+
+		for(int i = 1; i < labelCount; i++){
+			ifs2>> labelItem;
+			ifs2>>dummy;
+			numLabels +=labelItem;
+			for(int k = 0; k < labelItem; k++)
+				ofs2<< ","<<i+1;
+		}
+		ofs2.close();
 
 
 
@@ -351,7 +383,7 @@ int main(int argc, char** argv){
 		}
 		fastaout.close();
 
-		matlabTable(cktname, fpDatabase, constantDatabase);
+		matlabTable(cktname, fpDatabase, constantDatabase, numLabels);
 		
 		return 0;
 
@@ -952,7 +984,8 @@ double calculateSimilarity(std::map<unsigned, unsigned>& fingerprint1,
 void matlabTable(
 		std::vector<std::string>& cktname,
 		std::map<std::string, std::vector<std::map<unsigned, unsigned> > >& fpDatabase,
-		std::map<std::string, std::set<int> >& constantDatabase
+		std::map<std::string, std::set<int> >& constantDatabase,
+		int labelCount
 ){
 		printf("Preparing Matlab Tables\n");
 		std::map<std::string, std::vector<std::map<unsigned, unsigned> > >::iterator iFP;
@@ -1070,74 +1103,9 @@ void matlabTable(
 		
 
 
-		std::vector<unsigned> labels;
-		for(unsigned int i = 0; i < 6; i++) labels.push_back(1); //dec
-		for(unsigned int i = 0; i < 3; i++) labels.push_back(2); //mux
-		for(unsigned int i = 0; i < 7; i++) labels.push_back(3); //life
-		for(unsigned int i = 0; i < 4; i++) labels.push_back(4); //img
-		for(unsigned int i = 0; i < 2; i++) labels.push_back(5); //med
-		for(unsigned int i = 0; i < 5; i++) labels.push_back(6); //fir
-		for(unsigned int i = 0; i < 6; i++) labels.push_back(7); //cnt
-		for(unsigned int i = 0; i < 3; i++) labels.push_back(8); //cic
-		for(unsigned int i = 0; i < 8; i++) labels.push_back(9); //iirfix
-		for(unsigned int i = 0; i < 3; i++) labels.push_back(10); //iirsos
-		for(unsigned int i = 0; i < 3; i++) labels.push_back(11); //iirpar
-		for(unsigned int i = 0; i < 6; i++) labels.push_back(12); //arbiter
-		for(unsigned int i = 0; i < 3; i++) labels.push_back(13); //crc
-		for(unsigned int i = 0; i < 8; i++) labels.push_back(14); //fifo
-		for(unsigned int i = 0; i < 4; i++) labels.push_back(15); //lfsr
-		for(unsigned int i = 0; i < 2; i++) labels.push_back(16); //shift
-		for(unsigned int i = 0; i < 4; i++) labels.push_back(17); //clkdiv
-		for(unsigned int i = 0; i < 3; i++) labels.push_back(18); //regfile
-		for(unsigned int i = 0; i < 2; i++) labels.push_back(19); //mem
-		for(unsigned int i = 0; i < 9; i++) labels.push_back(20); //ram
-		for(unsigned int i = 0; i < 4; i++) labels.push_back(21); //spi
-		for(unsigned int i = 0; i < 17; i++) labels.push_back(21); //uart
-		for(unsigned int i = 0; i < 1; i++) labels.push_back(23); //edgedet
-		for(unsigned int i = 0; i < 3; i++) labels.push_back(24); //brg
-		for(unsigned int i = 0; i < 2; i++) labels.push_back(25); //addtree
-		for(unsigned int i = 0; i < 3; i++) labels.push_back(26); //add
-		for(unsigned int i = 0; i < 3; i++) labels.push_back(27); //div
-		for(unsigned int i = 0; i < 1; i++) labels.push_back(28); //2comp
-		for(unsigned int i = 0; i < 10; i++) labels.push_back(29); //mult
-		for(unsigned int i = 0; i < 4; i++) labels.push_back(30); //fsm
-		for(unsigned int i = 0; i < 14; i++) labels.push_back(31); //fft
-		/*
-		std::string labeltable;
-
-		labeltable = ("dec");
-		for(unsigned int i = 0; i < 5; i++) labeltable += (",dec");
-		for(unsigned int i = 0; i < 3; i++) labeltable += (",mux");
-		for(unsigned int i = 0; i < 7; i++) labeltable += (",life");
-		for(unsigned int i = 0; i < 4; i++) labeltable += (",img");
-		for(unsigned int i = 0; i < 2; i++) labeltable += (",med");
-		for(unsigned int i = 0; i < 5; i++) labeltable += (",fir");
-		for(unsigned int i = 0; i < 5; i++) labeltable += (",counter");
-		for(unsigned int i = 0; i < 3; i++) labeltable += (",cic");
-		for(unsigned int i = 0; i < 6; i++) labeltable += (",iirfix");
-		for(unsigned int i = 0; i < 3; i++) labeltable += (",iirsos");
-		for(unsigned int i = 0; i < 3; i++) labeltable += (",iirpar");
-		for(unsigned int i = 0; i < 1; i++) labeltable += (",arb");
-		for(unsigned int i = 0; i < 2; i++) labeltable += (",crc");
-		for(unsigned int i = 0; i < 7; i++) labeltable += (",fifo");
-		for(unsigned int i = 0; i < 3; i++) labeltable += (",lfsr");
-		for(unsigned int i = 0; i < 2; i++) labeltable += (",sh");
-		for(unsigned int i = 0; i < 3; i++) labeltable += (",clkdiv");
-		for(unsigned int i = 0; i < 9; i++) labeltable += (",ram");
-		for(unsigned int i = 0; i < 4; i++) labeltable += (",spi");
-		for(unsigned int i = 0; i < 17; i++) labeltable += (",uart");
-		for(unsigned int i = 0; i < 1; i++) labeltable += (",edge");
-		for(unsigned int i = 0; i < 1; i++) labeltable += (",brg");
-		for(unsigned int i = 0; i < 2; i++) labeltable += (",addTree");
-		for(unsigned int i = 0; i < 3; i++) labeltable += (",addsub");
-		for(unsigned int i = 0; i < 2; i++) labeltable += (",div");
-		for(unsigned int i = 0; i < 1; i++) labeltable += (",2comp");
-		for(unsigned int i = 0; i < 10; i++) labeltable += (",mult");
-		for(unsigned int i = 0; i < 4; i++) labeltable += (",fsm");
-		*/
-
 		//Form the output string
-		assert(labels.size() == ftable.size());
+		printf("LabelCount: %d\tFTABLE: %d\n", labelCount, (int)ftable.size());
+		assert((unsigned)labelCount == ftable.size());
 		for(unsigned int q = 0; q < ftable.size(); q++){
 			//bstr<<labels[q]<<",";
 			for(unsigned int w = 0; w < ftable[q].size(); w++){
@@ -1192,12 +1160,6 @@ void matlabTable(
 		ofs<< bstr.str();
 		ofs.close();
 	
-		printf("Outputing labels to labels.csv\n");
-		ofs.open("labels.csv");
-		ofs<< labels[0];
-		for(unsigned int i = 1; i < labels.size(); i++)
-			ofs<< ","<<labels[i];
-		ofs.close();
 	/*
 		printf("Outputing typename table to typename.csv\n");
 		ofs.open("typename.csv");

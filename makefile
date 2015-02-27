@@ -21,12 +21,26 @@ OBJSERVER = \
 	server.o \
 	$
 
-all: mainserver
+OBJREF= \
+	database.o \
+	birthmark.o \
+	feature.o \
+	similarity.o \
+	print.o \
+	$
+
+all: 
 
 #build subdirectories
 	
-main: $(OBJS) main.o 
-	$(CXX) $(OBJS) main.o -o hbflow 
+mat: $(OBJS) mat.o 
+	$(CXX) $(OBJS) mat.o -o matlab 
+
+autocor: $(OBJS) autocor.o 
+	$(CXX) $(OBJS) autocor.o -o autocor 
+
+refTest: $(OBJREF) refTest.o 
+	$(CXX) $(OBJREF) refTest.o -o refTest 
 
 mainopt: $(OBJS) swparam_opt.o
 	$(CXX) $(OBJS) swparam_opt.o -o opt_sswparam 

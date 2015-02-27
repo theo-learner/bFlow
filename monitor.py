@@ -14,7 +14,10 @@ import yosys;
 import traceback;
 import socket;
 import dataflow as dfx
+import processRef as ref 
 from bs4 import BeautifulSoup
+
+
 
 
 def skt_receive(csocket,timeout=2):
@@ -51,146 +54,95 @@ def skt_receive(csocket,timeout=2):
 	return ''.join(total_data)
  
  
-#Check Argument Length
-if len(sys.argv) != 4:
-	print "[ERROR] -- Not enough arguments";
-	print "        -- python monitor.py <verilog file> <IP ADDR> <PORT>"
-	exit();
+def main():
+	#Check Argument Length
+	if len(sys.argv) != 4:
+		print "[ERROR] -- Not enough arguments";
+		print "        -- python monitor.py <verilog file> <IP ADDR> <PORT>"
+		exit();
 
-verilogFile = sys.argv[1];
-ipaddr = sys.argv[2];
-port = int(sys.argv[3]);
-
-
-if(".v" not in verilogFile):
-	print "[ERROR] -- File does not have verilog extension";
-	exit();
+	verilogFile = sys.argv[1];
+	ipaddr = sys.argv[2];
+	port = int(sys.argv[3]);
 
 
-#Preprocess yosys script
-fileName = yosys.getFileData(verilogFile);
-scriptName = "yoscript_ref"
-print "Monitoring Verilog File: " + fileName[0] + fileName[1] + "." + fileName[2];
-scriptResult = yosys.create_yosys_script(verilogFile, scriptName)
-dotfile = scriptResult[0];
 
+
+	#Preprocess yosys script
+	fileName = yosys.getFileData(verilogFile);
+	(scriptName, dotfile) = ref.generateYosysScript(verilogFile);
 
 
 
 #Set up communication with server
-try:
-	print "[MONITOR] -- Setting up socket- IP: " + ipaddr + "\tPORT: " + repr(port);
-	csocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM);
-	csocket.connect((ipaddr, port));
-except:
-	print "[ERROR] -- Make sure server size is running. Check IP and PORT"
-	exit();
+	try:
+		print "[MONITOR] -- Setting up socket- IP: " + ipaddr + "\tPORT: " + repr(port);
+		csocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM);
+		csocket.connect((ipaddr, port));
+	except:
+		print "[ERROR] -- Make sure server size is running. Check IP and PORT"
+		exit();
 
 
 #INITIAL HANDSHAKE
-csocket.send("CLIENT_READY");
-val = skt_receive(csocket);
+	csocket.send("CLIENT_READY");
+	val = skt_receive(csocket);
 
-if(val != 'SERVER_READY'):
-	print "[ERROR] -- Server did not send ready signal"
-	exit()
+	if(val != 'SERVER_READY'):
+		print "[ERROR] -- Server did not send ready signal"
+		exit()
 
-print "[MONITOR] -- CONNECTED!";
+	print "[MONITOR] -- CONNECTED!";
 
 
 
 
 
 #Start Monitoring
-prevTime = os.stat(verilogFile).st_mtime
+	prevTime = os.stat(verilogFile).st_mtime
 
-try:
-	sleepTime = 3;
+	try:
+		sleepTime = 3;
 
-	while(True):
-		curTime = os.stat(verilogFile).st_mtime
-		st = datetime.datetime.fromtimestamp(time.time()).strftime('%H:%M:%S');
-		print "[" + st + "] -- Checking for changes..";
+		while(True):
+			curTime = os.stat(verilogFile).st_mtime
+			st = datetime.datetime.fromtimestamp(time.time()).strftime('%H:%M:%S');
+			print "[" + st + "] -- Checking for changes..";
 
-		if(prevTime != curTime ):
-			print "[" + st + "] -- -- Reference has been modified: " + repr(curTime);
-			prevTime = curTime;
+			if(prevTime != curTime ):
+				print "[" + st + "] -- -- Reference has been modified: " + repr(curTime);
+				prevTime = curTime;
 
-			rVal = yosys.execute(scriptName);
-			if(rVal != ""):
-				print "Continuing to monitor..."
-				time.sleep(sleepTime);
-				continue;
+				rVal = yosys.execute(scriptName);
+				if(rVal != ""):
+					print "Continuing to monitor..."
+					time.sleep(sleepTime);
+					continue;
 
-			result = dfx.extractDataflow(dotfile);
-
-
-#######################################################
-			soup = BeautifulSoup();
-			ckttag = soup.new_tag("CIRCUIT");
-			ckttag['name'] = fileName[1];
-			ckttag['id'] = -1 
-			soup.append(ckttag);
-
-			#Store the max seq
-			maxList = result[0];
-			for seq in maxList:
-				seqtag = soup.new_tag("MAXSEQ");
-				seqtag.string =seq 
-				ckttag.append(seqtag);
+				soup = ref.generateXML(dotfile, fileName[1]);
+				print "Sending XML Representation of Birthmark to server..."
+				csocket.send(repr(soup));
 				
-			minList = result[1];
-			for seq in maxList:
-				seqtag = soup.new_tag("MINSEQ");
-				seqtag.string =seq 
-				ckttag.append(seqtag);
-			
-			constSet= result[2];
-			for const in constSet:
-				consttag = soup.new_tag("CONSTANT");
-				consttag.string = const
-				ckttag.append(consttag);
-			
-			fpDict= result[3];
-			name = result[4];
-			if(len(fpDict) != len(name)):
-				raise error.SizeError("Fingerprint Dictionary and Name size do not match");
-	
-			i = 0;
-			for fp in fpDict:
-				fptag = soup.new_tag("FP");
-				fptag['type'] = name[i];
-				for k, v in fp.iteritems():
-					attrTag = soup.new_tag("DATA");
-					attrTag['size'] = k;
-					attrTag['count'] = v;
-					fptag.append(attrTag);
-				i = i + 1;
-	
-				ckttag.append(fptag);
-			#print soup.prettify();
-#######################################################
-		
-			print "Sending XML Representation of Birthmark to server..."
-			#xmldata = soup.prettify().replace('\n', '').replace("  ", "").replace(" <","<");
-			csocket.send(repr(soup));
-			
-			print "Waiting for response..."
-			val = skt_receive(csocket);
-			if(val != 'SERVER_READY'):
-				print "[ERROR] -- Server did not send ready signal"
-				exit()
-			print "Finished! Continue monitoring..."
-								 
-		time.sleep(sleepTime);
+				print "Waiting for response..."
+				val = skt_receive(csocket);
+				if(val != 'SERVER_READY'):
+					print "[ERROR] -- Server did not send ready signal"
+					exit()
+				print "Finished! Continue monitoring..."
+									 
+			time.sleep(sleepTime);
 
-except:
-	print "Error: ", sys.exc_info()[0];
-	traceback.print_exc(file=sys.stdout);
-	st = datetime.datetime.fromtimestamp(time.time()).strftime('%H:%M:%S');
-	print "---------------------------------------------------------------"
-	print "[" + st + "] -- User has stopped editing file...quitting";
+	except:
+		print "Error: ", sys.exc_info()[0];
+		traceback.print_exc(file=sys.stdout);
+		st = datetime.datetime.fromtimestamp(time.time()).strftime('%H:%M:%S');
+		print "---------------------------------------------------------------"
+		print "[" + st + "] -- User has stopped editing file...quitting";
 
-print "[" + st + "] -- COMPLETE!";
+	print "[" + st + "] -- COMPLETE!";
 
 
+
+
+if __name__ == '__main__':
+	main();
