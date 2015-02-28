@@ -1,6 +1,6 @@
 /*@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@
   @
-  @  MAINREF.cpp
+  @  refTest.cpp
   @  
   @  @AUTHOR:Kevin Zeng
   @  Copyright 2012 – 2013 
@@ -11,7 +11,6 @@
 
 #ifndef MAIN_GUARD
 #define MAIN_GUARD
-
 
 //System Includes
 #include <stdlib.h>
@@ -35,6 +34,8 @@ using namespace rapidxml;
 
 
 int main( int argc, char *argv[] ){
+
+	Database* db = NULL;
 	enum Error{
 		eARGS,
 		eBIRTHMARK,
@@ -42,32 +43,29 @@ int main( int argc, char *argv[] ){
 		eFILE
 	};
 
-	Database* db = NULL;
 	try{
+		//Check arguments : Verilog File, XML Database File
 		if(argc != 3) throw eARGS;
-
-
-
-		//**************************************************************************
-		//* MKR- CONECTING WITH FRONT END
-		//**************************************************************************
 		std::string xmlDB= argv[2];
 		std::string vREF= argv[1];
+
+
+		//Read Database
+		printf("[REF] -- Reading Database\n");
 		db = new Database(xmlDB);
 
-	
-		//Read in contents in the XML File
-		printf("Processing verilog file\n");
-		std::string cmd = "python processRef.py " + vREF; 
+
+		//Extract the birthmark from the verilog
+		printf("[REF] -- Reading Reference Design\n");
+		std::string cmd = "python scripts/processRef.py " + vREF; 
 		system(cmd.c_str());
-	
+
 		int lastSlashIndex = vREF.find_last_of("/") + 1;
 		if(lastSlashIndex == -1) lastSlashIndex = 0;
 
 		int lastDotIndex= vREF.find_last_of(".");
-		std::string xmlREF = "." +  vREF.substr(lastSlashIndex, lastDotIndex-lastSlashIndex) + ".xml";
+		std::string xmlREF = "data/" +  vREF.substr(lastSlashIndex, lastDotIndex-lastSlashIndex) + ".xml";
 
-		printf("Opening xml file\n");
 		std::string xmldata= "";
 		std::string xmlline;
 		std::ifstream refStream;
@@ -81,12 +79,12 @@ int main( int argc, char *argv[] ){
 		strcpy(cstr, xmldata.c_str());
 
 		//Parse the XML Data
+		printf("[REF] -- Generating Reference Birthmark\n");
 		xmldoc.parse<0>(cstr);
 		xml_node<>* cktNode= xmldoc.first_node();
 		Birthmark* refBirthmark = new Birthmark();
 		if(!refBirthmark->importXML(cktNode)) throw eBIRTHMARK;
 
-		//refBirthmark->print(); 
 		std::vector<double> fsim;
 		db->searchDatabase(refBirthmark, fsim);
 		for(unsigned int i = 0; i < fsim.size(); i++)
@@ -94,23 +92,24 @@ int main( int argc, char *argv[] ){
 
 
 		delete refBirthmark;
-		
 	}
-	catch(int e){
+	catch(Error e){
 		switch(e){
-			case eCLIENT_READY: 	
-				printf("Error\n[ERROR] -- Client did not send RDY Signal\n");
 			case eARGS:  
-				printf("[ERROR] -- Invalid Arguments\n\t./server <port number> <XML Database File>\n\n");
+				printf("[ERROR] -- Invalid Arguments\n\t./refTest <verilog file> <XML Database File>\n\n");
+				break;
 			case eFILE:  
 				printf("[ERROR] -- Cannot open file for importing\n\n");
+				break;
 			case eBIRTHMARK:  
 				printf("[ERROR] -- Invalid Arguments\n\t./server <port number> <XML Database File>\n\n\n");
+				break;
 			default:
 				printf("[ERROR] -- Exception occured\n"); 
+				break;
 		}
 	}
-	
+
 	if(db != NULL) delete db;
 
 

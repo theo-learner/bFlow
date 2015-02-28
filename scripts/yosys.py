@@ -51,12 +51,12 @@ def create_yosys_script(fileName, scriptName):
 
 def execute(scriptFile):
 	print "[YOSYS] -- Running yosys tools..."
-	cmd = "yosys -Qq -s " + scriptFile + " -l .pyosys.dmp";
+	cmd = "yosys -Qq -s " + scriptFile + " -l data/.pyosys.log";
 	rc = call(cmd, shell=True);
 
 	msg = ""
 	hasError = False;
-	with open(".pyosys.dmp") as f:
+	with open("data/.pyosys.log") as f:
 		for line in f:
 			if("ERROR:" in line or hasError):
 				hasError = True;

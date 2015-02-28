@@ -54,4 +54,4 @@ mainserver:  $(OBJSERVER) mainserver.o
 
 
 clean: 
-	rm -v *.o hbflow serverMain  .yosys.dmp .yscript.seq *.pyc opt* *.csv .const* .seq .component .stat *.dmp
+	rm -v *.o hbflow serverMain matlab refTest  scripts/*.pyc  data/*.csv data/*.dat data/*.log db/*.xml

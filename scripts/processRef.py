@@ -93,7 +93,7 @@ def main():
 	rVal = yosys.execute(scriptName);
 	soup = generateXML(dotfile, fileName[1])
 	
-	fileStream = open("." + fileName[1] + ".xml", 'w');
+	fileStream = open("data/" + fileName[1] + ".xml", 'w');
 	fileStream.write(repr(soup));
 	fileStream.close();
 

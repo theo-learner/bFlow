@@ -21,11 +21,11 @@ void readFile(std::string file, std::set<int>& set);
 void readFile(std::string file, std::vector<int>& set);
 void readSeqFile(std::string file, std::list<std::string>&, std::list<std::string>&);
 void readScoreMatrix(std::string file, std::map<char, std::map<char, double> >& scoreMatrix);
-const std::string g_YosysScript= "ys";
+const std::string g_YosysScript= "data/yoscript";
 void extractDataflow(std::string, std::string, std::string, std::list<std::string>&, std::list<std::string>&);
 void optimizeWeights(std::vector<std::vector<double> >& sim1,
-                     std::vector<std::vector<double> >& sim2,
-										 std::vector<std::vector<double> >& sim3);
+		std::vector<std::vector<double> >& sim2,
+		std::vector<std::vector<double> >& sim3);
 void optimizeFSIMweights(std::map<std::string, std::vector<std::map<unsigned, unsigned> > >& fdata);
 
 double calculateSimilarity(std::map<unsigned, unsigned>&, std::map<unsigned, unsigned>& );
@@ -34,11 +34,11 @@ void matlabTable(std::vector<std::string>& cktname,
 		std::map<std::string, std::vector<std::map<unsigned, unsigned> > >& fpDatabase,
 		std::map<std::string, std::set<int> >& constantDatabase,
 		int labelCount
-);
+		);
 
 
 bool dle(double a, double b, double eps = 0.001){
-		return b-a > eps;
+	return b-a > eps;
 }
 
 
@@ -94,19 +94,19 @@ void align(std::list<std::string>& ref, std::list<std::string>& db, double& sim,
 		for(iSeq = db.begin(); iSeq != db.end(); iSeq++){
 			//RUN PYTHON SCRIPT TO EXTRACT DATAFLOW FROM DOT FILE THAT IS GENERATED
 			printf(" * COMPARING REF: %s \tDB: %s\n", iRef->c_str(), iSeq->c_str());
-			std::string cmd = "python ssw.py " + *iRef + " " + *iSeq;// > .pscript.dmp";
+			std::string cmd = "python scripts/ssw.py " + *iRef + " " + *iSeq;// > .pscript.dmp";
 			//printf("[CMD] -- Running command: %s\n", cmd.c_str());
 			system(cmd.c_str());
 
 			std::ifstream ifs;
-			ifs.open(".align");
+			ifs.open("data/align.dat");
 			if (!ifs.is_open()) throw 5;
 
 			std::string questr, refstr, dummy;
 			getline(ifs, questr);
 			//getline(ifs, result);
 			getline(ifs, refstr);
-			
+
 			int qlen, rlen, score, matches;
 			double psim;
 			ifs>>dummy>>qlen;
@@ -133,9 +133,9 @@ void align(std::list<std::string>& ref, std::list<std::string>& db, double& sim,
 						penalty += 0.01	;
 				}
 				else if(refstr[i] != questr[i]){
-		
+
 					std::map<char, std::map<char, double> > scoreMatrix;
-					readScoreMatrix("scoreMatrix", scoreMatrix);
+					readScoreMatrix("data/scoreMatrix", scoreMatrix);
 
 					double scoreRef = scoreMatrix[refstr[i]][questr[i]];
 					if(scoreRef < -1.00)
@@ -174,29 +174,29 @@ void align(std::list<std::string>& ref, std::list<std::string>& db, double& sim,
 			//Make sure the first item in align is the longest. Otherwise seg fault may occur. 
 			int refMatchLen = 0;
 			if(iRef->length() > iSeq->length()){ printf(" * COMPARING REF: %s \tDB: %s\n", iRef->c_str(), iSeq->c_str());
-				aligner.Align(iRef->c_str(), iSeq->c_str(), iSeq->length(), filter, &alignment);
-				refMatchLen = alignment.query_end - alignment.query_begin + 1;
+			aligner.Align(iRef->c_str(), iSeq->c_str(), iSeq->length(), filter, &alignment);
+			refMatchLen = alignment.query_end - alignment.query_begin + 1;
 			}
 			else{
-				printf(" * COMPARING DB: %s \tREF: %s\n", iSeq->c_str(), iRef->c_str());
-				aligner.Align(iSeq->c_str(), iRef->c_str(), iRef->length(), filter, &alignment);
+			printf(" * COMPARING DB: %s \tREF: %s\n", iSeq->c_str(), iRef->c_str());
+			aligner.Align(iSeq->c_str(), iRef->c_str(), iRef->length(), filter, &alignment);
 
-				refMatchLen = alignment.ref_end- alignment.ref_begin + 1;
+			refMatchLen = alignment.ref_end- alignment.ref_begin + 1;
 
-				//sim= (double)alignment.matches/ iSeq->length();
-				///printf(" -- MATCHED WITH SMALLER score: %f\n", score);
+			//sim= (double)alignment.matches/ iSeq->length();
+			///printf(" -- MATCHED WITH SMALLER score: %f\n", score);
 			}
 
 			double mismatches = 0.0;
 			if(alignment.query.length() != alignment.result.length()) throw 6;
 
 			for(unsigned int i = 0; i < alignment.result.length(); i++){
-				if(alignment.result[i] == '*'){
-					if(alignment.ref[i] == '-' || alignment.query[i] == '-')
-						mismatches += 0.01;
-					else
-						mismatches += 0.20;
-				}
+			if(alignment.result[i] == '*'){
+			if(alignment.ref[i] == '-' || alignment.query[i] == '-')
+			mismatches += 0.01;
+			else
+			mismatches += 0.20;
+			}
 			}
 
 
@@ -213,10 +213,10 @@ void align(std::list<std::string>& ref, std::list<std::string>& db, double& sim,
 			printf("\t\tTOTAL: %d\t", (int)(alignment.length-refMatchLen+iRef->size()));
 			printf("\t\tMATCH: %d\t", alignment.matches);
 			printf("\t\tMISMATCH: %f\n", mismatches);
-      printf("Cigar: %s\n", alignment.cigar_string.c_str());
+			printf("Cigar: %s\n", alignment.cigar_string.c_str());
 
 			printf(" -- Best Smith-Waterman score:\t%d\t\tSIM: %f\n", alignment.sw_score, cursim);
-		*/
+			 */
 
 		}
 
@@ -277,7 +277,7 @@ int main(int argc, char** argv){
 
 		printf("Outputing labels to labels.csv\n");
 		std::ofstream ofs2;
-		ofs2.open("labels.csv");
+		ofs2.open("data/labels.csv");
 
 		std::string dummy;
 		int labelItem;
@@ -304,8 +304,8 @@ int main(int argc, char** argv){
 		//#########################################################################
 		// Extract features from the verilog files and store them in memory
 		//#########################################################################
-			std::ofstream ofsstat;
-			ofsstat.open("stat.csv");
+		std::ofstream ofsstat;
+		ofsstat.open("data/stat.csv");
 
 		std::string file;
 		std::vector<std::string> cktname;
@@ -327,18 +327,18 @@ int main(int argc, char** argv){
 			seqMinDatabase[topName] = seqMin;
 
 			std::set<int> cnst;
-			readFile(".const", cnst);
+			readFile("data/const.dat", cnst);
 			cprint(cnst);
 			//cnst.erase(0);
 			//cnst.erase(1);
 			constantDatabase[topName] = cnst;
-		
+
 			//std::string constStr;
 			//constStr = readFile(".const2");
 			//ofsconst<<constStr<<"\n";
-			
+
 			std::ifstream ifs;
-			ifs.open(".stat");
+			ifs.open("data/stat.dat");
 			std::vector<double> s;
 			double val;
 			ifs>>val;
@@ -351,40 +351,42 @@ int main(int argc, char** argv){
 			//printf("COR COE: %f\n", val);
 			s.push_back(val);
 			stat.push_back(s);
-			
-		
+
+
 			if(fpDatabase.find(topName) != fpDatabase.end()){
 				printf("TOPNAME: %s\n", topName.c_str());
 				throw 7;
 			}
 
 			std::vector<std::map<unsigned, unsigned> > fingerprint;
-			readFile(".component", fingerprint);
+			readFile("data/component.dat", fingerprint);
 			fpDatabase[topName] = fingerprint;
-		
-			std::string statstr = readFile(".stat");
+
+			std::string statstr = readFile("data/stat.dat");
 			ofsstat<<statstr<<"\n";
-			
+
 			cktname.push_back(topName);
 		}
 		ofsstat.close();
 
-		
+
 
 
 
 		//#########################################################################
 		// MatlabTable 
 		//#########################################################################
-		std::ofstream fastaout;
-		fastaout.open("dataflow.fasta");
-		for(iMax = seqMaxDatabase.begin(); iMax != seqMaxDatabase.end(); iMax++){
-			fastaout<<">"<<iMax->first<<"\n"<<*(iMax->second.begin())<<"\n";
-		}
-		fastaout.close();
+		/*
+		   std::ofstream fastaout;
+		   fastaout.open("data/dataflow.fasta");
+		   for(iMax = seqMaxDatabase.begin(); iMax != seqMaxDatabase.end(); iMax++){
+		   fastaout<<">"<<iMax->first<<"\n"<<*(iMax->second.begin())<<"\n";
+		   }
+		   fastaout.close();
+		 */
 
 		matlabTable(cktname, fpDatabase, constantDatabase, numLabels);
-		
+
 		return 0;
 
 
@@ -411,7 +413,7 @@ int main(int argc, char** argv){
 			sim.reserve(seqMinDatabase.size());
 			simTable2.push_back(sim);
 		}
-		
+
 		std::vector<std::vector<double> > simTable3;
 		simTable3.reserve(seqMinDatabase.size());
 		for(unsigned int i = 0; i < seqMinDatabase.size(); i++){
@@ -419,7 +421,7 @@ int main(int argc, char** argv){
 			sim.reserve(seqMinDatabase.size());
 			simTable3.push_back(sim);
 		}
-		
+
 		std::vector<std::vector<double> > simTable4;
 		simTable4.reserve(seqMinDatabase.size());
 		for(unsigned int i = 0; i < seqMinDatabase.size(); i++){
@@ -454,11 +456,11 @@ int main(int argc, char** argv){
 				std::vector<double> simScore;
 				simScore.reserve(3);
 
-		
-		
-		//#########################################################################
-		// SEQUENCE ALIGNMENT OF DATAPATH 
-		//#########################################################################
+
+
+				//#########################################################################
+				// SEQUENCE ALIGNMENT OF DATAPATH 
+				//#########################################################################
 				//Two sequences...one max path, max path or shortestpaths
 				double maxSim= 0.0;
 				double minSim = 0.0;
@@ -476,11 +478,11 @@ int main(int argc, char** argv){
 				simTable[index].push_back(result.score);
 
 				/*
-					 Score result2;
-					 result2.name = iMax->first;
-					 result2.score = asc/2;
-					 resultsAsc.insert(result2);
-					 simTable2[index].push_back(result2.score);
+				   Score result2;
+				   result2.name = iMax->first;
+				   result2.score = asc/2;
+				   resultsAsc.insert(result2);
+				   simTable2[index].push_back(result2.score);
 				 */	
 
 				printf(" -------------------------------------------------\n");
@@ -488,9 +490,9 @@ int main(int argc, char** argv){
 				//printf(" -- MATCHED WITH MINREF score: %f\n", result2.score);
 
 
-		//#########################################################################
-		// COMPARISON OF CONSTANT VALUES 
-		//#########################################################################
+				//#########################################################################
+				// COMPARISON OF CONSTANT VALUES 
+				//#########################################################################
 				std::set<std::string>::iterator iSet;
 				std::map<std::string, std::set<int> >::iterator iCRef;
 				std::map<std::string, std::set<int> >::iterator iCQue;
@@ -508,12 +510,12 @@ int main(int argc, char** argv){
 				printf("\nCSIM: %f\n", csim);
 
 
-		
-		
-		
-		//#########################################################################
-		// COMPARISON OF FINGERPRINT STATISTICS 
-		//#########################################################################
+
+
+
+				//#########################################################################
+				// COMPARISON OF FINGERPRINT STATISTICS 
+				//#########################################################################
 				//Fingerprint  Calculation
 				std::map<std::string, std::vector<std::map<unsigned, unsigned> > >::iterator iFRef;
 				std::map<std::string, std::vector<std::map<unsigned, unsigned> > >::iterator iFQue;
@@ -550,52 +552,52 @@ int main(int argc, char** argv){
 				printf("FP REF: \n");
 				cprint(iFRef->second);
 				printf("FSIM: %f\n\n", fsim);
-				
+
 				iMin2++;
 			}
 
 			iMin++;
 			index++;
 		}
-		
-		
+
+
 		//optimizeWeights(simTable, simTable2, simTable3);
 
 		//optimizeFSIMweights(fpDatabase);
 
-/*
-		printf("Circuits\t");
+		/*
+		   printf("Circuits\t");
 		//for(iMax = seqMaxDatabase.begin(); iMax != seqMaxDatabase.end(); iMax++){
 		for(unsigned int i = 0; i < cktname.size(); i++){
-			std::string name = cktname[i];
-			int lastSlashIndex = name.find_last_of("/") + 1;
-			printf("%s ", name.substr(lastSlashIndex, name.length()-lastSlashIndex-2).c_str());
+		std::string name = cktname[i];
+		int lastSlashIndex = name.find_last_of("/") + 1;
+		printf("%s ", name.substr(lastSlashIndex, name.length()-lastSlashIndex-2).c_str());
 		}
 		printf("\n");
 
 		//index = 0;
 		//for(iMax = seqMaxDatabase.begin(); iMax != seqMaxDatabase.end(); iMax++){
 		for(unsigned int i = 0; i < cktname.size(); i++){
-			std::string name = cktname[i];
-			int lastSlashIndex = name.find_last_of("/") + 1;
-			printf("%s ", name.substr(lastSlashIndex, name.length()-lastSlashIndex-2).c_str());
+		std::string name = cktname[i];
+		int lastSlashIndex = name.find_last_of("/") + 1;
+		printf("%s ", name.substr(lastSlashIndex, name.length()-lastSlashIndex-2).c_str());
 
 
-			for(unsigned int k = 0; k < simTable.size(); k++){
-				double simVal = simTable[i][k]*100.0*0.70 + 
-				                simTable2[i][k]*100.0*0.10 + 
-				                simTable3[i][k]*100.0*0.20 ;
-				printf("%.3f ", simVal);
+		for(unsigned int k = 0; k < simTable.size(); k++){
+		double simVal = simTable[i][k]*100.0*0.70 + 
+		simTable2[i][k]*100.0*0.10 + 
+		simTable3[i][k]*100.0*0.20 ;
+		printf("%.3f ", simVal);
 
-			}
-			printf("\n");
-			//index++;
 		}
 		printf("\n");
-		*/
+		//index++;
+		}
+		printf("\n");
+		 */
 
 
-		
+
 		printf("Circuits\t");
 		//for(iMax = seqMaxDatabase.begin(); iMax != seqMaxDatabase.end(); iMax++){
 		for(unsigned int i = 0; i < cktname.size(); i++){
@@ -615,8 +617,8 @@ int main(int argc, char** argv){
 
 			for(unsigned int k = 0; k < simTable.size(); k++){
 				double simVal = simTable[i][k]*100.0*0.67 + 
-				                simTable2[i][k]*100.0*0.12 + 
-				                simTable3[i][k]*100.0*0.21 ;
+					simTable2[i][k]*100.0*0.12 + 
+					simTable3[i][k]*100.0*0.21 ;
 				printf("%.3f ", simVal);
 			}
 
@@ -657,12 +659,12 @@ int main(int argc, char** argv){
 
 
 
-/*#############################################################################
- *
- * create_yosys_script 
- *   Creates the yosys script file for a given verilog file
- *
- *#############################################################################*/
+		/*#############################################################################
+		 *
+		 * create_yosys_script 
+		 *   Creates the yosys script file for a given verilog file
+		 *
+		 *#############################################################################*/
 		std::string create_yosys_script(std::string infile, std::string top, std::string extension){
 			//Create Yosys Script	
 			std::string yosysScript = "";
@@ -692,7 +694,7 @@ int main(int argc, char** argv){
 					yosysScript += "read_verilog ";
 					yosysScript += files[i]+ "\n";
 				}
-					
+
 				yosysScript += "\n";
 			}
 
@@ -717,12 +719,12 @@ int main(int argc, char** argv){
 
 
 
-/*#############################################################################
- *
- * readDumpFile
- *  Reads the DMP file produced by yosys/python for error handling 
- *
- *#############################################################################*/
+		/*#############################################################################
+		 *
+		 * readDumpFile
+		 *  Reads the DMP file produced by yosys/python for error handling 
+		 *
+		 *#############################################################################*/
 		bool readDumpFile(std::string file, std::string errorString)	{
 			std::stringstream ss;
 			std::ifstream ifs;
@@ -749,12 +751,12 @@ int main(int argc, char** argv){
 
 		}
 
-/*#############################################################################
- *
- * readFile
- *  Reads file and stores content in a list 
- *
- *#############################################################################*/
+		/*#############################################################################
+		 *
+		 * readFile
+		 *  Reads file and stores content in a list 
+		 *
+		 *#############################################################################*/
 		void readFile(std::string file, std::list<std::string>& list){
 			std::ifstream ifs;
 			ifs.open(file.c_str());
@@ -770,12 +772,12 @@ int main(int argc, char** argv){
 
 
 
-/*#############################################################################
- *
- * readFile
- *  Reads file and stores content in a set 
- *
- *#############################################################################*/
+		/*#############################################################################
+		 *
+		 * readFile
+		 *  Reads file and stores content in a set 
+		 *
+		 *#############################################################################*/
 		void readFile(std::string file, std::set<std::string>& set){
 			std::ifstream ifs;
 			ifs.open(file.c_str());
@@ -788,12 +790,12 @@ int main(int argc, char** argv){
 			ifs.close();
 		}
 
-/*#############################################################################
- *
- * readFile
- *  Reads file and stores content in a set 
- *
- *#############################################################################*/
+		/*#############################################################################
+		 *
+		 * readFile
+		 *  Reads file and stores content in a set 
+		 *
+		 *#############################################################################*/
 		void readFile(std::string file, std::set<int>& set){
 			std::ifstream ifs;
 			ifs.open(file.c_str());
@@ -812,21 +814,21 @@ int main(int argc, char** argv){
 			}
 			ifs.close();
 		}
-		
 
 
 
-/*#############################################################################
- *
- * readFile
- *  Reads file and stores content in a fingerprint 
- *
- *#############################################################################*/
+
+		/*#############################################################################
+		 *
+		 * readFile
+		 *  Reads file and stores content in a fingerprint 
+		 *
+		 *#############################################################################*/
 		void readFile(std::string file, std::vector<std::map<unsigned, unsigned> >& fingerprint){
 			std::ifstream ifs;
 			ifs.open(file.c_str());
 			if (!ifs.is_open()) throw 5;
-			
+
 			int numItems;
 			int size, count;
 			int numLines;
@@ -850,12 +852,12 @@ int main(int argc, char** argv){
 		}
 
 
-/*#############################################################################
- *
- * readSeqFile 
- *  Reads the sequence file that contains a max path and a min path
- *
- *#############################################################################*/
+		/*#############################################################################
+		 *
+		 * readSeqFile 
+		 *  Reads the sequence file that contains a max path and a min path
+		 *
+		 *#############################################################################*/
 		void readSeqFile(std::string file, std::list<std::string>& max, std::list<std::string>& min){
 			std::ifstream ifs;
 			ifs.open(file.c_str());
@@ -879,15 +881,15 @@ int main(int argc, char** argv){
 
 			ifs.close();
 		}
-		
 
 
-/*#############################################################################
- *
- * readScoreMatrix
- *  Reads the score matrix used for SWalign. For Penalty and matching scoring 
- *
- *#############################################################################*/
+
+		/*#############################################################################
+		 *
+		 * readScoreMatrix
+		 *  Reads the score matrix used for SWalign. For Penalty and matching scoring 
+		 *
+		 *#############################################################################*/
 		void readScoreMatrix(std::string file, std::map<char, std::map<char, double> >& scoreMatrix){
 			std::ifstream ifs;
 			ifs.open(file.c_str());
@@ -920,12 +922,12 @@ int main(int argc, char** argv){
 
 
 
-/*#############################################################################
- *
- * extractDataFlow 
- *   Extract the data flow from the verilog file 
- *
- *#############################################################################*/
+		/*#############################################################################
+		 *
+		 * extractDataFlow 
+		 *   Extract the data flow from the verilog file 
+		 *
+		 *#############################################################################*/
 		void extractDataflow(std::string file, std::string top,  std::string extension, std::list<std::string>& max, std::list<std::string>& min){
 			printf("\n########################################################################\n");
 			if(extension == "v")
@@ -942,38 +944,36 @@ int main(int argc, char** argv){
 			if(scriptFile == "") return;
 
 			std::string cmd = "yosys -Qq -s ";
-			cmd += scriptFile + " -l .yosys.dmp";
+			cmd += scriptFile + " -l data/.yosys.log";
 			printf("[CMD] -- Running command: %s\n", cmd.c_str());
 			system(cmd.c_str());
 
 			//Check to see if yosys encountered an error
-			readDumpFile(".yosys.dmp", "ERROR:");
+			readDumpFile("data/.yosys.log", "ERROR:");
 
 			//RUN PYTHON SCRIPT TO EXTRACT DATAFLOW FROM DOT FILE THAT IS GENERATED
-			cmd = "python pscript.py dot/" + top + "_df.dot";// > .pscript.dmp";
+			cmd = "python scripts/pscript.py dot/" + top + "_df.dot";// > .pscript.dmp";
 			printf("[CMD] -- Running command: %s\n", cmd.c_str());
 			system(cmd.c_str());
 
 			//Check to see if yosys encountered an error
 			//readDumpFile(".pscript.dmp", "Traceback");
 
-			readSeqFile(".seq", max, min);
+			readSeqFile("seq.dat", max, min);
 		}
 
 
-double calculateSimilarity(std::map<unsigned, unsigned>& fingerprint1,
-		std::map<unsigned, unsigned>& fingerprint2){
+		double calculateSimilarity(std::map<unsigned, unsigned>& fingerprint1,
+				std::map<unsigned, unsigned>& fingerprint2){
 
-	double sim;
-	if(fingerprint1.size() == 0 and fingerprint2.size() == 0)
-		sim = -1.00;
-	else
-		sim = SIMILARITY::tanimotoWindow_size(fingerprint1, fingerprint2);
+			double sim;
+			if(fingerprint1.size() == 0 and fingerprint2.size() == 0)
+				sim = -1.00;
+			else
+				sim = SIMILARITY::tanimotoWindow_size(fingerprint1, fingerprint2);
 
-	return sim;
-}
-
-
+			return sim;
+		}
 
 
 
@@ -981,222 +981,224 @@ double calculateSimilarity(std::map<unsigned, unsigned>& fingerprint1,
 
 
 
-void matlabTable(
-		std::vector<std::string>& cktname,
-		std::map<std::string, std::vector<std::map<unsigned, unsigned> > >& fpDatabase,
-		std::map<std::string, std::set<int> >& constantDatabase,
-		int labelCount
-){
-		printf("Preparing Matlab Tables\n");
-		std::map<std::string, std::vector<std::map<unsigned, unsigned> > >::iterator iFP;
-		std::map<unsigned, unsigned>::iterator iVal;
-		iFP = fpDatabase.begin(); 
-		int numVec = iFP->second.size();
 
-		//SET UP THE VECTOR TABLE for fingerprint
-		//Vec of each circuit, vec of each fingerprint, vec of the count
-		//number of circuits,      13 types:add..       index = size, val = count 
-		std::vector<std::vector<std::vector<int> > > ftable;
-		ftable.reserve(fpDatabase.size());
-		for(unsigned int i = 0; i < fpDatabase.size(); i++){
-			std::vector<std::vector<int> >  v;
-			v.reserve(numVec);
-			for(int k = 0; k < numVec; k++){
+
+		void matlabTable(
+				std::vector<std::string>& cktname,
+				std::map<std::string, std::vector<std::map<unsigned, unsigned> > >& fpDatabase,
+				std::map<std::string, std::set<int> >& constantDatabase,
+				int labelCount
+				){
+			printf("Preparing Matlab Tables\n");
+			std::map<std::string, std::vector<std::map<unsigned, unsigned> > >::iterator iFP;
+			std::map<unsigned, unsigned>::iterator iVal;
+			iFP = fpDatabase.begin(); 
+			int numVec = iFP->second.size();
+
+			//SET UP THE VECTOR TABLE for fingerprint
+			//Vec of each circuit, vec of each fingerprint, vec of the count
+			//number of circuits,      13 types:add..       index = size, val = count 
+			std::vector<std::vector<std::vector<int> > > ftable;
+			ftable.reserve(fpDatabase.size());
+			for(unsigned int i = 0; i < fpDatabase.size(); i++){
+				std::vector<std::vector<int> >  v;
+				v.reserve(numVec);
+				for(int k = 0; k < numVec; k++){
+					std::vector<int> vv;
+					v.push_back(vv);
+				}
+				ftable.push_back(v);
+			}
+
+
+			//POPULATE THE VECTOR TABLE with fingerprint data
+			unsigned int cIndex = 0;
+			//printf("Number of circuits: %d\n", (int)fpDatabase.size());
+			//printf("Number of circuits: %d\n", (int)cktname.size());
+			for(cIndex = 0; cIndex < cktname.size(); cIndex++){
+				iFP = fpDatabase.find(cktname[cIndex]);
+				//printf(" CKT: %d* Number of features: %d\n",cIndex+1, (int)iFP->second.size());
+				for(unsigned int q = 0; q < iFP->second.size(); q++){
+					//printf(" * *  INDEXES: %d %d\n", cIndex, q);
+					for(iVal = iFP->second[q].begin(); iVal != iFP->second[q].end(); iVal++){
+						//If the size of the fingerprint is smaller than the table, resize table
+						if(iVal->first > ftable[cIndex][q].size()){
+							for(unsigned int w = 0; w < ftable.size(); w++)
+								ftable[w][q].resize(iVal->first);
+						}
+
+						ftable[cIndex][q][iVal->first-1] = iVal->second;	
+					}
+				}
+			}
+
+
+
+
+			//POPULATE THE VECTOR TABLE with constant data
+			std::vector<std::vector<int> > ctable;
+			ctable.reserve(fpDatabase.size());
+			unsigned int numbin = 94;
+			for(unsigned int i = 0; i < fpDatabase.size(); i++){
 				std::vector<int> vv;
-				v.push_back(vv);
+				vv.resize(numbin);
+				ctable.push_back(vv);
 			}
-			ftable.push_back(v);
-		}
 
-
-		//POPULATE THE VECTOR TABLE with fingerprint data
-		unsigned int cIndex = 0;
-		//printf("Number of circuits: %d\n", (int)fpDatabase.size());
-		//printf("Number of circuits: %d\n", (int)cktname.size());
-		for(cIndex = 0; cIndex < cktname.size(); cIndex++){
-			iFP = fpDatabase.find(cktname[cIndex]);
-			//printf(" CKT: %d* Number of features: %d\n",cIndex+1, (int)iFP->second.size());
-			for(unsigned int q = 0; q < iFP->second.size(); q++){
-				//printf(" * *  INDEXES: %d %d\n", cIndex, q);
-				for(iVal = iFP->second[q].begin(); iVal != iFP->second[q].end(); iVal++){
+			std::map<std::string, std::set<int> >::iterator iC;
+			std::stringstream cstream;
+			std::string nameTable = "";
+			for(cIndex = 0; cIndex < cktname.size(); cIndex++){
+				iC = constantDatabase.find(cktname[cIndex]);
+				std::set<int>::iterator iSet;
+				for(iSet = iC->second.begin(); iSet != iC->second.end(); iSet++){
+					cstream<<*iSet<<",";
 					//If the size of the fingerprint is smaller than the table, resize table
-					if(iVal->first > ftable[cIndex][q].size()){
-						for(unsigned int w = 0; w < ftable.size(); w++)
-							ftable[w][q].resize(iVal->first);
-					}
 
-				  ftable[cIndex][q][iVal->first-1] = iVal->second;	
-				}
-			}
-		}
-		
-		
-		
-		
-		//POPULATE THE VECTOR TABLE with constant data
-		std::vector<std::vector<int> > ctable;
-		ctable.reserve(fpDatabase.size());
-		unsigned int numbin = 94;
-		for(unsigned int i = 0; i < fpDatabase.size(); i++){
-			std::vector<int> vv;
-			vv.resize(numbin);
-			ctable.push_back(vv);
-		}
-
-		std::map<std::string, std::set<int> >::iterator iC;
-		std::stringstream cstream;
-		std::string nameTable = "";
-		for(cIndex = 0; cIndex < cktname.size(); cIndex++){
-			iC = constantDatabase.find(cktname[cIndex]);
-			std::set<int>::iterator iSet;
-			for(iSet = iC->second.begin(); iSet != iC->second.end(); iSet++){
-				cstream<<*iSet<<",";
-				//If the size of the fingerprint is smaller than the table, resize table
-
-				if((*iSet) < 0)
-					ctable[cIndex][numbin-1]	= 1;
-				else if((*iSet) <= 64)
-					ctable[cIndex][*iSet] = 1;
-				else{
-					unsigned startIndex = 65;
-					unsigned base = 128;
-					bool binned = false;
-
-					for(;startIndex < (numbin-1); startIndex++){
-						if(startIndex % 2 == 1){
-							if(*iSet  < (int)base ){
-								ctable[cIndex][startIndex] = 1;
-								binned = true;
-								break;
-							}
-						}
-						else{
-							if(*iSet == (int)base ){
-								binned = true;
-								ctable[cIndex][startIndex] = 1;
-								break;
-							}
-
-							base = base<<1;
-						}
-					}
-					if(!binned){
+					if((*iSet) < 0)
 						ctable[cIndex][numbin-1]	= 1;
+					else if((*iSet) <= 64)
+						ctable[cIndex][*iSet] = 1;
+					else{
+						unsigned startIndex = 65;
+						unsigned base = 128;
+						bool binned = false;
+
+						for(;startIndex < (numbin-1); startIndex++){
+							if(startIndex % 2 == 1){
+								if(*iSet  < (int)base ){
+									ctable[cIndex][startIndex] = 1;
+									binned = true;
+									break;
+								}
+							}
+							else{
+								if(*iSet == (int)base ){
+									binned = true;
+									ctable[cIndex][startIndex] = 1;
+									break;
+								}
+
+								base = base<<1;
+							}
+						}
+						if(!binned){
+							ctable[cIndex][numbin-1]	= 1;
+						}
+
+					}
+				}
+				cstream<<"\n";
+				nameTable += cktname[cIndex] + ",";
+			}
+
+			std::stringstream tablestr;
+			std::stringstream cstr;
+			std::stringstream bstr;
+			std::vector<std::string> fpstr;
+			for(unsigned int w = 0; w < ftable[0].size(); w++){
+				std::string ss = "";
+				fpstr.push_back(ss);
+			}
+
+
+
+
+
+			//Form the output string
+			printf("LabelCount: %d\tFTABLE: %d\n", labelCount, (int)ftable.size());
+			assert((unsigned)labelCount == ftable.size());
+			for(unsigned int q = 0; q < ftable.size(); q++){
+				//bstr<<labels[q]<<",";
+				for(unsigned int w = 0; w < ftable[q].size(); w++){
+					std::stringstream ss;
+					for(unsigned int e = 0; e < ftable[q][w].size(); e++){
+						if(w != 0 || e != 0){
+							tablestr<<",";
+							ss<<",";
+							bstr<<",";
+						}
+
+						tablestr<<ftable[q][w][e];
+						ss<<ftable[q][w][e];
+						bstr<<ftable[q][w][e];
 					}
 
+					ss<<"\n";
+					fpstr[w] = fpstr[w] + ss.str();
 				}
-			}
-			cstream<<"\n";
-			nameTable += cktname[cIndex] + ",";
-		}
-	
-		std::stringstream tablestr;
-		std::stringstream cstr;
-		std::stringstream bstr;
-		std::vector<std::string> fpstr;
-		for(unsigned int w = 0; w < ftable[0].size(); w++){
-			std::string ss = "";
-			fpstr.push_back(ss);
-		}
-			
 
-		
-
-
-		//Form the output string
-		printf("LabelCount: %d\tFTABLE: %d\n", labelCount, (int)ftable.size());
-		assert((unsigned)labelCount == ftable.size());
-		for(unsigned int q = 0; q < ftable.size(); q++){
-			//bstr<<labels[q]<<",";
-			for(unsigned int w = 0; w < ftable[q].size(); w++){
 				std::stringstream ss;
-				for(unsigned int e = 0; e < ftable[q][w].size(); e++){
-					if(w != 0 || e != 0){
-						tablestr<<",";
-						ss<<",";
-						bstr<<",";
-					}
-
-					tablestr<<ftable[q][w][e];
-					ss<<ftable[q][w][e];
-					bstr<<ftable[q][w][e];
+				for(unsigned int w = 0; w < ctable[q].size(); w++){
+					//tablestr<<","<<ctable[q][w];
+					ss<<ctable[q][w]<<",";
 				}
-				
-				ss<<"\n";
-				fpstr[w] = fpstr[w] + ss.str();
+				//for(unsigned int w = 0; w < stat[q].size(); w++)
+				//tablestr<<","<<stat[q][w];
+
+				tablestr<<"\n";
+				std::string tmp = ss.str();
+				tmp = tmp.substr(0, tmp.size()-1);
+				bstr<<","<<tmp<<"\n";
+
+				cstr<<tmp;
+				cstr<<"\n";
+
 			}
 
-			std::stringstream ss;
-			for(unsigned int w = 0; w < ctable[q].size(); w++){
-				//tablestr<<","<<ctable[q][w];
-				ss<<ctable[q][w]<<",";
-			}
-			//for(unsigned int w = 0; w < stat[q].size(); w++)
-			//tablestr<<","<<stat[q][w];
-			
-			tablestr<<"\n";
-			std::string tmp = ss.str();
-			tmp = tmp.substr(0, tmp.size()-1);
-			bstr<<","<<tmp<<"\n";
-
-			cstr<<tmp;
-			cstr<<"\n";
-
-		}
-		
-		std::ofstream ofs;
-		printf("Outputing fingerprint table to matlab.csv\n");
-		ofs.open("fingerprint.csv");
-		ofs<< tablestr.str();
-		ofs.close();
-
-		printf("Outputing constant table to constant_bin.csv\n");
-		ofs.open("constant_bin.csv");
-		ofs<< cstr.str();
-		ofs.close();
-		
-		printf("Outputing birthmark to birthmark.csv\n");
-		ofs.open("birthmark.csv");
-		ofs<< bstr.str();
-		ofs.close();
-	
-	/*
-		printf("Outputing typename table to typename.csv\n");
-		ofs.open("typename.csv");
-		ofs<< labeltable;
-		ofs.close();
-		
-		printf("Outputing name table to name.csv\n");
-		ofs.open("name.csv");
-		ofs<< nameTable;
-		ofs.close();
-		*/
-
-
-		std::vector<std::string> fpname;
-		fpname.push_back("add.csv");
-		fpname.push_back("sub.csv");
-		fpname.push_back("mul.csv");
-		fpname.push_back("div.csv");
-		fpname.push_back("sh.csv");
-		fpname.push_back("mux.csv");
-		fpname.push_back("eq.csv");
-		fpname.push_back("cmp.csv");
-		fpname.push_back("ff.csv");
-		fpname.push_back("mem.csv");
-		fpname.push_back("log.csv");
-		fpname.push_back("blk.csv");
-		fpname.push_back("ffC.csv");
-		fpname.push_back("outC.csv");
-
-		assert(fpname.size() == fpstr.size());
-		printf("Outputing Individual fingerprint statistics\n");
-		for(unsigned int i = 0; i < fpname.size(); i++){
-			ofs.open(fpname[i].c_str());	
-			ofs<<fpstr[i];
+			std::ofstream ofs;
+			printf("Outputing fingerprint table to matlab.csv\n");
+			ofs.open("data/fingerprint.csv");
+			ofs<< tablestr.str();
 			ofs.close();
+
+			printf("Outputing constant table to constant_bin.csv\n");
+			ofs.open("data/constant_bin.csv");
+			ofs<< cstr.str();
+			ofs.close();
+
+			printf("Outputing birthmark to birthmark.csv\n");
+			ofs.open("data/birthmark.csv");
+			ofs<< bstr.str();
+			ofs.close();
+
+			/*
+			   printf("Outputing typename table to typename.csv\n");
+			   ofs.open("typename.csv");
+			   ofs<< labeltable;
+			   ofs.close();
+
+			   printf("Outputing name table to name.csv\n");
+			   ofs.open("name.csv");
+			   ofs<< nameTable;
+			   ofs.close();
+			 */
+
+
+			std::vector<std::string> fpname;
+			fpname.push_back("data/add.csv");
+			fpname.push_back("data/sub.csv");
+			fpname.push_back("data/mul.csv");
+			fpname.push_back("data/div.csv");
+			fpname.push_back("data/sh.csv");
+			fpname.push_back("data/mux.csv");
+			fpname.push_back("data/eq.csv");
+			fpname.push_back("data/cmp.csv");
+			fpname.push_back("data/ff.csv");
+			fpname.push_back("data/mem.csv");
+			fpname.push_back("data/log.csv");
+			fpname.push_back("data/blk.csv");
+			fpname.push_back("data/ffC.csv");
+			fpname.push_back("data/outC.csv");
+
+			assert(fpname.size() == fpstr.size());
+			printf("Outputing Individual fingerprint statistics\n");
+			for(unsigned int i = 0; i < fpname.size(); i++){
+				ofs.open(fpname[i].c_str());	
+				ofs<<fpstr[i];
+				ofs.close();
+			}
 		}
-}
 
 
 
@@ -1211,141 +1213,141 @@ void matlabTable(
 
 
 
-/*
-void optimizeFSIMweights(std::map<std::string, std::vector<std::map<unsigned, unsigned> > >& fdata){
-	printf("OPTIMIZING FINGERPRINT WEIGHTS\n");
-		
-		int arrangeSize	= 7;
-		int arrangement[7] = {
-			3, 3, 2, 2, 2, 3, 4
-		};
+		/*
+		   void optimizeFSIMweights(std::map<std::string, std::vector<std::map<unsigned, unsigned> > >& fdata){
+		   printf("OPTIMIZING FINGERPRINT WEIGHTS\n");
 
-				//Fingerprint  Calculation
-				std::map<std::string, std::vector<std::map<unsigned, unsigned> > >::iterator iFRef;
-				std::map<std::string, std::vector<std::map<unsigned, unsigned> > >::iterator iFQue;
-				//The more features both doesn't have, the less effect it has on the overall score
-				//double weights[9] = {
-			//		0.12, 0.12, 0.05, 0.08, 0.08, 0.1, 0.05, 0.20, 0.20
-			//	};
+		   int arrangeSize	= 7;
+		   int arrangement[7] = {
+		   3, 3, 2, 2, 2, 3, 4
+		   };
 
-				std::map<int, std::vector<double> > wOpt;
-				for(int i = 0; i < arrangeSize; i++){
-					std::vector<double> vd(9, 0.0);
-					wOpt[i] = vd;
-				}
-					
+		//Fingerprint  Calculation
+		std::map<std::string, std::vector<std::map<unsigned, unsigned> > >::iterator iFRef;
+		std::map<std::string, std::vector<std::map<unsigned, unsigned> > >::iterator iFQue;
+		//The more features both doesn't have, the less effect it has on the overall score
+		//double weights[9] = {
+		//		0.12, 0.12, 0.05, 0.08, 0.08, 0.1, 0.05, 0.20, 0.20
+		//	};
+
+		std::map<int, std::vector<double> > wOpt;
+		for(int i = 0; i < arrangeSize; i++){
+		std::vector<double> vd(9, 0.0);
+		wOpt[i] = vd;
+		}
+
 
 		std::vector<double> diffmaxv;
 		for(int i = 0; i < arrangeSize; i++) 
-			diffmaxv.push_back(0.0);
+		diffmaxv.push_back(0.0);
 
-				for(double t1 = 0.05; dle(t1, 1.0-0.05*8.0+0.01); t1=t1+0.05){
-					for(double t2 = 0.05; dle(t2, 1.0-t1); t2=t2+0.05){
-						for(double t3 = 0.05; dle(t3, 1.0-t1-t2); t3=t3+0.05){
-							for(double t4 = 0.05; dle(t4, 1.0-t1-t2-t3); t4=t4+0.05){
-								for(double t5 = 0.05; dle(t5, 1.0-t1-t2-t3-t4); t5=t5+0.05){
-									for(double t6 = 0.05;dle(t6, 1.0-t1-t2-t3-t4-t5) ; t6=t6+0.05){
-										for(double t7 = 0.05; dle(t7, 1.0-t1-t2-t3-t4-t5-t6); t7=t7+0.05){
-											for(double t8 = 0.05; dle(t8, 1.0-t1-t2-t3-t4-t5-t6-t7) ; t8=t8+0.05){
-												
-												double t9 = 1.00-t1-t2-t3-t4-t5-t6-t7-t8;
+		for(double t1 = 0.05; dle(t1, 1.0-0.05*8.0+0.01); t1=t1+0.05){
+		for(double t2 = 0.05; dle(t2, 1.0-t1); t2=t2+0.05){
+		for(double t3 = 0.05; dle(t3, 1.0-t1-t2); t3=t3+0.05){
+		for(double t4 = 0.05; dle(t4, 1.0-t1-t2-t3); t4=t4+0.05){
+		for(double t5 = 0.05; dle(t5, 1.0-t1-t2-t3-t4); t5=t5+0.05){
+		for(double t6 = 0.05;dle(t6, 1.0-t1-t2-t3-t4-t5) ; t6=t6+0.05){
+		for(double t7 = 0.05; dle(t7, 1.0-t1-t2-t3-t4-t5-t6); t7=t7+0.05){
+		for(double t8 = 0.05; dle(t8, 1.0-t1-t2-t3-t4-t5-t6-t7) ; t8=t8+0.05){
 
-
-													printf("w1: %4.2f w2: %4.2f w3: %4.2f w4: %4.2f w5: %4.2f w6: %4.2f w7: %4.2f w8: %4.2f w9: %4.2f\n", t1, t2, t3, t4, t5, t6, t7, t8, t9 );
-													pt1 = t6;
-
-												//printf("w1: %4.2f w2: %4.2f w3: %4.2f w4: %4.2f w5: %4.2f w6: %4.2f w7: %4.2f w8: %4.2f w9: %4.2f", t1, t2, t3, t4, t5, t6, t7, t8, t9 );
-												//double sum = (t1+t2+t3+t4+t5+t6+t7+t8+t9);
-												//printf("\tSUM: %f\n", sum);
-
-												std::vector<double> w;
-												w.push_back(t1);
-												w.push_back(t2);
-												w.push_back(t3);
-												w.push_back(t4);
-												w.push_back(t5);
-												w.push_back(t6);
-												w.push_back(t7);
-												w.push_back(t8);
-												w.push_back(t9);
-
-				double posval = 0.0, negval = 0.0;
-				int numpos = 0, numneg = 0;
-
-				int startp = 0;
-				int endp = 0;
-				std::vector<double> diffv;
-				for(int q = 0 ; q < arrangeSize; q++){
-					//printf("ARRANGEMENT: %d\n", q);
-					endp = endp + arrangement[q];	
-
-					unsigned int i = 0;
-					for(iFRef = fdata.begin(); iFRef != fdata.end(); iFRef++){
-						unsigned int k = 0;
-						for(iFQue = fdata.begin(); iFQue != fdata.end(); iFQue++){
-							if((i < endp && i >= startp)){
-								
-							double tsim = 0.0;
-							double fsim = 0.0;
-
-							for(unsigned int a = 0; a < iFRef->second.size(); a++){
-								tsim = calculateSimilarity(iFRef->second[a], iFQue->second[a]);
-								//printf("SIM: %f\n", tsim);
-								if(tsim >= 0)
-									fsim += tsim* w[a];
-								else
-									fsim += (-1.0 * tsim * w[a]);//fempty++;
-							}
+		double t9 = 1.00-t1-t2-t3-t4-t5-t6-t7-t8;
 
 
-								if(i < endp && k < endp &&
-										i >= startp && k >= startp){
-									numpos++;
-									posval+=fsim;
+		printf("w1: %4.2f w2: %4.2f w3: %4.2f w4: %4.2f w5: %4.2f w6: %4.2f w7: %4.2f w8: %4.2f w9: %4.2f\n", t1, t2, t3, t4, t5, t6, t7, t8, t9 );
+		pt1 = t6;
 
-								}
-								else{
-									numneg++;
-									negval+=fsim;
-								}
+		//printf("w1: %4.2f w2: %4.2f w3: %4.2f w4: %4.2f w5: %4.2f w6: %4.2f w7: %4.2f w8: %4.2f w9: %4.2f", t1, t2, t3, t4, t5, t6, t7, t8, t9 );
+		//double sum = (t1+t2+t3+t4+t5+t6+t7+t8+t9);
+		//printf("\tSUM: %f\n", sum);
 
-						}
-						k++;
-					}
-					i++;
+		std::vector<double> w;
+		w.push_back(t1);
+		w.push_back(t2);
+		w.push_back(t3);
+		w.push_back(t4);
+		w.push_back(t5);
+		w.push_back(t6);
+		w.push_back(t7);
+		w.push_back(t8);
+		w.push_back(t9);
 
-				}
-					//printf("NUMPOS: %d\tNUMNEG: %d\n", numpos, numneg);
-					diffv.push_back( posval/(double)numpos - negval/(double)numneg);
-					startp = endp;
-				}
+		double posval = 0.0, negval = 0.0;
+		int numpos = 0, numneg = 0;
 
-				for(unsigned int i = 0; i < diffv.size(); i++){
-					 if(diffv[i] > diffmaxv[i]){
-						 diffmaxv[i] = diffv[i];
-						 wOpt[i].clear();
-						 for(unsigned int p = 0; p < 9; p++)
-							 wOpt[i].push_back(w[p]);
+		int startp = 0;
+		int endp = 0;
+		std::vector<double> diffv;
+		for(int q = 0 ; q < arrangeSize; q++){
+		//printf("ARRANGEMENT: %d\n", q);
+		endp = endp + arrangement[q];	
 
-						 //printf("OPT: %d WEIGHTS: ", i);
-						 //cprint(wOpt[i]);
-					 }
+		unsigned int i = 0;
+		for(iFRef = fdata.begin(); iFRef != fdata.end(); iFRef++){
+		unsigned int k = 0;
+		for(iFQue = fdata.begin(); iFQue != fdata.end(); iFQue++){
+			if((i < endp && i >= startp)){
+
+				double tsim = 0.0;
+				double fsim = 0.0;
+
+				for(unsigned int a = 0; a < iFRef->second.size(); a++){
+					tsim = calculateSimilarity(iFRef->second[a], iFQue->second[a]);
+					//printf("SIM: %f\n", tsim);
+					if(tsim >= 0)
+						fsim += tsim* w[a];
+					else
+						fsim += (-1.0 * tsim * w[a]);//fempty++;
 				}
 
 
+				if(i < endp && k < endp &&
+						i >= startp && k >= startp){
+					numpos++;
+					posval+=fsim;
 
-											}
-										}
-									}
-								}
-							}
-						}
-					}
 				}
+				else{
+					numneg++;
+					negval+=fsim;
+				}
+
+			}
+			k++;
+		}
+		i++;
+
+		}
+		//printf("NUMPOS: %d\tNUMNEG: %d\n", numpos, numneg);
+		diffv.push_back( posval/(double)numpos - negval/(double)numneg);
+		startp = endp;
+		}
+
+		for(unsigned int i = 0; i < diffv.size(); i++){
+			if(diffv[i] > diffmaxv[i]){
+				diffmaxv[i] = diffv[i];
+				wOpt[i].clear();
+				for(unsigned int p = 0; p < 9; p++)
+					wOpt[i].push_back(w[p]);
+
+				//printf("OPT: %d WEIGHTS: ", i);
+				//cprint(wOpt[i]);
+			}
+		}
+
+
+
+		}
+		}
+		}
+		}
+		}
+		}
+		}
+		}
 
 
 		printf("DONE\n");
-		
+
 		std::map<int, std::vector<double> >::iterator iMap;
 		for(iMap = wOpt.begin(); iMap != wOpt.end(); iMap++){
 			printf(" OPTPARAM %d: w: ",iMap->first);
@@ -1356,97 +1358,97 @@ void optimizeFSIMweights(std::map<std::string, std::vector<std::map<unsigned, un
 		}
 
 
-}
-
-
-
-void optimizeWeights(std::vector<std::vector<double> >& simTable,
-                     std::vector<std::vector<double> >& simTable2,
-										 std::vector<std::vector<double> >& simTable3){
-		int arrangeSize	= 7;
-		int arrangement[7] = {
-			3, 3, 2, 2, 2, 3, 4
-		};
-
-
-
-		std::vector<double> diffmaxv, t1v, t2v, t3v;
-		for(int i = 0; i < arrangeSize; i++) {
-			diffmaxv.push_back(0.0);
-			t1v.push_back(0.0);
-			t2v.push_back(0.0);
-			t3v.push_back(0.0);
 		}
 
-		for(double t1 = 0.55; t1 <0.95; t1=t1+0.01){
-			for(double t2 = 0.01; t2 < 1.0-t1-0.02 ; t2=t2+0.01){
-				double t3 = 1.0-t1-t2;
-				assert(t1+t2+t3 == 1.0);
-				//printf(" CHECKING t1: %f   t2: %f   t3:%f\n", t1, t2, t3);
 
-				double posval = 0.0, negval = 0.0;
-				int numpos = 0, numneg = 0;
 
-				int startp = 0;
-				int endp = 0;
+		void optimizeWeights(std::vector<std::vector<double> >& simTable,
+				std::vector<std::vector<double> >& simTable2,
+				std::vector<std::vector<double> >& simTable3){
+			int arrangeSize	= 7;
+			int arrangement[7] = {
+				3, 3, 2, 2, 2, 3, 4
+			};
 
-				pos = false;
-				std::vector<double> diffv;
 
-				for(int q = 0 ; q < arrangeSize; q++){
-					//printf("ARRANGEMENT: %d\n", q);
-					endp = endp + arrangement[q];	
 
-					for(unsigned int i = 0; i < simTable.size(); i++){
-						for(unsigned int k = 0; k < simTable.size(); k++){
-							if((i < endp && i >= startp) || 
-									(k < endp && k >= startp)){
-								double simVal = simTable[i][k]*100.0*t1 + 
-									simTable2[i][k]*100.0*t2 + 
-									simTable3[i][k]*100.0*t3 ;
+			std::vector<double> diffmaxv, t1v, t2v, t3v;
+			for(int i = 0; i < arrangeSize; i++) {
+				diffmaxv.push_back(0.0);
+				t1v.push_back(0.0);
+				t2v.push_back(0.0);
+				t3v.push_back(0.0);
+			}
 
-								if(i < endp && k < endp &&
-										i >= startp && k >= startp){
-									numpos++;
-									posval+=simVal;
+			for(double t1 = 0.55; t1 <0.95; t1=t1+0.01){
+				for(double t2 = 0.01; t2 < 1.0-t1-0.02 ; t2=t2+0.01){
+					double t3 = 1.0-t1-t2;
+					assert(t1+t2+t3 == 1.0);
+					//printf(" CHECKING t1: %f   t2: %f   t3:%f\n", t1, t2, t3);
 
-								}
-								else{
-									numneg++;
-									negval+=simVal;
-								}
+					double posval = 0.0, negval = 0.0;
+					int numpos = 0, numneg = 0;
+
+					int startp = 0;
+					int endp = 0;
+
+					pos = false;
+					std::vector<double> diffv;
+
+					for(int q = 0 ; q < arrangeSize; q++){
+						//printf("ARRANGEMENT: %d\n", q);
+						endp = endp + arrangement[q];	
+
+						for(unsigned int i = 0; i < simTable.size(); i++){
+							for(unsigned int k = 0; k < simTable.size(); k++){
+								if((i < endp && i >= startp) || 
+										(k < endp && k >= startp)){
+									double simVal = simTable[i][k]*100.0*t1 + 
+										simTable2[i][k]*100.0*t2 + 
+										simTable3[i][k]*100.0*t3 ;
+
+									if(i < endp && k < endp &&
+											i >= startp && k >= startp){
+										numpos++;
+										posval+=simVal;
+
+									}
+									else{
+										numneg++;
+										negval+=simVal;
+									}
 									//printf("checking %d %d S: %d  E: %d P %d N %d\n", i, k, startp, endp, numpos, numneg);
 
+								}
 							}
 						}
+
+						//printf("NUMPOS: %d\tNUMNEG: %d\n", numpos, numneg);
+						diffv.push_back( posval/(double)numpos - negval/(double)numneg);
+
+						startp = endp;
 					}
-
-					//printf("NUMPOS: %d\tNUMNEG: %d\n", numpos, numneg);
-					diffv.push_back( posval/(double)numpos - negval/(double)numneg);
-
-					startp = endp;
-				}
-				//printf("checking %d %d S: %d  E: %d POS?:%d\n", i, k, startp, endp, pos);
+					//printf("checking %d %d S: %d  E: %d POS?:%d\n", i, k, startp, endp, pos);
 
 
 
-				printf(" PARAM: t1: %f %f %f ", t1, t2, t3);
-				for(unsigned int i = 0; i < diffv.size(); i++) printf("%f ", diffv[i]);
-				printf("\n");
-				for(unsigned int i = 0; i < diffv.size(); i++){
-					 if(diffv[i] > diffmaxv[i]){
-						 diffmaxv[i] = diffv[i];
-						 t1v[i] = t1;
-						 t2v[i] = t2;
-						 t3v[i] = t3;
-					 }
+					printf(" PARAM: t1: %f %f %f ", t1, t2, t3);
+					for(unsigned int i = 0; i < diffv.size(); i++) printf("%f ", diffv[i]);
+					printf("\n");
+					for(unsigned int i = 0; i < diffv.size(); i++){
+						if(diffv[i] > diffmaxv[i]){
+							diffmaxv[i] = diffv[i];
+							t1v[i] = t1;
+							t2v[i] = t2;
+							t3v[i] = t3;
+						}
+					}
 				}
 			}
+
+			printf("DONE\n");
+			for(unsigned int i = 0; i < t1v.size(); i++)
+				printf(" OPTPARAM %d: t1: %f   t2: %f   t3:%f\n",i,  t1v[i], t2v[i], t3v[i]);
+
 		}
-
-		printf("DONE\n");
-		for(unsigned int i = 0; i < t1v.size(); i++)
-			printf(" OPTPARAM %d: t1: %f   t2: %f   t3:%f\n",i,  t1v[i], t2v[i], t3v[i]);
-
-}
-*/
+		*/

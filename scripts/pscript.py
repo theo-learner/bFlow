@@ -61,13 +61,13 @@ try:
 	print sequence
 		
 	#Output Sequence extracted 
-	fileStream = open(".seq", 'w');
+	fileStream = open("data/seq.dat", 'w');
 	fileStream.write(sequence);
 	fileStream.close();
 
 
 	constSet= result[2];
-	fileStream = open(".const", 'w');
+	fileStream = open("data/const.dat", 'w');
 	fileStream.write(repr(len(constSet)));
 	for const in constSet:
 		fileStream.write("\n" + const);
@@ -90,7 +90,7 @@ try:
 	if(len(fpDict) != len(name)):
 		raise;
 
-	fileStream = open(".component", 'w');
+	fileStream = open("data/component.dat", 'w');
 	compstr = "";
 	compstr = compstr + repr(len(fpDict));
 
@@ -102,7 +102,7 @@ try:
 	fileStream.close();
 	
 	statstr= result[5];
-	fileStream = open(".stat", 'w');
+	fileStream = open("data/stat.dat", 'w');
 	fileStream.write(statstr);
 	fileStream.close();
 

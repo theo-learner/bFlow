@@ -56,7 +56,9 @@ try:
 	for line in flines:
 		start_time = timeit.default_timer();
 		line= re.sub(r"\s+", "", line);
+		print "--------------------------------------------------------------------------------"
 		print "[PPDB] -- Extracting feature from verilog file: " + line;
+		print "--------------------------------------------------------------------------------"
 
 		val  = yosys.create_yosys_script(line, scriptName)
 		top = val[1];
@@ -96,14 +98,11 @@ try:
 			ckttag.append(consttag);
 		
 		fpDict= result[3];
-		name = result[4];
-		if(len(fpDict) != len(name)):
-			raise error.SizeError("Fingerprint Dictionary and Name size do not match");
 
 		i = 0;
-		for fp in fpDict:
+		for n, fp in fpDict.iteritems():		
 			fptag = soup.new_tag("FP");
-			fptag['type'] = name[i];
+			fptag['type'] = n;
 			for k, v in fp.iteritems():
 				attrTag = soup.new_tag("DATA");
 				attrTag['size'] = k;
@@ -128,9 +127,6 @@ try:
 except error.YosysError as e:
 	print "[ERROR] -- Yosys has encountered an error...";
 	print e.msg;
-except error.SizeError as e:
-	print "[ERROR] -- Sizing Error...";
-	print "        -- " +  e.msg;
 except error.YosysError as e:
 	print "[ERROR] -- Yosys Error...";
 	print "        -- " +  e.msg;
