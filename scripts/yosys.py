@@ -18,17 +18,20 @@ def create_yosys_script(fileName, scriptName):
 	path = data[0];
 	top= data[1];
 	ext= data[2];
+	print path
+	print top
+	print ext
 
 	script = "";	
 	script = script + "echo on\n";
 
-	if(ext == 'd'):
+	if (ext == 'v'):
+		script = script + "read_verilog " + fileName;
+	if(ext == 'd' or ext == 'd/'):
 		files = fileName +   "/files"
 		with open(files) as f:
 			for line in f:
 				script = script + "read_verilog " + line;
-	else:
-		script = script + "read_verilog " + fileName;
 
 	script = script + "\n\n";
 	script = script + "hierarchy -check\n";

@@ -1,6 +1,6 @@
+v/median.d/median.v
 v/median.d/common_network.v
 v/median.d/dff_3_pipe.v
-v/median.d/median.v
 v/median.d/node.v
 v/median.d/pixel_network.v
 v/median.d/state_machine.v

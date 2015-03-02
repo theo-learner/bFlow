@@ -49,7 +49,7 @@ try:
 
 
 	ID = 0;
-	scriptName = "yoscript_db"
+	scriptName = "data/yoscript"
 	fstream = open(cfiles);
 	flines = fstream.readlines();
 

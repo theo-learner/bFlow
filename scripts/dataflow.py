@@ -144,6 +144,44 @@ def findMaxPath(dfg, node, dst, marked, path, maxPath, maxPathList):
 	return maxPath;
 
 
+def faninCone(dfg, node, dst, marked, path, maxPath, maxPathList):
+	if node == dst:
+		path.append(node);
+		if len(path) >= len(maxPath):
+			maxPath = copy.deepcopy(path);
+			maxPathList.append(maxPath);
+			
+		path.pop(len(path)-1);
+		return maxPath;
+
+	path.append(node);
+	marked.append(node);	
+
+	predList = dfg.predecessors(node);
+	for pred in predList:
+		if pred not in marked:
+			maxPath = findMaxPath(dfg, pred, dst,  marked, path, maxPath, maxPathList);
+		else:
+			for mp in maxPathList:
+				try:
+					index = mp.index(pred);
+					newLen = len(path) + len(mp) - index
+					
+					if newLen >= len(maxPath):
+						tempPath = path + mp[index:]
+						maxPath = copy.deepcopy(tempPath);
+						maxPathList.append(maxPath);
+
+					break;
+				except ValueError:
+					continue;
+				
+
+
+	path.pop(len(path)-1);
+	return maxPath;
+
+
 
 
 
@@ -233,6 +271,7 @@ def extractDataflow(fileName):
 	outNodeList= [];
 	inNodeList= [];
 	constantList= [];
+	ffList = [];
 	totalFanin = 0;
 	totalFanout = 0;
 	maxFanin = 0;
@@ -255,6 +294,7 @@ def extractDataflow(fileName):
 				inNodeList.append(node);
 			else:
 				outNodeList.append(node);
+			continue;
 
 
 		if(len(predList) > maxFanin):
@@ -269,7 +309,7 @@ def extractDataflow(fileName):
 	
 			if label != None:
 				operation = label.group(1);
-				labelAttr[node] = operation;
+				labelAttr[node] = operation
 
 				size = 0;
 				for pred in predList:
@@ -282,16 +322,18 @@ def extractDataflow(fileName):
 					if(ssize > size):
 						size = ssize;
 
+				if(size == 0):
+					print "[WARNING] -- There is a size of zero. OPERATION: " + operation;
+					print "IN:  " + repr(len(predList))
+					print "OUT: " + repr(len(sucList))
+					
+
 				#Count the number of components
 				if any(s in operation for s in muxStr):
 					inc(fpDict["mux"], size)
 				elif any(s in operation for s in regStr):
-					count = 0;
 					inc(fpDict["reg"], size)
-					for inNode in inNodeList:
-						if(nx.has_path(dfg, inNode, node)):
-							count = count + 1;
-					inc(fpDict["ffC"], count)
+					ffList.append(node);
 				elif any(s in operation for s in addStr):
 					inc(fpDict["add"], size)
 				elif any(s in operation for s in logicStr):
@@ -330,8 +372,40 @@ def extractDataflow(fileName):
 	#print "Max Fanout: " + repr(maxFanout)
 	#print "Num Nodes: " + repr(len(nodeList))
 	#print "Num Edges: " + repr(len(edgeList))
+	#print "Num In : " + repr(len(inNodeList))
+	#print "Num Out: " + repr(len(outNodeList))
 	#num node, num edge, num input, num output, max fanin, max fanout num cycle, 
 
+	#Need to wait till all the inputs have been found during node processing
+	inFanout = {};
+
+	for inNode in inNodeList:
+		fanout = nx.dfs_successors(inNode);
+		inFanout[inNode] = fanout
+
+
+	
+	for n, fanout in inFanout.iteritems() 
+		ffNodes = [fanoutnode for fanoutnode in  fanout for ff in ffList if ff == fanoutnode]
+		if any(s in operation for s in fp):
+	
+
+
+		'''
+	print "NUM FF: " + repr(len(ffList));
+	for node in ffList:	
+		print node
+		count = 0;
+		for inNode in inNodeList:
+			if(nx.has_path(dfg, inNode, node)):
+				count = count + 1;
+
+		for inNode in constantList:
+			if(nx.has_path(dfg, inNode, node)):
+				count = count + 1;
+
+		inc(fpDict["ffC"], count)
+		'''
 
 	
 	###########################################################################
@@ -372,13 +446,13 @@ def extractDataflow(fileName):
 		inc(fpDict["outC"], count)
 	
 	
-	#compstr = repr(len(fpDict)) ;
-	#for n, fp in fpDict.iteritems():		
-#		compstr = compstr + "\n" + n + repr(len(fp)) + " ";
-#		for k, v in fp.iteritems():		
-#			compstr = compstr +repr(k) + " " + repr(v) + "   ";
+	compstr = repr(len(fpDict)) ;
+	for n, fp in fpDict.iteritems():		
+		compstr = compstr + "\n" + n + repr(len(fp)) + " ";
+		for k, v in fp.iteritems():		
+			compstr = compstr +repr(k) + " " + repr(v) + "   ";
 		
-#	print compstr
+	print compstr
 
 
 	###########################################################################
