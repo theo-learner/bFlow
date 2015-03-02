@@ -60,12 +60,7 @@ int main( int argc, char *argv[] ){
 		std::string cmd = "python scripts/processRef.py " + vREF; 
 		system(cmd.c_str());
 
-		int lastSlashIndex = vREF.find_last_of("/") + 1;
-		if(lastSlashIndex == -1) lastSlashIndex = 0;
-
-		int lastDotIndex= vREF.find_last_of(".");
-		std::string xmlREF = "data/" +  vREF.substr(lastSlashIndex, lastDotIndex-lastSlashIndex) + ".xml";
-
+		std::string xmlREF = "data/reference.xml";
 		std::string xmldata= "";
 		std::string xmlline;
 		std::ifstream refStream;
@@ -87,8 +82,14 @@ int main( int argc, char *argv[] ){
 
 		std::vector<double> fsim;
 		db->searchDatabase(refBirthmark, fsim);
-		for(unsigned int i = 0; i < fsim.size(); i++)
+		
+		std::ofstream ofs;
+		ofs.open("data/fsim.csv");
+		for(unsigned int i = 0; i < fsim.size(); i++){
 			printf("fSIM C%3d: %f\n", i, fsim[i]);
+			ofs<<fsim[i]<<"\n";
+		}
+		ofs.close();
 
 
 		delete refBirthmark;

@@ -119,9 +119,9 @@ void Database::searchDatabase(Birthmark* reference, std::vector<double>& fsim){
 
 	std::list<Birthmark*>::iterator iList;
 	for(iList = m_Database.begin(); iList != m_Database.end(); iList++){
-		printf("[SRCH] -- Comparing reference to #%s#\n", (*iList)->getName().c_str());
+		printf("[DB] -- Comparing reference to %s\n", (*iList)->getName().c_str());
 		//Align the max sequences
-		printf("       -- Comparing functional components...\n");
+		printf("     -- Comparing functional components...\n");
 		std::list<std::string> maxDB;
 		(*iList)->getMaxSequence(maxDB);
 		double maxScore = SIMILARITY::align(maxRef, maxDB);
@@ -132,7 +132,7 @@ void Database::searchDatabase(Birthmark* reference, std::vector<double>& fsim){
 		double minScore = SIMILARITY::align(minRef, minDB);
 
 		double fScore = (maxScore*0.650 + minScore* 0.350);
-		printf("-- FSCORE: %f\n",fScore);
+		printf("        * FSCORE: %f\n",fScore);
 		fsim.push_back(fScore);
 	}
 }

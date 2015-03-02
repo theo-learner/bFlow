@@ -16,6 +16,7 @@ import traceback;
 import socket;
 import dataflow as dfx
 from bs4 import BeautifulSoup
+import error;
 
 def generateXML(dotfile, cktName):
 	result = dfx.extractDataflow(dotfile);
@@ -47,14 +48,11 @@ def generateXML(dotfile, cktName):
 		ckttag.append(consttag);
 	
 	fpDict= result[3];
-	name = result[4];
-	if(len(fpDict) != len(name)):
-		raise error.SizeError("Fingerprint Dictionary and Name size do not match");
 
 	i = 0;
-	for fp in fpDict:
+	for n, fp in fpDict.iteritems():		
 		fptag = soup.new_tag("FP");
-		fptag['type'] = name[i];
+		fptag['type'] = n;
 		for k, v in fp.iteritems():
 			attrTag = soup.new_tag("DATA");
 			attrTag['size'] = k;
@@ -93,7 +91,7 @@ def main():
 	rVal = yosys.execute(scriptName);
 	soup = generateXML(dotfile, fileName[1])
 	
-	fileStream = open("data/" + fileName[1] + ".xml", 'w');
+	fileStream = open("data/reference.xml", 'w');
 	fileStream.write(repr(soup));
 	fileStream.close();
 

@@ -300,11 +300,11 @@ double SIMILARITY::align(std::list<std::string>& ref, std::list<std::string>& db
 		for(iSeq = db.begin(); iSeq != db.end(); iSeq++){
 			//RUN PYTHON SCRIPT TO EXTRACT DATAFLOW FROM DOT FILE THAT IS GENERATED
 			//printf(" * COMPARING REF: #%s# \tDB: #%s#\n", iRef->c_str(), iSeq->c_str());
-			std::string cmd = "python ssw.py " + *iRef + " " + *iSeq;// > .pscript.dmp";
+			std::string cmd = "python scripts/ssw.py " + *iRef + " " + *iSeq;// > .pscript.dmp";
 			system(cmd.c_str());
 
 			std::ifstream ifs;
-			ifs.open(".align");
+			ifs.open("data/align.dat");
 			if (!ifs.is_open()) throw 5;
 
 			std::string questr, refstr, dummy;

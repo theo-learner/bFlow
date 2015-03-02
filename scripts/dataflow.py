@@ -12,6 +12,7 @@ import re;
 import copy;
 import error;
 import timeit
+from collections import Counter
 
 
 def inc(counter, size):
@@ -213,6 +214,9 @@ def longest_path(G):
 def extractDataflow(fileName):
 	# Read in dot file of the dataflow
 	print "[DFX] -- Extracting structural features..."# from : " + fileName;
+	if(".dot" not in fileName):
+		print "[ERROR] -- Input file does not seem to be a dot file"
+		exit()	
 
 	start_time = timeit.default_timer();
 	dfg = nx.DiGraph(nx.read_dot(fileName));
@@ -294,7 +298,6 @@ def extractDataflow(fileName):
 				inNodeList.append(node);
 			else:
 				outNodeList.append(node);
-			continue;
 
 
 		if(len(predList) > maxFanin):
@@ -361,11 +364,11 @@ def extractDataflow(fileName):
 				else:
 					inc(fpDict["bb"], size)
 	
+	print "TOT Fanin: " + repr(totalFanin)
+	print "TOT Fanout: " + repr(totalFanout)
+	print "count: " + repr(nodeCount)
 	avgFanin = totalFanin / nodeCount;	
 	avgFanout = totalFanout / nodeCount;	
-	#print "TOT Fanin: " + repr(totalFanin)
-	#print "TOT Fanout: " + repr(totalFanout)
-	#print "count: " + repr(count)
 	#print "Avg Fanin: " + repr(avgFanin)
 	#print "Avg Fanout: " + repr(avgFanout)
 	#print "Max Fanin: " + repr(maxFanin)
@@ -377,35 +380,47 @@ def extractDataflow(fileName):
 	#num node, num edge, num input, num output, max fanin, max fanout num cycle, 
 
 	#Need to wait till all the inputs have been found during node processing
-	inFanout = {};
-
-	for inNode in inNodeList:
-		fanout = nx.dfs_successors(inNode);
-		inFanout[inNode] = fanout
+	start_time = timeit.default_timer();
 
 
-	
-	for n, fanout in inFanout.iteritems() 
-		ffNodes = [fanoutnode for fanoutnode in  fanout for ff in ffList if ff == fanoutnode]
-		if any(s in operation for s in fp):
-	
+	if (float(len(inNodeList) + len(constantList)) * 0.25 > len(ffList)) or len(ffList) == 1:
+		start_time = timeit.default_timer();
+		for node in ffList:	
+			count = 0;
+			for inNode in inNodeList:
+				if(nx.has_path(dfg, inNode, node)):
+					count = count + 1;
 
+			for inNode in constantList:
+				if(nx.has_path(dfg, inNode, node)):
+					count = count + 1;
 
-		'''
-	print "NUM FF: " + repr(len(ffList));
-	for node in ffList:	
-		print node
-		count = 0;
+			inc(fpDict["ffC"], count)
+		elapsed = timeit.default_timer() - start_time;
+		print "[DFX] -- ELAPSED: " +  repr(elapsed);
+		print
+	else:
+		inFanout = {};
 		for inNode in inNodeList:
-			if(nx.has_path(dfg, inNode, node)):
-				count = count + 1;
-
+			fanout = nx.dfs_successors(dfg, inNode);
+			inFanout[inNode] = fanout
+		
 		for inNode in constantList:
-			if(nx.has_path(dfg, inNode, node)):
-				count = count + 1;
+			fanout = nx.dfs_successors(dfg, inNode);
+			inFanout[inNode] = fanout
 
-		inc(fpDict["ffC"], count)
-		'''
+		ffCounts = dict()	
+		for n, fanout in inFanout.iteritems():
+			ffNodes = [fanoutnode for fanoutnode in  fanout for ff in ffList if ff == fanoutnode]
+			for ff in ffNodes:
+				ffCounts[ff] = ffCounts.get(ff, 0) + 1;
+		
+		fpDict["ffC"] = Counter(ffCounts.values());
+
+		elapsed = timeit.default_timer() - start_time;
+		print "[DFX] -- ELAPSED: " +  repr(elapsed);
+					
+		
 
 	
 	###########################################################################
@@ -452,7 +467,7 @@ def extractDataflow(fileName):
 		for k, v in fp.iteritems():		
 			compstr = compstr +repr(k) + " " + repr(v) + "   ";
 		
-	print compstr
+	#print compstr
 
 
 	###########################################################################

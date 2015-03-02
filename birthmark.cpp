@@ -59,7 +59,6 @@ bool Birthmark::importXML(xml_node<>* cktNode){
 
 		setID(id);
 		setName(cktName);
-		printf("CKTNAME: %s\n", cktName.c_str());
 
 		std::map<unsigned, unsigned> fingerprint;
 		std::list<std::string> maxseq;

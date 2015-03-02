@@ -18,9 +18,6 @@ def create_yosys_script(fileName, scriptName):
 	path = data[0];
 	top= data[1];
 	ext= data[2];
-	print path
-	print top
-	print ext
 
 	script = "";	
 	script = script + "echo on\n";

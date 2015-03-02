@@ -30,6 +30,7 @@ OBJREF= \
 	$
 
 all: 
+	mkdir -p dot
 
 #build subdirectories
 	
@@ -51,6 +52,7 @@ mainserver:  $(OBJSERVER) mainserver.o
 
 %.o: %.cpp 
 	$(CXX) $(CFLAGS) -c -o $@ $<
+
 
 
 clean: 
