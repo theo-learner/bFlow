@@ -70,7 +70,7 @@ def generateYosysScript(verilogFile):
 		print "[ERROR] -- File does not have verilog extension";
 		exit();
 
-	scriptName = "yoscript_ref"
+	scriptName = "data/yoscript"
 	scriptResult = yosys.create_yosys_script(verilogFile, scriptName)
 	dotfile = scriptResult[0];
 	return (scriptName, dotfile);

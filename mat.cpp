@@ -6,8 +6,6 @@
 #include <map>
 #include <set>
 #include <list>
-#include "sw/src/ssw.h"
-#include "sw/src/ssw_cpp.h"
 #include "similarity.hpp"
 #include "print.hpp"
 
@@ -310,7 +308,6 @@ int main(int argc, char** argv){
 		std::string file;
 		std::vector<std::string> cktname;
 		printf("Extracting dataflows from database\n");	
-		std::vector<std::vector<double> >stat;
 		while(getline(infile, file)){
 			std::string topName = "", extension = "";
 			getFileProperties(file, topName, extension);
@@ -327,6 +324,7 @@ int main(int argc, char** argv){
 			seqMinDatabase[topName] = seqMin;
 
 			std::set<int> cnst;
+			printf("Reading const\n");	
 			readFile("data/const.dat", cnst);
 			cprint(cnst);
 			//cnst.erase(0);
@@ -337,20 +335,6 @@ int main(int argc, char** argv){
 			//constStr = readFile(".const2");
 			//ofsconst<<constStr<<"\n";
 
-			std::ifstream ifs;
-			ifs.open("data/stat.dat");
-			std::vector<double> s;
-			double val;
-			ifs>>val;
-			//printf("DIAMETER: %f\n", val);
-			s.push_back(val);
-			ifs>>val;
-			//printf("RADIUS: %f\n", val);
-			s.push_back(val);
-			ifs>>val;
-			//printf("COR COE: %f\n", val);
-			s.push_back(val);
-			stat.push_back(s);
 
 
 			if(fpDatabase.find(topName) != fpDatabase.end()){
@@ -359,6 +343,7 @@ int main(int argc, char** argv){
 			}
 
 			std::vector<std::map<unsigned, unsigned> > fingerprint;
+			printf("Reading component\n");	
 			readFile("data/component.dat", fingerprint);
 			fpDatabase[topName] = fingerprint;
 
@@ -959,7 +944,7 @@ int main(int argc, char** argv){
 			//Check to see if yosys encountered an error
 			//readDumpFile(".pscript.dmp", "Traceback");
 
-			readSeqFile("seq.dat", max, min);
+			readSeqFile("data/seq.dat", max, min);
 		}
 
 
@@ -1133,8 +1118,6 @@ int main(int argc, char** argv){
 					//tablestr<<","<<ctable[q][w];
 					ss<<ctable[q][w]<<",";
 				}
-				//for(unsigned int w = 0; w < stat[q].size(); w++)
-				//tablestr<<","<<stat[q][w];
 
 				tablestr<<"\n";
 				std::string tmp = ss.str();
@@ -1172,10 +1155,8 @@ int main(int argc, char** argv){
 			   ofs.open("name.csv");
 			   ofs<< nameTable;
 			   ofs.close();
-			 */
 
 
-			std::vector<std::string> fpname;
 			fpname.push_back("data/add.csv");
 			fpname.push_back("data/sub.csv");
 			fpname.push_back("data/mul.csv");
@@ -1198,6 +1179,7 @@ int main(int argc, char** argv){
 				ofs<<fpstr[i];
 				ofs.close();
 			}
+			 */
 		}
 
 

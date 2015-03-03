@@ -53,6 +53,9 @@ Monitor Verilog File:
 	  A. This will monitor for changes in the reference design. 
 		B. If using vim, install Autosave plugin to autosave reference
 
+Extract matlab tables:
+	1. Run ./matlab <database v file>
+
 
 Troubleshooting
 ---------------

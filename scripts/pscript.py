@@ -86,22 +86,18 @@ try:
 	
 	
 	fpDict= result[3];
-	name = result[4];
-	if(len(fpDict) != len(name)):
-		raise;
-
 	fileStream = open("data/component.dat", 'w');
 	compstr = "";
 	compstr = compstr + repr(len(fpDict));
 
-	for fp in fpDict:
+	for n, fp in fpDict.iteritems():		
 		compstr = compstr + "\n" + repr(len(fp));
 		for k, v in fp.iteritems():
 			compstr = compstr + " " + repr(k) + " " + repr(v) + "   ";
 	fileStream.write(compstr);
 	fileStream.close();
 	
-	statstr= result[5];
+	statstr= result[4];
 	fileStream = open("data/stat.dat", 'w');
 	fileStream.write(statstr);
 	fileStream.close();

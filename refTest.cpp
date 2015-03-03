@@ -22,6 +22,9 @@
 #include <math.h>
 #include <fstream>
 
+#include <sys/time.h>
+#include <sys/stat.h>
+
 //Server Includes
 #include "similarity.hpp"
 #include "database.hpp"
@@ -80,6 +83,8 @@ int main( int argc, char *argv[] ){
 		Birthmark* refBirthmark = new Birthmark();
 		if(!refBirthmark->importXML(cktNode)) throw eBIRTHMARK;
 
+		timeval start_time, end_time;
+		gettimeofday(&start_time, NULL); //----------------------------------
 		std::vector<double> fsim;
 		db->searchDatabase(refBirthmark, fsim);
 		
@@ -93,6 +98,10 @@ int main( int argc, char *argv[] ){
 
 
 		delete refBirthmark;
+		gettimeofday(&end_time, NULL); //----------------------------------
+		double elapsedTime = (end_time.tv_sec - start_time.tv_sec) * 1000.0;
+		elapsedTime += (end_time.tv_usec - start_time.tv_usec) / 1000.0;
+		printf("[REF] -- Elapsed search time: %f\n", elapsedTime/1000.0);
 	}
 	catch(Error e){
 		switch(e){

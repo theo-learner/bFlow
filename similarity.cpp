@@ -292,6 +292,9 @@ double SIMILARITY::tanimoto(std::map<unsigned, unsigned>& data1, std::map<unsign
  *
  *#############################################################################*/
 double SIMILARITY::align(std::list<std::string>& ref, std::list<std::string>& db){
+	timeval start_time, end_time;
+	gettimeofday(&start_time, NULL); //----------------------------------
+
 	std::list<std::string>::iterator iSeq;	
 	std::list<std::string>::iterator iRef;	
 	double maxSim = 0.0;
@@ -306,7 +309,11 @@ double SIMILARITY::align(std::list<std::string>& ref, std::list<std::string>& db
 			std::ifstream ifs;
 			ifs.open("data/align.dat");
 			if (!ifs.is_open()) throw 5;
+			double psim;
+			ifs>>psim;
+			ifs.close();
 
+/*
 			std::string questr, refstr, dummy;
 			getline(ifs, questr);
 			getline(ifs, refstr);
@@ -336,6 +343,7 @@ double SIMILARITY::align(std::list<std::string>& ref, std::list<std::string>& db
 						penalty += 0.01	;
 				}
 				else if(refstr[i] != questr[i]){
+					*/
 /*
 		
 					std::map<char, std::map<char, double> > scoreMatrix;
@@ -349,14 +357,15 @@ double SIMILARITY::align(std::list<std::string>& ref, std::list<std::string>& db
 					else if (scoreRef > 0)
 						penalty -= 0.75;
 						*/
-						penalty -= 0.75;
-				}
-			}
+					//	penalty -= 0.75;
+				//}
+			//}
 
 
-			double cursim= ((double)(matches - penalty) + wildcard) / (double) rlen;
+			//double cursim= ((double)(matches - penalty) + wildcard) / (double) rlen;
 			//double curscore = (double) score;
-			if(cursim> maxSim) maxSim = cursim;
+			if(psim> maxSim) maxSim = psim;
+			//if(cursim> maxSim) maxSim = cursim;
 
 
 /*
@@ -370,6 +379,11 @@ double SIMILARITY::align(std::list<std::string>& ref, std::list<std::string>& db
 		}
 		//printf("***************************************************\n");
 	}
+
+	gettimeofday(&end_time, NULL); //----------------------------------
+	double elapsedTime = (end_time.tv_sec - start_time.tv_sec) * 1000.0;
+	elapsedTime += (end_time.tv_usec - start_time.tv_usec) / 1000.0;
+	printf("[SIM] -- Align elapsed time: %f\n", elapsedTime/1000.0);
 	return maxSim;
 
 }

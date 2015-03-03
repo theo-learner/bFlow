@@ -34,8 +34,8 @@ all:
 
 #build subdirectories
 	
-mat: $(OBJS) mat.o 
-	$(CXX) $(OBJS) mat.o -o matlab 
+msim: $(OBJREF) mat.o 
+	$(CXX) $(OBJREF) mat.o -o matlab 
 
 autocor: $(OBJS) autocor.o 
 	$(CXX) $(OBJS) autocor.o -o autocor 
@@ -56,4 +56,7 @@ mainserver:  $(OBJSERVER) mainserver.o
 
 
 clean: 
+	rm -v *.o hbflow serverMain matlab refTest  scripts/*.pyc  data/*.csv data/*.dat data/*.log
+
+cleanall: 
 	rm -v *.o hbflow serverMain matlab refTest  scripts/*.pyc  data/*.csv data/*.dat data/*.log db/*.xml
