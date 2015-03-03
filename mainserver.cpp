@@ -29,8 +29,8 @@
 #include "database.hpp"
 #include "error.hpp"
 
-#include "rapidxml/rapidxml.hpp"
-#include "rapidxml/rapidxml_print.hpp"
+#include "libs/rapidxml/rapidxml.hpp"
+#include "libs/rapidxml/rapidxml_print.hpp"
 using namespace rapidxml;
 
 

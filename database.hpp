@@ -25,8 +25,8 @@
 #include "birthmark.hpp"
 #include "similarity.hpp"
 
-#include "rapidxml/rapidxml.hpp"
-#include "rapidxml/rapidxml_print.hpp"
+#include "libs/rapidxml/rapidxml.hpp"
+#include "libs/rapidxml/rapidxml_print.hpp"
 
 //Used to sort the id and name by the score
 struct Score{
@@ -48,7 +48,7 @@ class Database{
 		rapidxml::xml_document<> m_XML;
 		//rapidxml::xml_node<>* m_Root;
 		
-		std::list<Birthmark*> m_Database;
+		std::vector<Birthmark*> m_Database;
 
 	public:
 		Database();
@@ -57,6 +57,7 @@ class Database{
 		bool importDatabase(std::string);   //PARAM: File Name
 	  void searchDatabase(Birthmark*);
 		void searchDatabase(Birthmark*, std::vector<double>&);
+		Birthmark* getBirthmark(unsigned);
 
 		void printXML();
 		void print();

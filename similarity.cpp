@@ -292,8 +292,9 @@ double SIMILARITY::tanimoto(std::map<unsigned, unsigned>& data1, std::map<unsign
  *
  *#############################################################################*/
 double SIMILARITY::align(std::list<std::string>& ref, std::list<std::string>& db){
-	timeval start_time, end_time;
-	gettimeofday(&start_time, NULL); //----------------------------------
+//	timeval start_time, end_time;
+//	gettimeofday(&start_time, NULL); //----------------------------------
+
 
 	std::list<std::string>::iterator iSeq;	
 	std::list<std::string>::iterator iRef;	
@@ -301,91 +302,88 @@ double SIMILARITY::align(std::list<std::string>& ref, std::list<std::string>& db
 
 	for(iRef= ref.begin(); iRef!= ref.end(); iRef++){
 		for(iSeq = db.begin(); iSeq != db.end(); iSeq++){
-			//RUN PYTHON SCRIPT TO EXTRACT DATAFLOW FROM DOT FILE THAT IS GENERATED
-			//printf(" * COMPARING REF: #%s# \tDB: #%s#\n", iRef->c_str(), iSeq->c_str());
-			std::string cmd = "python scripts/ssw.py " + *iRef + " " + *iSeq;// > .pscript.dmp";
-			system(cmd.c_str());
 
-			std::ifstream ifs;
-			ifs.open("data/align.dat");
-			if (!ifs.is_open()) throw 5;
-			double psim;
-			ifs>>psim;
-			ifs.close();
+			TSequence seq1 = *iRef;
+			TSequence seq2 = *iSeq;
+			assignSource(row(s_Align, 0), seq1);
+			assignSource(row(s_Align, 1), seq2);
 
-/*
-			std::string questr, refstr, dummy;
-			getline(ifs, questr);
-			getline(ifs, refstr);
-			
-			int qlen, rlen, score, matches;
-			double psim;
-			ifs>>dummy>>qlen;
-			ifs>>dummy>>rlen;
-			ifs>>dummy>>score;
-			ifs>>dummy>>matches;
-			ifs>>dummy>>psim;
-			ifs.close();
-
-			double penalty = 0.0;
-			double wildcard = 0.0;
-			for(unsigned int i = 0; i < questr.length(); i++){
-				if(questr[i] == '-'){
-					if(refstr[i] == 'N')
-						wildcard += 0.80;	
-					else
-						penalty += 0.01	;
-				}
-				else if(refstr[i] == '-'){
-					if(questr[i] == 'N')
-						wildcard += 0.80;	
-					else
-						penalty += 0.01	;
-				}
-				else if(refstr[i] != questr[i]){
-					*/
-/*
-		
-					std::map<char, std::map<char, double> > scoreMatrix;
-					readScoreMatrix("scoreMatrix", scoreMatrix);
-
-					double scoreRef = scoreMatrix[refstr[i]][questr[i]];
-					if(scoreRef < -1.00)
-						penalty += 0.25;
-					else if (scoreRef < -0.50)
-						penalty += 0.1;
-					else if (scoreRef > 0)
-						penalty -= 0.75;
-						*/
-					//	penalty -= 0.75;
-				//}
-			//}
-
-
-			//double cursim= ((double)(matches - penalty) + wildcard) / (double) rlen;
-			//double curscore = (double) score;
-			if(psim> maxSim) maxSim = psim;
-			//if(cursim> maxSim) maxSim = cursim;
-
-
-/*
-			printf("REFLENGTH:  %d", rlen);
-			printf("\t\tQUERY: %d\t", qlen);
-			printf("\t\tMATCH: %d\t", matches);
-			printf("\t\tWILD: %f\t", wildcard);
-			printf("\t\tPEN: %f\n", penalty);
-			printf(" -- Best Smith-Waterman score:\t%f\t\tSIM: %f\n", curscore, cursim);
-			*/
+			int score = localAlignment(s_Align, Score<int, Simple>(10, -10, -7, -1));
+			double cursim = alignScore();
+			if(cursim > maxSim) maxSim = cursim;
 		}
 		//printf("***************************************************\n");
 	}
 
+/*
 	gettimeofday(&end_time, NULL); //----------------------------------
 	double elapsedTime = (end_time.tv_sec - start_time.tv_sec) * 1000.0;
 	elapsedTime += (end_time.tv_usec - start_time.tv_usec) / 1000.0;
 	printf("[SIM] -- Align elapsed time: %f\n", elapsedTime/1000.0);
+	*/
+
 	return maxSim;
 
+}
+
+double SIMILARITY::alignScore(){
+    TRowIterator it1 = begin(row(s_Align,0));
+    TRowIterator it2 = begin(row(s_Align,1));
+    TRowIterator it1End = end(row(s_Align,0));
+
+		double penalty = 0.0;
+		double match = 0.0;
+		double gaps = 0.0;
+		for (; it1 != it1End; ++it1){
+        if (isGap(it1)){
+					match += 0.2;
+					gaps += 1.0;
+				}
+        else if(isGap(it2))     match += 0.2;
+        else if(*it2 != *it1)   penalty += 0.75;
+				else                    match += 1.0;
+				++it2;
+    }
+
+		double refSizeWithGap = ((double)(length(value(stringSet(s_Align), 0))) + gaps);
+		double sim = (match - penalty) / refSizeWithGap;
+		return sim;
+}
+
+void SIMILARITY::printAlignment(){
+    TRowIterator it1 = begin(row(s_Align,0));
+    TRowIterator it2 = begin(row(s_Align,1));
+    TRowIterator it1End = end(row(s_Align,0));
+    TRowIterator it2End = end(row(s_Align,1));
+		for (; it1 != it1End; ++it1){
+        if (isGap(it1))    std::cout << gapValue<char>();
+        else              std::cout << *it1;
+    }
+    std::cout << std::endl;
+		
+    it1 = begin(row(s_Align,0));
+    it2 = begin(row(s_Align,1));
+		for (; it1 != it1End; ++it1){
+        if (isGap(it1))         std::cout << "*" ;
+        else if(isGap(it2))     std::cout << "*" ;
+        else if(*it2 != *it1)  	std::cout << "X";
+				else                    std::cout << "|";
+				++it2;
+    }
+    std::cout << std::endl;
+    
+		it1 = begin(row(s_Align,0));
+    it2 = begin(row(s_Align,1));
+    for (; it2 != it2End; ++it2){
+        if (isGap(it2))   std::cout << gapValue<char>();
+        else              std::cout << *it2;
+    }
+    std::cout << std::endl;
+    std::cout << std::endl;
+}
+
+void SIMILARITY::initAlignment(){
+	resize(rows(s_Align), 2);
 }
 
 double SIMILARITY::calculateSimilarity(std::map<unsigned, unsigned>& fingerprint1,

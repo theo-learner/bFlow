@@ -30,8 +30,8 @@
 #include "database.hpp"
 #include "error.hpp"
 
-#include "rapidxml/rapidxml.hpp"
-#include "rapidxml/rapidxml_print.hpp"
+#include "libs/rapidxml/rapidxml.hpp"
+#include "libs/rapidxml/rapidxml_print.hpp"
 using namespace rapidxml;
 
 
@@ -91,7 +91,7 @@ int main( int argc, char *argv[] ){
 		std::ofstream ofs;
 		ofs.open("data/fsim.csv");
 		for(unsigned int i = 0; i < fsim.size(); i++){
-			printf("fSIM C%3d: %f\n", i, fsim[i]);
+			printf("fSIM %7.4f\tCircuit: %s\n", fsim[i], db->getBirthmark(i)->getName().c_str());
 			ofs<<fsim[i]<<"\n";
 		}
 		ofs.close();

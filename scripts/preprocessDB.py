@@ -86,7 +86,7 @@ try:
 			ckttag.append(seqtag);
 		
 		minList = result[1];
-		for seq in maxList:
+		for seq in minList:
 			seqtag = soup.new_tag("MINSEQ");
 			seqtag.string =seq 
 			ckttag.append(seqtag);
@@ -118,6 +118,10 @@ try:
 	#print soup.prettify()
 	fileStream = open(dbFile, 'w');
 	fileStream.write(repr(soup));
+	fileStream.close();
+	
+	fileStream = open("data/prettify.xml", 'w');
+	fileStream.write(soup.prettify());
 	fileStream.close();
 	
 	print " -- XML File saved  : " + dbFile;

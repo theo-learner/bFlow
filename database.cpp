@@ -12,16 +12,21 @@
 using namespace rapidxml;
 
 Database::Database(){	
+	SIMILARITY::initAlignment();
 }
 
 Database::Database(std::string file){	
+	SIMILARITY::initAlignment();
 	importDatabase(file);
 }
 
 Database::~Database(){
+	/*
 	std::list<Birthmark*>::iterator it;
 	for(it = m_Database.begin(); it != m_Database.end(); it++)
-		delete *it;
+		*/
+	for(unsigned int i = 0; i < m_Database.size(); i++) 
+		delete m_Database[i];
 }
 
 bool Database::importDatabase(std::string path){
@@ -117,24 +122,28 @@ void Database::searchDatabase(Birthmark* reference, std::vector<double>& fsim){
 	reference->getMaxSequence(maxRef);
 	reference->getMinSequence(minRef);
 
+/*
 	std::list<Birthmark*>::iterator iList;
 	for(iList = m_Database.begin(); iList != m_Database.end(); iList++){
-		printf("-------------------------------------------------------\n");
-		printf("[DB] -- Comparing reference to %s\n", (*iList)->getName().c_str());
-		printf("-------------------------------------------------------\n");
+		*/
+	fsim.reserve(m_Database.size());
+	for(unsigned int i = 0; i < m_Database.size(); i++) {
+		//printf("-------------------------------------------------------\n");
+		printf("[DB] -- Comparing reference to %s\n", m_Database[i]->getName().c_str());
+		//printf("-------------------------------------------------------\n");
 		//Align the max sequences
-		printf("     -- Comparing functional components...\n");
+		//printf("     -- Comparing functional components...\n");
 		std::list<std::string> maxDB;
-		(*iList)->getMaxSequence(maxDB);
+		m_Database[i]->getMaxSequence(maxDB);
 		double maxScore = SIMILARITY::align(maxRef, maxDB);
 
 		//Align the min sequences
 		std::list<std::string> minDB;
-		(*iList)->getMinSequence(minDB);
+		m_Database[i]->getMinSequence(minDB);
 		double minScore = SIMILARITY::align(minRef, minDB);
 
 		double fScore = (maxScore*0.650 + minScore* 0.350);
-		printf("        * FSCORE: %f\n\n",fScore);
+		//printf("        * FSCORE: %f\n\n",fScore);
 		fsim.push_back(fScore);
 	}
 }
@@ -155,18 +164,21 @@ void Database::searchDatabase(Birthmark* reference){
 
 	std::set<Score, setCompare> results;
 
+/*
 	std::list<Birthmark*>::iterator iList;
 	for(iList = m_Database.begin(); iList != m_Database.end(); iList++){
-		printf("[SRCH] -- Comparing reference to #%s#\n", (*iList)->getName().c_str());
+		*/
+	for(unsigned int i = 0; i < m_Database.size(); i++) {
+		printf("[SRCH] -- Comparing reference to #%s#\n", m_Database[i]->getName().c_str());
 		//Align the max sequences
 		printf("       -- Comparing functional components...\n");
 		std::list<std::string> maxDB;
-		(*iList)->getMaxSequence(maxDB);
+		m_Database[i]->getMaxSequence(maxDB);
 		double maxScore = SIMILARITY::align(maxRef, maxDB);
 
 		//Align the min sequences
 		std::list<std::string> minDB;
-		(*iList)->getMinSequence(minDB);
+		m_Database[i]->getMinSequence(minDB);
 		double minScore = SIMILARITY::align(minRef, minDB);
 
 		double fScore = (maxScore*0.650 + minScore* 0.350);
@@ -178,7 +190,7 @@ void Database::searchDatabase(Birthmark* reference){
 		std::map<std::string, Feature*> featureDB;
 		std::map<std::string, Feature*>::iterator iFeat;
 		std::map<std::string, Feature*>::iterator iFeatRef;
-		(*iList)->getFingerprint(featureDB);
+		m_Database[i]->getFingerprint(featureDB);
 
 		double sScore= 0.0;
 		double tsim;
@@ -212,7 +224,7 @@ void Database::searchDatabase(Birthmark* reference){
 
 		printf("       -- Comparing Constant Components....");
 		std::set<int> constantDB;
-		(*iList)->getConstants(constantDB);
+		m_Database[i]->getConstants(constantDB);
 
 		double cScore;
 		if(constantRef.size() == 0 && constantDB.size() == 0) cScore = 1.0;
@@ -222,8 +234,8 @@ void Database::searchDatabase(Birthmark* reference){
 
 
 		Score result;
-		result.id = (*iList)->getID();
-		result.name = (*iList)->getName();
+		result.id = m_Database[i]->getID();
+		result.name = m_Database[i]->getName();
 		result.score = fScore*100.0*0.67 +
 		               sScore*100.0*0.21 + 
 									 cScore*100.0*0.12;
@@ -242,6 +254,10 @@ void Database::searchDatabase(Birthmark* reference){
 	}
 
 }
+		
+Birthmark* Database::getBirthmark(unsigned index){
+	return m_Database[index];
+}
 
 
 void Database::printXML(){
@@ -250,8 +266,10 @@ void Database::printXML(){
 
 
 void Database::print(){
+	/*
 	std::list<Birthmark*>::iterator iList;
 	for(iList = m_Database.begin(); iList != m_Database.end(); iList++){
-		(*iList)->print();
-	}
+		*/
+	for(unsigned int i = 0; i < m_Database.size(); i++) 
+		m_Database[i]->print();
 }

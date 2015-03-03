@@ -41,7 +41,7 @@ autocor: $(OBJS) autocor.o
 	$(CXX) $(OBJS) autocor.o -o autocor 
 
 refTest: $(OBJREF) refTest.o 
-	$(CXX) $(OBJREF) refTest.o -o refTest 
+	$(CXX) $(OBJREF) refTest.o -o refTest
 
 mainopt: $(OBJS) swparam_opt.o
 	$(CXX) $(OBJS) swparam_opt.o -o opt_sswparam 
@@ -51,7 +51,7 @@ mainserver:  $(OBJSERVER) mainserver.o
 	
 
 %.o: %.cpp 
-	$(CXX) $(CFLAGS) -c -o $@ $<
+	$(CXX) $(CFLAGS) -c -o $@ $< -Ilibs/
 
 
 
