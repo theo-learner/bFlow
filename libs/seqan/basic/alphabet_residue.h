@@ -68,6 +68,47 @@ template <typename T> struct BaseAlphabet;
 // this section.
 
 // ----------------------------------------------------------------------------
+// Specialization Circuit_Alpha
+// ----------------------------------------------------------------------------
+
+/*!
+ * @class Circuit_Alpha
+ * @extends SimpleType
+ * @headerfile <seqan/basic.h>
+ * @brief Alphabet for Circuit.
+ *
+ * @signature typedef SimpleType<unsigned char, Circuit_Alpha> Circuit_Alpha;
+ *
+ * The ValueSize of <tt>Dna</tt> is 4.  The nucleotides are enumerated this way: <tt>'A' = 0, 'C' = 1, 'G' = 2, 'T' =
+ * The ValueSize of <tt>Circuit_Alpha</tt> is 16.  The nucleotides are enumerated from 0 to 19 in this order: 'U'=0, 'T', 'A',
+ * 'W', 'C', 'Y', 'M', 'H', 'G', 'K', 'R', 'D', 'S', 'B', 'V', 'N'=15.
+ *
+ * Objects of type <tt>Dna</tt> can be converted to various other types and vice versa.  An object that has a value not
+ * in <tt>{'A', 'C', 'G', 'T'}</tt> is converted to <tt>'A'</tt>.
+ *
+ * @see Dna5
+ * @see DnaString
+ * @see DnaIterator
+ */
+
+struct Circuit_Alpha_ {};
+typedef SimpleType<unsigned char, Circuit_Alpha_> Circuit_Alpha;
+
+template <>
+struct ValueSize<Circuit_Alpha>
+{
+    typedef __uint8 Type;
+    static const Type VALUE = 16;
+};
+
+template <>
+struct BitsPerValue< Circuit_Alpha >
+{
+    typedef __uint8 Type;
+    static const Type VALUE = 4;
+};
+
+// ----------------------------------------------------------------------------
 // Specialization Dna
 // ----------------------------------------------------------------------------
 
@@ -645,6 +686,12 @@ inline void assign(char & c_target, AminoAcid const & source)
     c_target = TranslateTableAAToChar_<>::VALUE[source.value];
 }
 
+inline void assign(char & c_target, Circuit_Alpha const & source)
+{
+    c_target = TranslateTableCAToChar_<>::VALUE[source.value];
+}
+
+
 // ----------------------------------------------------------------------------
 // Dna
 // ----------------------------------------------------------------------------
@@ -883,6 +930,33 @@ struct CompareTypeImpl<AminoAcid, char>
 inline void assign(AminoAcid & target, char c_source)
 {
     target.value = TranslateTableCharToAA_<>::VALUE[(unsigned char) c_source];
+}
+
+
+// ---------------------------------------------------------------------------
+// Circuit Alpha 
+// ---------------------------------------------------------------------------
+
+template <>
+struct CompareTypeImpl<Circuit_Alpha, __uint8>
+{
+    typedef Circuit_Alpha Type;
+};
+
+inline void assign(Circuit_Alpha& target, __uint8 c_source)
+{
+    target.value = TranslateTableByteToCA_<>::VALUE[c_source];
+}
+
+template <>
+struct CompareTypeImpl<Circuit_Alpha, char>
+{
+    typedef Circuit_Alpha Type;
+};
+
+inline void assign(Circuit_Alpha& target, char c_source)
+{
+    target.value = TranslateTableCharToCA_<>::VALUE[(unsigned char) c_source];
 }
 
 // ---------------------------------------------------------------------------
