@@ -283,6 +283,94 @@ double SIMILARITY::tanimoto(std::map<unsigned, unsigned>& data1, std::map<unsign
 }
 
 
+/*#############################################################################
+ *
+ * align 
+ *  given a list of sequences (REF and DB), align the sequences and extract
+ *  the similarity of the alignment (AVG SIM) 
+ *
+ *#############################################################################*/
+double SIMILARITY::align(std::list<std::string>& ref, std::list<std::string>& db, int& alignScore){
+//	timeval start_time, end_time;
+//	gettimeofday(&start_time, NULL); //----------------------------------
+
+
+	std::list<std::string>::iterator iSeq;	
+	std::list<std::string>::iterator iRef;	
+	double maxSim = 0.0;
+	unsigned totalScore = 0;
+
+	for(iRef= ref.begin(); iRef!= ref.end(); iRef++){
+		for(iSeq = db.begin(); iSeq != db.end(); iSeq++){
+
+			TSequence seq1 = *iRef;
+			TSequence seq2 = *iSeq;
+			assignSource(row(s_Align, 0), seq1);
+			assignSource(row(s_Align, 1), seq2);
+
+			double sizeRatio;
+			if(iRef->length() < iSeq->length())
+				sizeRatio = (double)iRef->length()/ (double)iSeq->length();
+			else
+				sizeRatio = (double)iSeq->length()/ (double)iRef->length();
+
+			//int score = localAlignment(s_Align, Score<int, Simple>(10, -10, -8, -1));
+
+			//printf("GAP: %d  GAPOPEN: %d  GAPEXTEND: %d\n", scoreGap(s_Score), scoreGapOpen(s_Score), scoreGapExtend(s_Score));
+			int score = localAlignment(s_Align, s_Score);
+			printAlignment();
+
+//////////////////////////////////////////////////////////////
+    TRowIterator it1 = begin(row(s_Align,0));
+    TRowIterator it2 = begin(row(s_Align,1));
+    TRowIterator it1End = end(row(s_Align,0));
+
+		double penalty = 0.0;
+		double match = 0.0;
+		double gaps = 0.0;
+		for (; it1 != it1End; ++it1){
+        if (isGap(it1)){
+					gaps += 1.0;
+					match += 0.2;
+					score += CircuitGapPenaltyMatrix[*it2];
+
+				}
+        else if(isGap(it2)){
+					match += 0.2;
+					score += CircuitGapPenaltyMatrix[*it1];
+				}
+        else if(*it2 != *it1)   penalty += 0.75;
+				else                    match += 1.0;
+				++it2;
+    }
+
+		double refSizeWithGap = ((double)(length(value(stringSet(s_Align), 0))) + gaps);
+		double sim = (match - penalty) / refSizeWithGap;
+		////////////////////////////////////////////////////////////////
+
+
+
+			//double cursim = alignScore() * sizeRatio;
+			double cursim = sim * sizeRatio;
+			if(cursim > maxSim) maxSim = cursim;
+			totalScore += score;
+			printf("[SIM] -- SCORE: %7.4f - %5d   ALIGN: %s - %s\n", cursim, score, iRef->c_str(), iSeq->c_str());
+		}
+		//printf("***************************************************\n");
+	}
+
+/*
+	gettimeofday(&end_time, NULL); //----------------------------------
+	double elapsedTime = (end_time.tv_sec - start_time.tv_sec) * 1000.0;
+	elapsedTime += (end_time.tv_usec - start_time.tv_usec) / 1000.0;
+	printf("[SIM] -- Align elapsed time: %f\n", elapsedTime/1000.0);
+	*/
+
+	alignScore = totalScore;
+	return maxSim;
+	//return totalScore;
+
+}
 
 /*#############################################################################
  *
@@ -299,6 +387,7 @@ double SIMILARITY::align(std::list<std::string>& ref, std::list<std::string>& db
 	std::list<std::string>::iterator iSeq;	
 	std::list<std::string>::iterator iRef;	
 	double maxSim = 0.0;
+	unsigned totalScore = 0;
 
 	for(iRef= ref.begin(); iRef!= ref.end(); iRef++){
 		for(iSeq = db.begin(); iSeq != db.end(); iSeq++){
@@ -308,9 +397,52 @@ double SIMILARITY::align(std::list<std::string>& ref, std::list<std::string>& db
 			assignSource(row(s_Align, 0), seq1);
 			assignSource(row(s_Align, 1), seq2);
 
-			int score = localAlignment(s_Align, Score<int, Simple>(10, -10, -7, -1));
-			double cursim = alignScore();
+			double sizeRatio;
+			if(iRef->length() < iSeq->length())
+				sizeRatio = (double)iRef->length()/ (double)iSeq->length();
+			else
+				sizeRatio = (double)iSeq->length()/ (double)iRef->length();
+
+			//int score = localAlignment(s_Align, Score<int, Simple>(10, -10, -8, -1));
+
+			//printf("GAP: %d  GAPOPEN: %d  GAPEXTEND: %d\n", scoreGap(s_Score), scoreGapOpen(s_Score), scoreGapExtend(s_Score));
+			int score = localAlignment(s_Align, s_Score);
+
+//////////////////////////////////////////////////////////////
+    TRowIterator it1 = begin(row(s_Align,0));
+    TRowIterator it2 = begin(row(s_Align,1));
+    TRowIterator it1End = end(row(s_Align,0));
+
+		double penalty = 0.0;
+		double match = 0.0;
+		double gaps = 0.0;
+		for (; it1 != it1End; ++it1){
+        if (isGap(it1)){
+					gaps += 1.0;
+					match += 0.2;
+					score += CircuitGapPenaltyMatrix[*it2];
+
+				}
+        else if(isGap(it2)){
+					match += 0.2;
+					score += CircuitGapPenaltyMatrix[*it1];
+				}
+        else if(*it2 != *it1)   penalty += 0.75;
+				else                    match += 1.0;
+				++it2;
+    }
+
+		double refSizeWithGap = ((double)(length(value(stringSet(s_Align), 0))) + gaps);
+		double sim = (match - penalty) / refSizeWithGap;
+		////////////////////////////////////////////////////////////////
+
+
+
+			//double cursim = alignScore() * sizeRatio;
+			double cursim = sim * sizeRatio;
 			if(cursim > maxSim) maxSim = cursim;
+			totalScore += score;
+			printf("[SIM] -- SCORE: %7.4f - %5d   ALIGN: %s - %s\n", cursim, score, iRef->c_str(), iSeq->c_str());
 		}
 		//printf("***************************************************\n");
 	}
@@ -323,6 +455,7 @@ double SIMILARITY::align(std::list<std::string>& ref, std::list<std::string>& db
 	*/
 
 	return maxSim;
+	//return totalScore;
 
 }
 
@@ -338,8 +471,12 @@ double SIMILARITY::alignScore(){
         if (isGap(it1)){
 					match += 0.2;
 					gaps += 1.0;
+
 				}
-        else if(isGap(it2))     match += 0.2;
+        else if(isGap(it2)){
+					match += 0.2;
+
+				}
         else if(*it2 != *it1)   penalty += 0.75;
 				else                    match += 1.0;
 				++it2;
@@ -383,7 +520,14 @@ void SIMILARITY::printAlignment(){
 }
 
 void SIMILARITY::initAlignment(){
+	//Set up the aligner
 	resize(rows(s_Align), 2);
+
+	//Set up the scoring scheme using a custom scoring matrix
+	//Located in header file
+	setDefaultScoreMatrix(s_Score, CircuitScoringMatrix());
+	showScoringMatrix(s_Score);
+	
 }
 
 double SIMILARITY::calculateSimilarity(std::map<unsigned, unsigned>& fingerprint1,

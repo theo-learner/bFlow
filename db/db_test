@@ -1,1 +1,5 @@
-v/lfsr_arb.v
+v/uart_simple.v
+v/uart2.v
+v/fft8.v
+v/IIR6_18bit_fixed.v
+v/simple_spi_top.v

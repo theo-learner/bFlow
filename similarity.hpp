@@ -25,6 +25,9 @@
 #include <sys/stat.h>
 
 #include "libs/seqan/align.h"
+#include "libs/seqan/basic.h"
+#include "libs/seqan/score.h"
+#include "libs/seqan/stream.h"
 
 
 namespace SIMILARITY{
@@ -51,13 +54,54 @@ namespace SIMILARITY{
 	typedef Align<TSequence, ArrayGaps> TAlign;
 	typedef Row<TAlign>::Type TRow;
 	typedef Iterator<TRow>::Type TRowIterator;
+
 	static TAlign s_Align;
 	
 	void initAlignment();
 	double align(std::list<std::string>&, std::list<std::string>&);
+	double align(std::list<std::string>&, std::list<std::string>&, int&);
 	double alignScore();
 	void printAlignment();
+
+	//Custom Scoring Matrix
+	typedef Score<int, ScoreMatrix<Circuit_Alpha, CircuitScoringMatrix> > TScoreMatrix;
+	static TScoreMatrix s_Score(-8, -1);
+
+	template <typename TScoreValue, typename TSequenceValue, typename TSpec>
+		void showScoringMatrix(Score<TScoreValue, ScoreMatrix<TSequenceValue, TSpec> > const & scoringScheme)
+		{
+			// Print top row.
+			for (unsigned i = 0; i < ValueSize<TSequenceValue>::VALUE; ++i)
+				std::cout << "\t" << TSequenceValue(i);
+			std::cout << std::endl;
+			// Print each row.
+			for (unsigned i = 0; i < ValueSize<TSequenceValue>::VALUE; ++i)
+			{
+				std::cout << TSequenceValue(i);
+				for (unsigned j = 0; j < ValueSize<TSequenceValue>::VALUE; ++j)
+				{
+					std::cout << "\t" << score(scoringScheme, TSequenceValue(i), TSequenceValue(j));
+				}
+				std::cout << std::endl;
+			}
+		}
+
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 #endif

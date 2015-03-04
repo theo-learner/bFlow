@@ -56,7 +56,7 @@ mainserver:  $(OBJSERVER) mainserver.o
 
 
 clean: 
-	rm -v *.o hbflow serverMain matlab refTest  scripts/*.pyc  data/*.csv data/*.dat data/*.log
+	rm -v *.o hbflow serverMain matlab refTest  
 
 cleanall: 
 	rm -v *.o hbflow serverMain matlab refTest  scripts/*.pyc  data/*.csv data/*.dat data/*.log db/*.xml

@@ -88,6 +88,7 @@ int main( int argc, char *argv[] ){
 		std::vector<double> fsim;
 		db->searchDatabase(refBirthmark, fsim);
 		
+		/*
 		std::ofstream ofs;
 		ofs.open("data/fsim.csv");
 		for(unsigned int i = 0; i < fsim.size(); i++){
@@ -95,6 +96,7 @@ int main( int argc, char *argv[] ){
 			ofs<<fsim[i]<<"\n";
 		}
 		ofs.close();
+		*/
 
 
 		delete refBirthmark;

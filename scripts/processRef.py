@@ -36,7 +36,7 @@ def generateXML(dotfile, cktName):
 		ckttag.append(seqtag);
 		
 	minList = result[1];
-	for seq in maxList:
+	for seq in minList:
 		seqtag = soup.new_tag("MINSEQ");
 		seqtag.string =seq 
 		ckttag.append(seqtag);
