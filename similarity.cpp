@@ -352,9 +352,10 @@ double SIMILARITY::align(std::list<std::string>& ref, std::list<std::string>& db
 
 			//double cursim = alignScore() * sizeRatio;
 			double cursim = sim * sizeRatio;
+			score *= sizeRatio;
 			if(cursim > maxSim) maxSim = cursim;
-			totalScore += score;
 			printf("[SIM] -- SCORE: %7.4f - %5d   ALIGN: %s - %s\n", cursim, score, iRef->c_str(), iSeq->c_str());
+			totalScore += score;
 		}
 		//printf("***************************************************\n");
 	}

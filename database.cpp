@@ -128,9 +128,7 @@ void Database::searchDatabase(Birthmark* reference, std::vector<double>& fsim){
 	for(iList = m_Database.begin(); iList != m_Database.end(); iList++){
 		*/
 	fsim.reserve(m_Database.size());
-	std::set<Score, setCompare> maxscores;
-	std::set<Score, setCompare> minscores;
-	std::set<Score, setCompare> alphascores;
+	std::set<Score, setCompare> avgscores;
 	std::set<Score, setCompare> scores;
 	std::set<Score, setCompare> sims;
 	for(unsigned int i = 0; i < m_Database.size(); i++) {
@@ -144,15 +142,17 @@ void Database::searchDatabase(Birthmark* reference, std::vector<double>& fsim){
 		m_Database[i]->getMaxSequence(maxDB);
 		int sc;
 		double maxScore = SIMILARITY::align(maxRef, maxDB, sc);
-		printf("TOTAL SCORE: %d\n", sc);
+		printf("TOTAL SCORE: %4d\tAVG: %f\n", sc, double(sc) / ((double)maxRef.size() * (double)maxDB.size()));;
 		int totalScore = sc;
+		double totalAvg = (double(sc) / ((double)maxRef.size() * (double)maxDB.size())) * 0.75;
 
 		//Align the min sequences
 		printf("MIN\n");
 		std::list<std::string> minDB;
 		m_Database[i]->getMinSequence(minDB);
 		double minScore = SIMILARITY::align(minRef, minDB, sc);
-		printf("TOTAL SCORE: %d\n", sc);
+		totalAvg += double(sc) / ((double)minRef.size() * (double)minDB.size());
+		printf("TOTAL SCORE: %4d\tAVG: %f\n", sc, double(sc) / ((double)minRef.size() * (double)minDB.size()));
 		totalScore += sc;
 
 		//Align the min sequences
@@ -160,10 +160,11 @@ void Database::searchDatabase(Birthmark* reference, std::vector<double>& fsim){
 		std::list<std::string> alphaDB;
 		m_Database[i]->getAlphaSequence(alphaDB);
 		double alphaScore = SIMILARITY::align(alphaRef, alphaDB, sc);
-		printf("TOTAL SCORE: %d\n", sc);
+		totalAvg += (double(sc) / ((double)alphaRef.size() * (double)alphaDB.size())) * 3;
+		printf("TOTAL SCORE: %4d\tAVG: %f\n", sc, double(sc) / ((double)alphaRef.size() * (double)alphaDB.size()));
 		totalScore += sc;
 
-		double fScore = (alphaScore*0.5 + maxScore*0.30 + minScore* 0.20);
+		double fScore = (maxScore*0.65 + minScore* 0.35);
 		//printf("        * FSCORE: %f\n\n",fScore);
 		printf("\n\n");
 		fsim.push_back(fScore);
@@ -174,11 +175,18 @@ void Database::searchDatabase(Birthmark* reference, std::vector<double>& fsim){
 		score.score = totalScore;
 		printf("TOTAL SCORE: %d\n", totalScore);
 		
+		Score score2;
+		score2.id = m_Database[i]->getID();
+		score2.name = m_Database[i]->getName();
+		score2.score = totalAvg;
+		printf("TOTAL AVG: %f\n", totalAvg);
+		
 		Score sim;
 		sim.id = m_Database[i]->getID();
 		sim.name = m_Database[i]->getName();
 		sim.score = fScore;
 
+		avgscores.insert(score2);
 		scores.insert(score);
 		sims.insert(sim);
 	}
@@ -187,11 +195,19 @@ void Database::searchDatabase(Birthmark* reference, std::vector<double>& fsim){
 	printf("###############################################################\n");
 	int count = 1;
 	std::set<Score, setCompare>::iterator iSet;
+	printf("\n\n###############################################################\n\n");
+	for(iSet = avgscores.begin(); iSet != avgscores.end(); iSet++){
+		printf("RANK: %2d   ID: %2d   SCR: %6.2f   CKT:%s\n", count, iSet->id, iSet->score, iSet->name.c_str());
+		count++;
+	}
+	printf("\n");
+	count = 1;
 	for(iSet = scores.begin(); iSet != scores.end(); iSet++){
 		printf("RANK: %2d   ID: %2d   SCR: %6.2f   CKT:%s\n", count, iSet->id, iSet->score, iSet->name.c_str());
 		count++;
 	}
 	printf("\n\n###############################################################\n\n");
+	count = 1;
 	for(iSet = sims.begin(); iSet != sims.end(); iSet++){
 		printf("RANK: %2d   ID: %2d   SCR: %6.2f   CKT:%s\n", count, iSet->id, iSet->score, iSet->name.c_str());
 		count++;

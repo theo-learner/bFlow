@@ -65,7 +65,7 @@ namespace SIMILARITY{
 
 	//Custom Scoring Matrix
 	typedef Score<int, ScoreMatrix<Circuit_Alpha, CircuitScoringMatrix> > TScoreMatrix;
-	static TScoreMatrix s_Score(-8, -1);
+	static TScoreMatrix s_Score(-5, -1);
 
 	template <typename TScoreValue, typename TSequenceValue, typename TSpec>
 		void showScoringMatrix(Score<TScoreValue, ScoreMatrix<TSequenceValue, TSpec> > const & scoringScheme)

@@ -18,13 +18,13 @@ import dataflow as dfx
 from bs4 import BeautifulSoup
 import error;
 
-def generateXML(dotfile, cktName, soup):
+def generateXML(dotfile, ID,  cktName, soup):
 	result = dfx.extractDataflow(dotfile);
 
 #######################################################
 	ckttag = soup.new_tag("CIRCUIT");
 	ckttag['name'] = cktName;
-	ckttag['id'] = -1 
+	ckttag['id'] = ID 
 
 	#Store the max seq
 	maxList = result[0];
@@ -85,24 +85,29 @@ def generateYosysScript(verilogFile):
 
 
 def main():
-	if len(sys.argv) != 2: 
-		print "[ERROR] -- Not enough argument. Provide V File to process" 
-		print "        -- ARG1: verilog file";
-		exit();
-	
-	vfile = sys.argv[1];
-	fileName = yosys.getFileData(vfile);
+	try:
+		if len(sys.argv) != 2: 
+			print "[ERROR] -- Not enough argument. Provide V File to process" 
+			print "        -- ARG1: verilog file";
+			exit();
 
-	#Preprocess yosys script
-	(scriptName, dotfile) = generateYosysScript(vfile);
-	rVal = yosys.execute(scriptName);
-	soup = BeautifulSoup();
-	ckttag = generateXML(dotfile, fileName[1], soup)
-	soup.append(ckttag);
-	
-	fileStream = open("data/reference.xml", 'w');
-	fileStream.write(repr(soup));
-	fileStream.close();
+		
+		vfile = sys.argv[1];
+		fileName = yosys.getFileData(vfile);
+
+		#Preprocess yosys script
+		(scriptName, dotfile) = generateYosysScript(vfile);
+		rVal = yosys.execute(scriptName);
+		soup = BeautifulSoup();
+		ckttag = generateXML(dotfile, -1, fileName[1], soup)
+		soup.append(ckttag);
+		
+		fileStream = open("data/reference.xml", 'w');
+		fileStream.write(repr(soup));
+		fileStream.close();
+	except error.YosysError as e:
+		print "[ERROR] -- Yosys has encountered an error...";
+		print e.msg;
 
 
 

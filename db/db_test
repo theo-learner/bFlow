@@ -1,5 +1,5 @@
-v/uart_simple.v
 v/uart2.v
-v/fft8.v
-v/IIR6_18bit_fixed.v
+v/fft16.v
 v/simple_spi_top.v
+v/qdiv2.v
+v/osdvuart.v

@@ -69,8 +69,9 @@ try:
 			raise error.YosysError(rVal);
 
 
-		ckttag = processRef.generateXML(val[0], top, soup)
+		ckttag = processRef.generateXML(val[0], ID, top, soup)
 		dbtag.append(ckttag)
+		ID = ID + 1;
 
 	
 		elapsed = timeit.default_timer() - start_time;
