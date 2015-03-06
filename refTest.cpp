@@ -56,6 +56,7 @@ int main( int argc, char *argv[] ){
 		//Read Database
 		printf("[REF] -- Reading Database\n");
 		db = new Database(xmlDB);
+		db->print();
 
 
 		//Extract the birthmark from the verilog
@@ -82,6 +83,7 @@ int main( int argc, char *argv[] ){
 		xml_node<>* cktNode= xmldoc.first_node();
 		Birthmark* refBirthmark = new Birthmark();
 		if(!refBirthmark->importXML(cktNode)) throw eBIRTHMARK;
+		refBirthmark->print();
 
 		timeval start_time, end_time;
 		gettimeofday(&start_time, NULL); //----------------------------------

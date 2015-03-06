@@ -26,7 +26,7 @@ try:
 	vfile= sys.argv[1];
 		
 	print "--------------------------------------------------------------------------------"
-	print "[SFlow] -- Extracting feature from verilog file: " + vfile;
+	print "[v2ast] -- Extracting feature from verilog file: " + vfile;
 	print "--------------------------------------------------------------------------------"
 
 	scriptName = "data/yoscript"

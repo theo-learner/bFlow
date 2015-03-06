@@ -33,10 +33,15 @@ def Entropy(text):
 	
 
 def findMaxEntropy(sequenceList):
+	if(len(sequenceList) == 1):
+		item,=sequenceList;
+		return item
+
 	maxEntropy = 0;
 	maxString = '';
 	for sequence in sequenceList:
 		entropy = Entropy(sequence)
+		#print "SEQUENCE:" + sequence + " ENTROPY: " + repr(entropy)
 		if entropy > maxEntropy:
 			maxEntropy = entropy;
 			maxString = sequence;
@@ -146,17 +151,12 @@ def extractSWStringList(dataflowList_node, foundList, labelAttr, shapeAttr):
 def numAlpha(seqList):
 	setList = set();
 	setList.update(seqList);
-	setList.discard("");
 
 	return len(setList);
 
 	
 def findMaxAlphaPath(dfg, node, dst, marked, path, maxNumAlpha, maxPath, maxPathList, labelAttr, shapeAttr):
 	
-	letter = extractSequenceLetter(node, labelAttr, shapeAttr);
-	if(letter == 'X'):
-		print "MULT FOUNNDDDDDDDDDDDDDDDD!"
-		exit()
 	if node == dst:
 		path.append(node);
 		newSequence = extractSWString(path, labelAttr, shapeAttr);
@@ -175,7 +175,7 @@ def findMaxAlphaPath(dfg, node, dst, marked, path, maxNumAlpha, maxPath, maxPath
 		return maxNumAlpha;
 
 	path.append(node);
-	marked.append(node);	
+	marked.add(node);	
 
 	predList = dfg.predecessors(node);
 
@@ -206,9 +206,144 @@ def findMaxAlphaPath(dfg, node, dst, marked, path, maxNumAlpha, maxPath, maxPath
 	return maxNumAlpha;
 
 
-def findMaxPath(dfg, node, dst, marked, path, maxPath, maxPathList):
+def findMaxAlphaPath(dfg, node, dst, marked, path, pathSequence, maxNumAlpha, maxPathList, maxSequenceList, labelAttr, shapeAttr):
 	if node == dst:
 		path.append(node);
+		letter = extractSequenceLetter(node, labelAttr, shapeAttr);
+		pathSequence.append(letter)
+		numAlphabet = numAlpha(pathSequence);
+		if numAlphabet > maxNumAlpha:
+			maxPathList[:] = [];
+			maxSequenceList[:] = [];
+			maxNumAlpha = numAlphabet
+		if numAlphabet >= maxNumAlpha:
+			newPath = copy.deepcopy(path);
+			maxPathList.append(newPath);
+			maxSequenceList.append(copy.deepcopy(pathSequence));
+			
+		path.pop(len(path)-1);
+		pathSequence.pop(len(pathSequence)-1);
+		return maxNumAlpha;
+
+	letter = extractSequenceLetter(node, labelAttr, shapeAttr);
+	path.append(node);
+	pathSequence.append(letter)
+	marked.add(node);	
+
+	succList = dfg.successors(node);
+	for succ in succList:
+		if succ not in marked:
+			maxNumAlpha= findMaxAlphaPath(dfg, succ, dst,  marked, path, pathSequence, maxNumAlpha, maxPathList, maxSequenceList, labelAttr, shapeAttr);
+		else:
+			i = 0;
+			for mp in maxSequenceList:
+				try:
+					index = maxPathList[i].index(succ);
+
+					tmpPathSequence = pathSequence + mp[index:];
+					numAlphabet = numAlpha(tmpPathSequence);
+					tmpPath = path + maxPathList[i][index:]
+					
+					if numAlphabet > maxNumAlpha:
+						maxPathList[:] = [];
+						maxSequenceList[:] = [];
+						maxNumAlpha = numAlphabet
+
+					if numAlphabet >= maxNumAlpha:
+						maxPathList.append(tmpPath);
+						maxSequenceList.append(tmpPathSequence);
+						break;
+				except ValueError:
+					continue;
+				finally:
+					i=i+1;
+				
+	pathSequence.pop(len(pathSequence)-1);
+	path.pop(len(path)-1);
+	return maxNumAlpha
+
+
+def findMaxPath(dfg, node, dst, marked, path, maxLen, maxPathList):
+	if node == dst:
+		path.append(node);
+		if len(path) > maxLen:
+			maxPathList[:] = [];
+			maxLen = len(path)
+		if len(path) >= maxLen:
+			newPath = copy.deepcopy(path);
+			maxPathList.append(newPath);
+			
+		path.pop(len(path)-1);
+		return maxLen;
+
+	path.append(node);
+	marked.add(node);	
+	succList = dfg.successors(node);
+	for succ in succList:
+		if succ not in marked:
+			maxLen = findMaxPath(dfg, succ, dst,  marked, path, maxLen, maxPathList);
+		else:
+			for mp in maxPathList:
+				try:
+					index = mp.index(succ);
+					newLen = len(path) + len(mp) - index
+					
+					if newLen > maxLen:
+						maxPathList[:] = [];
+						maxLen = newLen 
+					if newLen >= maxLen:
+						tempPath = path + mp[index:]
+						maxPathList.append(tempPath);
+						break;
+				except ValueError:
+					continue;
+				
+	path.pop(len(path)-1);
+	return maxLen
+
+def findMinPath(dfg, node, dst, marked, path, minLen, maxPathList):
+	if node == dst:
+		newLen = len(path) + 1;
+		if newLen  <= minLen:
+			if newLen < minLen:
+				maxPathList[:] = [];
+				minLen = newLen 
+			newPath = path + [node];
+			maxPathList.append(newPath);
+			
+		return minLen;
+
+	path.append(node);
+	marked.add(node);	
+	succList = dfg.successors(node);
+	for succ in succList:
+		if succ not in marked:
+			minLen = findMinPath(dfg, succ, dst,  marked, path, minLen, maxPathList);
+		else:
+			for mp in maxPathList:
+				try:
+					index = mp.index(succ);
+					newLen = len(path) + len(mp) - index
+					
+					if newLen <= minLen:
+						if newLen < minLen:
+							minLen = newLen
+							maxPathList[:] = [];
+						tempPath = path + mp[index:]
+						maxPathList.append(tempPath);
+						break;
+				except ValueError:
+					continue;
+				
+	del path[-1];
+	return minLen
+
+	
+def findMaxPathOutIn(dfg, node, dst, marked, path, maxPath, maxPathList):
+	if node == dst:
+		path.append(node);
+		if len(path) > len(maxPath):
+			maxPathList[:] = [];
 		if len(path) >= len(maxPath):
 			maxPath = copy.deepcopy(path);
 			maxPathList.append(maxPath);
@@ -217,29 +352,27 @@ def findMaxPath(dfg, node, dst, marked, path, maxPath, maxPathList):
 		return maxPath;
 
 	path.append(node);
-	marked.append(node);	
-
+	marked.add(node);	
 	predList = dfg.predecessors(node);
 	for pred in predList:
 		if pred not in marked:
-			maxPath = findMaxPath(dfg, pred, dst,  marked, path, maxPath, maxPathList);
+			maxPath = findMaxPathOutIn(dfg, pred, dst,  marked, path, maxPath, maxPathList);
 		else:
 			for mp in maxPathList:
 				try:
 					index = mp.index(pred);
 					newLen = len(path) + len(mp) - index
 					
+					if newLen > len(maxPath):
+						maxPathList[:] = [];
 					if newLen >= len(maxPath):
 						tempPath = path + mp[index:]
 						maxPath = copy.deepcopy(tempPath);
 						maxPathList.append(maxPath);
-
-					break;
+						break;
 				except ValueError:
 					continue;
 				
-
-
 	path.pop(len(path)-1);
 	return maxPath;
 
@@ -479,9 +612,9 @@ def extractDataflow(fileName):
 				else:
 					inc(fpDict["bb"], size)
 
-	print "TOT Fanin: " + repr(totalFanin)
-	print "TOT Fanout: " + repr(totalFanout)
-	print "count: " + repr(nodeCount)
+	#print "TOT Fanin: " + repr(totalFanin)
+	#print "TOT Fanout: " + repr(totalFanout)
+	#print "count: " + repr(nodeCount)
 	avgFanin = totalFanin / nodeCount;	
 	avgFanout = totalFanout / nodeCount;	
 	#print "Avg Fanin: " + repr(avgFanin)
@@ -493,12 +626,12 @@ def extractDataflow(fileName):
 	#print "Num In : " + repr(len(inNodeList))
 	#print "Num Out: " + repr(len(outNodeList))
 	#num node, num edge, num input, num output, max fanin, max fanout num cycle, 
-	for outNode in outNodeList:
-		for mult in multList:
-			print "CHECKING " + mult + " TO " + outNode;
-			if(nx.has_path(dfg, mult, outNode)):
-				print "---------------YES_-------------";
-	exit()
+	#for outNode in outNodeList:
+	#	for mult in multList:
+	#		print "CHECKING " + mult + " TO " + outNode;
+	#		if(nx.has_path(dfg, mult, outNode)):
+	#			print "---------------YES_-------------";
+	#exit()
 
 
 
@@ -543,14 +676,17 @@ def extractDataflow(fileName):
 	dataflowMaxList_node = [];
 	dataflowMinList_node = [];
 	maxList = set();
+	alphaList = set();
 	minList = set();
-	totalPathLen = 0;
-	pathCount = 0;
+	totalMinPaths = 0;
+	totalMaxPaths = 0;
+	maxPathCount= 0;
+	minPathCount= 0;
+
+	maxNumAlpha = 0;
+
 	for out in outNodeList:
 		count = 0;
-
-		minPaths = []
-		maxPaths = []
 
 		for constant in constantList:
 			if(nx.has_path(dfg, constant, out)):
@@ -559,44 +695,77 @@ def extractDataflow(fileName):
 		for inNode in inNodeList:
 			if(not nx.has_path(dfg, inNode, out)):
 				continue;
-
-			shortestPaths = nx.all_shortest_paths(dfg, inNode, out)
-			for s in shortestPaths:
-				minPaths.append(list(reversed(s)));
-				totalPathLen = totalPathLen + len(s);
-				pathCount = pathCount + 1;
-
-			#Necessary for recursion
-			marked = [];
-			path= [];
-			maxPath= [];
-			maxPathList= [];
-			#findMaxAlphaPath(dfg, out, inNode, marked, path, 0, maxPath, maxPathList, labelAttr, shapeAttr);
-			findMaxPath(dfg, out, inNode, marked, path, maxPath, maxPathList);
-			#print "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
-			#newSequence = extractSWStringList(maxPathList,[], labelAttr, shapeAttr);
-			#print newSequence 
-			#print "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
-			#maxPathList.sort(lambda x, y: -1*(cmp(len(x), len(y))));
-			maxPaths = maxPaths + maxPathList;
 			
+			#OUtput input path
 			count = count + 1;
 
-			#Extract the sequence representation
-			swMax = extractSWStringList(maxPaths, maxList, labelAttr, shapeAttr);
-			swMin = extractSWStringList(minPaths, minList, labelAttr, shapeAttr);
 
+			
+
+			#Necessary for recursion
+			marked = set();
+			path= [];
+			maxLen= 0;
+			maxPathList= [];
+			#findMaxAlphaPath(dfg, out, inNode, marked, path, 0, maxPath, maxPathList, labelAttr, shapeAttr);
+			#print " -- Finding max paths"
+			maxLen = findMaxPath(dfg, inNode, out, marked, path, maxLen, maxPathList);
+			
+			#print " -- Finding Max ALpha paths"
+			marked = set();
+			path= [];
+			pathSequence= [];
+			maxAlphaList= [];
+			swAlpha = [];
+			findMaxAlphaPath(dfg, inNode, out, marked, path, pathSequence,  0, maxAlphaList, swAlpha, labelAttr, shapeAttr);
+			
+			#print " -- Finding shortest paths"
+			marked = set();
+			path= [];
+			minPathList = []
+
+			findMinPath(dfg, inNode, out, marked, path, maxLen+10, minPathList);
+			elapsed = timeit.default_timer() - start_time;
+
+			#Extract the sequence representation, make sure to ignore representations that is already in maxList
+			#print " -- Extracting Sequence"
+			swMax = extractSWStringList(maxPathList, maxList, labelAttr, shapeAttr);
+			swMin = extractSWStringList(minPathList, minList, labelAttr, shapeAttr);
+			swAlpha = extractSWStringList(maxAlphaList, alphaList, labelAttr, shapeAttr);
+
+			#print " -- Finding Entropy"
 			#Find the sequences with the highest entropy
 			maxSequence = findMaxEntropy(swMax);
 			minSequence = findMaxEntropy(swMin);
-			#print "MAX: " + maxSequence;
+			alphaSequence = findMaxEntropy(swAlpha);
+			nAlpha = numAlpha(alphaSequence);
+			#print "NUMBER OF ALPHA: " + repr(nAlpha)
+
+			#print alphaSequence
+			#if "X" in alphaSequence:
+			#	print "MULT FOUND!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
 
 			#Store the highest entropy sequence
-			maxList.add(maxSequence);
-			minList.add(minSequence);
+			if(maxSequence != ""):
+				maxList.add(maxSequence);
+				totalMaxPaths= totalMaxPaths + 1;
+				maxPathCount= maxPathCount+ len(maxSequence);
+			if(minSequence != ""):
+				minList.add(minSequence);
+				totalMinPaths= totalMinPaths + 1;
+				minPathCount= minPathCount+ len(minSequence);
+			if(alphaSequence != ""):
+				if(nAlpha > maxNumAlpha):
+					alphaList = set();
+					maxNumAlpha = nAlpha
+					alphaList.add(alphaSequence);
+				elif(nAlpha == maxNumAlpha):
+					alphaList.add(alphaSequence);
+
 			
 		#Number of inputs the output depends on;
 		inc(fpDict["outC"], count)
+	
 	
 	
 	compstr = repr(len(fpDict)) ;
@@ -611,10 +780,6 @@ def extractDataflow(fileName):
 	###########################################################################
 	# Extract the sequence 
 	###########################################################################
-	
-	#swMax = extractSWStringList(dataflowMaxList_node, labelAttr, shapeAttr);
-	#swMin = extractSWStringList(dataflowMinList_node, labelAttr, shapeAttr);
-
 	maxSeq = 3;
 	swMax = list(maxList);
 	swMax.sort(lambda x, y: -1*(cmp(len(x), len(y))));
@@ -625,6 +790,11 @@ def extractDataflow(fileName):
 	swMin.sort(lambda x, y: -1*(cmp(len(x), len(y))));
 	minList = getTopSequence(maxSeq, swMin)
 	print "MINLIST: " + repr(minList);
+	
+	swAlpha = list(alphaList);
+	swAlpha.sort(lambda x, y: -1*(cmp(len(x), len(y))));
+	alphaList= getTopSequence(maxSeq, swAlpha)
+	print "ALPHALIST: " + repr(swAlpha);
 	
 	
 	
@@ -668,11 +838,14 @@ def extractDataflow(fileName):
 	
 	
 	print "[DFX] -- Extracting additional features..."
+	print "AVG MAXPATH LEN: " + repr(float(maxPathCount)/float(totalMaxPaths));
+	print "AVG MINPATH LEN: " + repr(float(minPathCount)/float(totalMinPaths));
 	statstr = repr(len(nodeList)) + "," + repr(len(edgeList)) + ","
 	statstr = statstr + repr(len(inNodeList)) + "," + repr(len(outNodeList)) + ","
 	statstr = statstr + repr(maxFanin) + "," + repr(maxFanout) + ",";
 	#statstr = statstr + repr(len(list(nx.simple_cycles(dfg)))) + ",";
-	statstr = statstr + repr(float(totalPathLen)/float(pathCount));
+	statstr = statstr + repr(float(maxPathCount)/float(totalMaxPaths)) + ',';
+	statstr = statstr + repr(float(minPathCount)/float(totalMinPaths));
 	for freq in nx.degree_histogram(dfg):
 		statstr = statstr + "," + repr(freq);
 	#print "STAT: " + statstr
@@ -681,7 +854,7 @@ def extractDataflow(fileName):
 	print "[DFX] -- ELAPSED: " +  repr(elapsed);
 	print
 
-	result = (maxList, minList, constSet, fpDict, statstr);
+	result = (maxList, minList, constSet, fpDict, statstr, alphaList);
 	return result;
 
 

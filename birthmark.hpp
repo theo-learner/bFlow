@@ -31,6 +31,7 @@ class Birthmark{
 		std::string m_Name;
 		std::list<std::string> m_MaxSequence;
 		std::list<std::string> m_MinSequence;
+		std::list<std::string> m_AlphaSequence;
 		std::set<int> m_Constants;
 
 		//Name of feature, map of the size of the feature and how many there are
@@ -43,6 +44,7 @@ class Birthmark{
 
 		void getMaxSequence(std::list<std::string>&);
 		void getMinSequence(std::list<std::string>&);
+		void getAlphaSequence(std::list<std::string>&);
 		void getConstants(std::set<int>&);
 		void getFingerprint(std::map<std::string, Feature*> &);
 		std::string getName();
@@ -50,6 +52,7 @@ class Birthmark{
 		
 		void setMaxSequence(std::list<std::string>&);
 		void setMinSequence(std::list<std::string>&);
+		void setAlphaSequence(std::list<std::string>&);
 		void setConstants(std::set<int>&);
 		void setFingerprint(std::map<std::string, Feature*> &);
 		void setName(std::string);
@@ -57,6 +60,7 @@ class Birthmark{
 		
 		void addMaxSequence(std::string);
 		void addMinSequence(std::string);
+		void addAlphaSequence(std::string);
 		void addConstant(int);
 		void addFingerprint(std::string, Feature*);
 		void addFingerprint(std::string, unsigned , unsigned);

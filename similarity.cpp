@@ -318,7 +318,7 @@ double SIMILARITY::align(std::list<std::string>& ref, std::list<std::string>& db
 
 			//printf("GAP: %d  GAPOPEN: %d  GAPEXTEND: %d\n", scoreGap(s_Score), scoreGapOpen(s_Score), scoreGapExtend(s_Score));
 			int score = localAlignment(s_Align, s_Score);
-			printAlignment();
+			//printAlignment();
 
 //////////////////////////////////////////////////////////////
     TRowIterator it1 = begin(row(s_Align,0));

@@ -73,6 +73,8 @@ bool Birthmark::importXML(xml_node<>* cktNode){
 				addMaxSequence(featureNode->value());
 			else if(featureNodeName == "MINSEQ")
 				addMinSequence(featureNode->value());
+			else if(featureNodeName == "ALPHASEQ")
+				addAlphaSequence(featureNode->value());
 			else if(featureNodeName == "CONSTANT")
 				addConstant(s2i::string2int(featureNode->value()));
 			else if(featureNodeName == "FP"){
@@ -159,6 +161,10 @@ void Birthmark::getMinSequence(std::list<std::string>& rVal){
 	rVal = m_MinSequence;
 }
 
+void Birthmark::getAlphaSequence(std::list<std::string>& rVal){
+	rVal = m_AlphaSequence;
+}
+
 void Birthmark::getConstants(std::set<int>& rVal){
 	rVal = m_Constants;
 }
@@ -188,6 +194,10 @@ void Birthmark::setMinSequence(std::list<std::string>& val){
 	m_MinSequence = val;
 }
 
+void Birthmark::setAlphaSequence(std::list<std::string>& val){
+	m_AlphaSequence = val;
+}
+
 void Birthmark::setConstants(std::set<int>& val){
 	m_Constants = val;
 }
@@ -215,6 +225,10 @@ void Birthmark::addMaxSequence(std::string seq){
 
 void Birthmark::addMinSequence(std::string seq){
 	m_MinSequence.push_back(seq);
+}
+
+void Birthmark::addAlphaSequence(std::string seq){
+	m_AlphaSequence.push_back(seq);
 }
 
 void Birthmark::addConstant(int constant){
@@ -247,6 +261,9 @@ void Birthmark::print(){
 	
 	for(it = m_MinSequence.begin(); it != m_MinSequence.end(); it++)
 		printf("Min Sequence: %s\n", it->c_str());
+	
+	for(it = m_AlphaSequence.begin(); it != m_AlphaSequence.end(); it++)
+		printf("Alpha Sequence: %s\n", it->c_str());
 	
 	
 	

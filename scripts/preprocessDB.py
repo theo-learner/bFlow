@@ -16,6 +16,7 @@ import yosys;
 import dataflow as dfx
 import traceback
 import timeit
+import processRef
 
 
 if len(sys.argv) != 3: 
@@ -68,49 +69,10 @@ try:
 			raise error.YosysError(rVal);
 
 
-		#(maxList, minList, constSet, fp) 
-		result = dfx.extractDataflow(val[0]);
-		
-		#Create tag for new circuit
-		ckttag = soup.new_tag("CIRCUIT");
-		ckttag['name'] = top
-		ckttag['id'] = ID
-		ID = ID + 1;
+		ckttag = processRef.generateXML(val[0], top, soup)
 		dbtag.append(ckttag)
+
 	
-		#Store the max seq
-		maxList = result[0];
-		for seq in maxList:
-			seqtag = soup.new_tag("MAXSEQ");
-			seqtag.string =seq 
-			ckttag.append(seqtag);
-		
-		minList = result[1];
-		for seq in minList:
-			seqtag = soup.new_tag("MINSEQ");
-			seqtag.string =seq 
-			ckttag.append(seqtag);
-		
-		constSet= result[2];
-		for const in constSet:
-			consttag = soup.new_tag("CONSTANT");
-			consttag.string = const
-			ckttag.append(consttag);
-		
-		fpDict= result[3];
-
-		i = 0;
-		for n, fp in fpDict.iteritems():		
-			fptag = soup.new_tag("FP");
-			fptag['type'] = n;
-			for k, v in fp.iteritems():
-				attrTag = soup.new_tag("DATA");
-				attrTag['size'] = k;
-				attrTag['count'] = v;
-				fptag.append(attrTag);
-			i = i + 1;
-
-			ckttag.append(fptag);
 		elapsed = timeit.default_timer() - start_time;
 		print "ELASPED TIME: " + repr(elapsed);
 		print

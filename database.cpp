@@ -118,15 +118,19 @@ bool Database::importDatabase(std::string path){
 
 void Database::searchDatabase(Birthmark* reference, std::vector<double>& fsim){
 	//Get FComponent
-	std::list<std::string> maxRef, minRef;
+	std::list<std::string> maxRef, minRef, alphaRef;
 	reference->getMaxSequence(maxRef);
 	reference->getMinSequence(minRef);
+	reference->getAlphaSequence(alphaRef);
 
 /*
 	std::list<Birthmark*>::iterator iList;
 	for(iList = m_Database.begin(); iList != m_Database.end(); iList++){
 		*/
 	fsim.reserve(m_Database.size());
+	std::set<Score, setCompare> maxscores;
+	std::set<Score, setCompare> minscores;
+	std::set<Score, setCompare> alphascores;
 	std::set<Score, setCompare> scores;
 	std::set<Score, setCompare> sims;
 	for(unsigned int i = 0; i < m_Database.size(); i++) {
@@ -151,7 +155,15 @@ void Database::searchDatabase(Birthmark* reference, std::vector<double>& fsim){
 		printf("TOTAL SCORE: %d\n", sc);
 		totalScore += sc;
 
-		double fScore = (maxScore*0.650 + minScore* 0.350);
+		//Align the min sequences
+		printf("ALPHA\n");
+		std::list<std::string> alphaDB;
+		m_Database[i]->getAlphaSequence(alphaDB);
+		double alphaScore = SIMILARITY::align(alphaRef, alphaDB, sc);
+		printf("TOTAL SCORE: %d\n", sc);
+		totalScore += sc;
+
+		double fScore = (alphaScore*0.5 + maxScore*0.30 + minScore* 0.20);
 		//printf("        * FSCORE: %f\n\n",fScore);
 		printf("\n\n");
 		fsim.push_back(fScore);

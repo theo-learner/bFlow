@@ -18,15 +18,13 @@ import dataflow as dfx
 from bs4 import BeautifulSoup
 import error;
 
-def generateXML(dotfile, cktName):
+def generateXML(dotfile, cktName, soup):
 	result = dfx.extractDataflow(dotfile);
 
 #######################################################
-	soup = BeautifulSoup();
 	ckttag = soup.new_tag("CIRCUIT");
 	ckttag['name'] = cktName;
 	ckttag['id'] = -1 
-	soup.append(ckttag);
 
 	#Store the max seq
 	maxList = result[0];
@@ -61,7 +59,16 @@ def generateXML(dotfile, cktName):
 		i = i + 1;
 
 		ckttag.append(fptag);
-	return soup
+		
+	alphaList = result[5];
+	for seq in alphaList:
+		seqtag = soup.new_tag("ALPHASEQ");
+		seqtag.string = seq 
+		ckttag.append(seqtag);
+
+	return ckttag
+
+	#return soup
 #######################################################
 
 
@@ -89,7 +96,9 @@ def main():
 	#Preprocess yosys script
 	(scriptName, dotfile) = generateYosysScript(vfile);
 	rVal = yosys.execute(scriptName);
-	soup = generateXML(dotfile, fileName[1])
+	soup = BeautifulSoup();
+	ckttag = generateXML(dotfile, fileName[1], soup)
+	soup.append(ckttag);
 	
 	fileStream = open("data/reference.xml", 'w');
 	fileStream.write(repr(soup));
