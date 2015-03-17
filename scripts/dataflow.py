@@ -42,7 +42,7 @@ def findMaxEntropy(sequenceList):
 	for sequence in sequenceList:
 		entropy = Entropy(sequence)
 		#print "SEQUENCE:" + sequence + " ENTROPY: " + repr(entropy)
-		if entropy > maxEntropy:
+		if entropy >= maxEntropy:
 			maxEntropy = entropy;
 			maxString = sequence;
 	
@@ -68,7 +68,7 @@ def getTopSequence(maxSeq, seqList):
 
 def extractSequenceLetter(node, labelAttr, shapeAttr):
 	#	Make sure it isn't a port/point node
-	if 'n' in node or 'v' in node:#or 'x' in node:
+	if 'n' in node or 'v' in node or 'x' in node:
 		return ""
 	elif shapeAttr[node] == "diamond":       # Check to see if it is a point node
 		return ""
@@ -92,9 +92,9 @@ def extractSequenceLetter(node, labelAttr, shapeAttr):
 	lutStr    = ["$lut"]
 	memStr    = ["$mem"]
 
-	if 'x' in node or any(s in operation for s in wireStr):
-		return 'N';
-	elif any(s in operation for s in muxStr):
+	#if 'x' in node or any(s in operation for s in wireStr):
+	#	return 'N';
+	if any(s in operation for s in muxStr):
 		return 'M';
 	elif any(s in operation for s in regStr):
 		return 'F';

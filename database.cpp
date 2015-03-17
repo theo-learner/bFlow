@@ -164,10 +164,13 @@ void Database::searchDatabase(Birthmark* reference, std::vector<double>& fsim){
 		printf("TOTAL SCORE: %4d\tAVG: %f\n", sc, double(sc) / ((double)alphaRef.size() * (double)alphaDB.size()));
 		totalScore += sc;
 
-		double fScore = (maxScore*0.65 + minScore* 0.35);
+		double axW = 0.3;
+		double inW = 0.1;
+		double alW = 0.6;
+
+		double fScore = (maxScore*axW + minScore* inW + alphaScore * alW);
 		//printf("        * FSCORE: %f\n\n",fScore);
 		printf("\n\n");
-		fsim.push_back(fScore);
 
 		Score score;
 		score.id = m_Database[i]->getID();
@@ -311,7 +314,7 @@ void Database::searchDatabase(Birthmark* reference){
 		result.name = m_Database[i]->getName();
 		result.score = fScore*100.0*0.67 +
 		               sScore*100.0*0.21 + 
-									 cScore*100.0*0.12;
+     				   cScore*100.0*0.12;
 
 		results.insert(result);
 		printf(" ## OVERALL SCORE: %f\n\n", result.score);

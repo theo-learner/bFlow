@@ -1,12 +1,12 @@
 /*@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@ 
-	@
-	@  SIMILARITY.cpp
-	@  
-	@  @AUTHOR:Kevin Zeng
-	@  Copyright 2012 – 2013 
-	@  Virginia Polytechnic Institute and State University
-	@
-	@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@*/
+  @
+  @  SIMILARITY.cpp
+  @  
+  @  @AUTHOR:Kevin Zeng
+  @  Copyright 2012 – 2013 
+  @  Virginia Polytechnic Institute and State University
+  @
+  @#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@*/
 
 #include "similarity.hpp"
 
@@ -61,7 +61,7 @@ double SIMILARITY::tanimotoWindow_size(std::map<unsigned, unsigned>& data1, std:
 		1.000, 0.9938, 0.9772, 0.9332, 0.8413, 0.6915
 	};
 
-	
+
 	//Count the number of bits that are the same
 	for(iMap = data1.begin(); iMap != data1.end(); iMap++){
 		iTemp = data2.find(iMap->first);	
@@ -132,9 +132,9 @@ double SIMILARITY::tanimotoWindow(std::map<unsigned, unsigned> data1, std::map<u
 
 	const double multiplier[windowSize+1] = {
 		1.000, 0.9332, 0.6915
-		//1.000, 0.9938, 0.9772, 0.9332, 0.8413, 0.6915
+			//1.000, 0.9938, 0.9772, 0.9332, 0.8413, 0.6915
 	};
-	
+
 	//Count the number of bits that are the same
 	for(iMap = data1.begin(); iMap != data1.end(); iMap++){
 		iTemp = data2.find(iMap->first);	
@@ -184,27 +184,27 @@ double SIMILARITY::tanimotoWindow(std::map<unsigned, unsigned> data1, std::map<u
 			//Similar size found within window
 			if(minDistance1 <= windowSize){
 				double ratio;
-			
 
 
-			if(iMap->second > iTemp->second){
-				marked2.insert(iTemp->first);
-				//printf("data 1- %d: has %d left unmapped\n", iMap->first, iMap->second-iTemp->second);
-				ratio = ((double)iTemp->second / (double)iMap->second);
-				iMap->second = iMap->second - iTemp->second;
-			}
-			else if(iTemp->second >  iMap->second){
-				marked1.insert(iMap->first);
-				//printf("data 2- %d: has %d left unmapped\n", iTemp->first, iTemp->second-iMap->second);
-				ratio = ((double)iMap->second / (double)iTemp->second);
-				iTemp->second = iTemp->second - iMap->second;
-			}
-			else{
-				ratio = 1.000;
-				//printf("EQUAL COUNTS\n");
-				marked1.insert(iMap->first);
-				marked2.insert(iTemp->first);
-			}
+
+				if(iMap->second > iTemp->second){
+					marked2.insert(iTemp->first);
+					//printf("data 1- %d: has %d left unmapped\n", iMap->first, iMap->second-iTemp->second);
+					ratio = ((double)iTemp->second / (double)iMap->second);
+					iMap->second = iMap->second - iTemp->second;
+				}
+				else if(iTemp->second >  iMap->second){
+					marked1.insert(iMap->first);
+					//printf("data 2- %d: has %d left unmapped\n", iTemp->first, iTemp->second-iMap->second);
+					ratio = ((double)iMap->second / (double)iTemp->second);
+					iTemp->second = iTemp->second - iMap->second;
+				}
+				else{
+					ratio = 1.000;
+					//printf("EQUAL COUNTS\n");
+					marked1.insert(iMap->first);
+					marked2.insert(iTemp->first);
+				}
 
 
 
@@ -247,8 +247,8 @@ double SIMILARITY::tanimoto(std::set<int>& data1, std::set<int>& data2){
 			N_f1f2_ratio += 1.000;
 		}
 	}
-	
-	
+
+
 	double denom = (N_f1+N_f2-N_f1f2_ratio);
 	if(denom == 0.0)	return 0.0;
 
@@ -274,8 +274,8 @@ double SIMILARITY::tanimoto(std::map<unsigned, unsigned>& data1, std::map<unsign
 			N_f1f2_ratio += 1.000;
 		}
 	}
-	
-	
+
+
 	double denom = (N_f1+N_f2-N_f1f2_ratio);
 	if(denom == 0.0)	return 0.0;
 
@@ -291,8 +291,8 @@ double SIMILARITY::tanimoto(std::map<unsigned, unsigned>& data1, std::map<unsign
  *
  *#############################################################################*/
 double SIMILARITY::align(std::list<std::string>& ref, std::list<std::string>& db, int& alignScore){
-//	timeval start_time, end_time;
-//	gettimeofday(&start_time, NULL); //----------------------------------
+	//	timeval start_time, end_time;
+	//	gettimeofday(&start_time, NULL); //----------------------------------
 
 
 	std::list<std::string>::iterator iSeq;	
@@ -318,35 +318,35 @@ double SIMILARITY::align(std::list<std::string>& ref, std::list<std::string>& db
 
 			//printf("GAP: %d  GAPOPEN: %d  GAPEXTEND: %d\n", scoreGap(s_Score), scoreGapOpen(s_Score), scoreGapExtend(s_Score));
 			int score = localAlignment(s_Align, s_Score);
-			//printAlignment();
+			/printAlignment();
 
-//////////////////////////////////////////////////////////////
-    TRowIterator it1 = begin(row(s_Align,0));
-    TRowIterator it2 = begin(row(s_Align,1));
-    TRowIterator it1End = end(row(s_Align,0));
+			//////////////////////////////////////////////////////////////
+			TRowIterator it1 = begin(row(s_Align,0));
+			TRowIterator it2 = begin(row(s_Align,1));
+			TRowIterator it1End = end(row(s_Align,0));
 
-		double penalty = 0.0;
-		double match = 0.0;
-		double gaps = 0.0;
-		for (; it1 != it1End; ++it1){
-        if (isGap(it1)){
+			double penalty = 0.0;
+			double match = 0.0;
+			double gaps = 0.0;
+			for (; it1 != it1End; ++it1){
+				if (isGap(it1)){
 					gaps += 1.0;
 					match += 0.2;
 					score += CircuitGapPenaltyMatrix[*it2];
 
 				}
-        else if(isGap(it2)){
+				else if(isGap(it2)){
 					match += 0.2;
 					score += CircuitGapPenaltyMatrix[*it1];
 				}
-        else if(*it2 != *it1)   penalty += 0.75;
+				else if(*it2 != *it1)   penalty += 0.75;
 				else                    match += 1.0;
 				++it2;
-    }
+			}
 
-		double refSizeWithGap = ((double)(length(value(stringSet(s_Align), 0))) + gaps);
-		double sim = (match - penalty) / refSizeWithGap;
-		////////////////////////////////////////////////////////////////
+			double refSizeWithGap = ((double)(length(value(stringSet(s_Align), 0))) + gaps);
+			double sim = (match - penalty) / refSizeWithGap;
+			////////////////////////////////////////////////////////////////
 
 
 
@@ -360,12 +360,12 @@ double SIMILARITY::align(std::list<std::string>& ref, std::list<std::string>& db
 		//printf("***************************************************\n");
 	}
 
-/*
-	gettimeofday(&end_time, NULL); //----------------------------------
-	double elapsedTime = (end_time.tv_sec - start_time.tv_sec) * 1000.0;
-	elapsedTime += (end_time.tv_usec - start_time.tv_usec) / 1000.0;
-	printf("[SIM] -- Align elapsed time: %f\n", elapsedTime/1000.0);
-	*/
+	/*
+	   gettimeofday(&end_time, NULL); //----------------------------------
+	   double elapsedTime = (end_time.tv_sec - start_time.tv_sec) * 1000.0;
+	   elapsedTime += (end_time.tv_usec - start_time.tv_usec) / 1000.0;
+	   printf("[SIM] -- Align elapsed time: %f\n", elapsedTime/1000.0);
+	 */
 
 	alignScore = totalScore;
 	return maxSim;
@@ -381,8 +381,8 @@ double SIMILARITY::align(std::list<std::string>& ref, std::list<std::string>& db
  *
  *#############################################################################*/
 double SIMILARITY::align(std::list<std::string>& ref, std::list<std::string>& db){
-//	timeval start_time, end_time;
-//	gettimeofday(&start_time, NULL); //----------------------------------
+	//	timeval start_time, end_time;
+	//	gettimeofday(&start_time, NULL); //----------------------------------
 
 
 	std::list<std::string>::iterator iSeq;	
@@ -408,34 +408,35 @@ double SIMILARITY::align(std::list<std::string>& ref, std::list<std::string>& db
 
 			//printf("GAP: %d  GAPOPEN: %d  GAPEXTEND: %d\n", scoreGap(s_Score), scoreGapOpen(s_Score), scoreGapExtend(s_Score));
 			int score = localAlignment(s_Align, s_Score);
+			printAlignment();
 
-//////////////////////////////////////////////////////////////
-    TRowIterator it1 = begin(row(s_Align,0));
-    TRowIterator it2 = begin(row(s_Align,1));
-    TRowIterator it1End = end(row(s_Align,0));
+			//////////////////////////////////////////////////////////////
+			TRowIterator it1 = begin(row(s_Align,0));
+			TRowIterator it2 = begin(row(s_Align,1));
+			TRowIterator it1End = end(row(s_Align,0));
 
-		double penalty = 0.0;
-		double match = 0.0;
-		double gaps = 0.0;
-		for (; it1 != it1End; ++it1){
-        if (isGap(it1)){
+			double penalty = 0.0;
+			double match = 0.0;
+			double gaps = 0.0;
+			for (; it1 != it1End; ++it1){
+				if (isGap(it1)){
 					gaps += 1.0;
 					match += 0.2;
 					score += CircuitGapPenaltyMatrix[*it2];
 
 				}
-        else if(isGap(it2)){
+				else if(isGap(it2)){
 					match += 0.2;
 					score += CircuitGapPenaltyMatrix[*it1];
 				}
-        else if(*it2 != *it1)   penalty += 0.75;
+				else if(*it2 != *it1)   penalty += 0.75;
 				else                    match += 1.0;
 				++it2;
-    }
+			}
 
-		double refSizeWithGap = ((double)(length(value(stringSet(s_Align), 0))) + gaps);
-		double sim = (match - penalty) / refSizeWithGap;
-		////////////////////////////////////////////////////////////////
+			double refSizeWithGap = ((double)(length(value(stringSet(s_Align), 0))) + gaps);
+			double sim = (match - penalty) / refSizeWithGap;
+			////////////////////////////////////////////////////////////////
 
 
 
@@ -448,12 +449,12 @@ double SIMILARITY::align(std::list<std::string>& ref, std::list<std::string>& db
 		//printf("***************************************************\n");
 	}
 
-/*
-	gettimeofday(&end_time, NULL); //----------------------------------
-	double elapsedTime = (end_time.tv_sec - start_time.tv_sec) * 1000.0;
-	elapsedTime += (end_time.tv_usec - start_time.tv_usec) / 1000.0;
-	printf("[SIM] -- Align elapsed time: %f\n", elapsedTime/1000.0);
-	*/
+	/*
+	   gettimeofday(&end_time, NULL); //----------------------------------
+	   double elapsedTime = (end_time.tv_sec - start_time.tv_sec) * 1000.0;
+	   elapsedTime += (end_time.tv_usec - start_time.tv_usec) / 1000.0;
+	   printf("[SIM] -- Align elapsed time: %f\n", elapsedTime/1000.0);
+	 */
 
 	return maxSim;
 	//return totalScore;
@@ -461,63 +462,63 @@ double SIMILARITY::align(std::list<std::string>& ref, std::list<std::string>& db
 }
 
 double SIMILARITY::alignScore(){
-    TRowIterator it1 = begin(row(s_Align,0));
-    TRowIterator it2 = begin(row(s_Align,1));
-    TRowIterator it1End = end(row(s_Align,0));
+	TRowIterator it1 = begin(row(s_Align,0));
+	TRowIterator it2 = begin(row(s_Align,1));
+	TRowIterator it1End = end(row(s_Align,0));
 
-		double penalty = 0.0;
-		double match = 0.0;
-		double gaps = 0.0;
-		for (; it1 != it1End; ++it1){
-        if (isGap(it1)){
-					match += 0.2;
-					gaps += 1.0;
+	double penalty = 0.0;
+	double match = 0.0;
+	double gaps = 0.0;
+	for (; it1 != it1End; ++it1){
+		if (isGap(it1)){
+			match += 0.2;
+			gaps += 1.0;
 
-				}
-        else if(isGap(it2)){
-					match += 0.2;
+		}
+		else if(isGap(it2)){
+			match += 0.2;
 
-				}
-        else if(*it2 != *it1)   penalty += 0.75;
-				else                    match += 1.0;
-				++it2;
-    }
+		}
+		else if(*it2 != *it1)   penalty += 0.75;
+		else                    match += 1.0;
+		++it2;
+	}
 
-		double refSizeWithGap = ((double)(length(value(stringSet(s_Align), 0))) + gaps);
-		double sim = (match - penalty) / refSizeWithGap;
-		return sim;
+	double refSizeWithGap = ((double)(length(value(stringSet(s_Align), 0))) + gaps);
+	double sim = (match - penalty) / refSizeWithGap;
+	return sim;
 }
 
 void SIMILARITY::printAlignment(){
-    TRowIterator it1 = begin(row(s_Align,0));
-    TRowIterator it2 = begin(row(s_Align,1));
-    TRowIterator it1End = end(row(s_Align,0));
-    TRowIterator it2End = end(row(s_Align,1));
-		for (; it1 != it1End; ++it1){
-        if (isGap(it1))    std::cout << gapValue<char>();
-        else              std::cout << *it1;
-    }
-    std::cout << std::endl;
-		
-    it1 = begin(row(s_Align,0));
-    it2 = begin(row(s_Align,1));
-		for (; it1 != it1End; ++it1){
-        if (isGap(it1))         std::cout << "*" ;
-        else if(isGap(it2))     std::cout << "*" ;
-        else if(*it2 != *it1)  	std::cout << "X";
-				else                    std::cout << "|";
-				++it2;
-    }
-    std::cout << std::endl;
-    
-		it1 = begin(row(s_Align,0));
-    it2 = begin(row(s_Align,1));
-    for (; it2 != it2End; ++it2){
-        if (isGap(it2))   std::cout << gapValue<char>();
-        else              std::cout << *it2;
-    }
-    std::cout << std::endl;
-    std::cout << std::endl;
+	TRowIterator it1 = begin(row(s_Align,0));
+	TRowIterator it2 = begin(row(s_Align,1));
+	TRowIterator it1End = end(row(s_Align,0));
+	TRowIterator it2End = end(row(s_Align,1));
+	for (; it1 != it1End; ++it1){
+		if (isGap(it1))    std::cout << gapValue<char>();
+		else              std::cout << *it1;
+	}
+	std::cout << std::endl;
+
+	it1 = begin(row(s_Align,0));
+	it2 = begin(row(s_Align,1));
+	for (; it1 != it1End; ++it1){
+		if (isGap(it1))         std::cout << "*" ;
+		else if(isGap(it2))     std::cout << "*" ;
+		else if(*it2 != *it1)  	std::cout << "X";
+		else                    std::cout << "|";
+		++it2;
+	}
+	std::cout << std::endl;
+
+	it1 = begin(row(s_Align,0));
+	it2 = begin(row(s_Align,1));
+	for (; it2 != it2End; ++it2){
+		if (isGap(it2))   std::cout << gapValue<char>();
+		else              std::cout << *it2;
+	}
+	std::cout << std::endl;
+	std::cout << std::endl;
 }
 
 void SIMILARITY::initAlignment(){
@@ -528,7 +529,7 @@ void SIMILARITY::initAlignment(){
 	//Located in header file
 	setDefaultScoreMatrix(s_Score, CircuitScoringMatrix());
 	showScoringMatrix(s_Score);
-	
+
 }
 
 double SIMILARITY::calculateSimilarity(std::map<unsigned, unsigned>& fingerprint1,

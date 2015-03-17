@@ -3,3 +3,4 @@ v/fft16.v
 v/simple_spi_top.v
 v/qdiv2.v
 v/osdvuart.v
+v/qmult2.v
