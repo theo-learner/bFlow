@@ -1,6 +1,6 @@
-v/uart2.v
-v/fft16.v
-v/simple_spi_top.v
+v/cf_fft_256_8.v
 v/qdiv2.v
-v/osdvuart.v
-v/qmult2.v
+v/cam.v
+
+
+v/ncsu_arbiter.v

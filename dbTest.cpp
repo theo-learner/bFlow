@@ -48,9 +48,8 @@ int main( int argc, char *argv[] ){
 
 	try{
 		//Check arguments : Verilog File, XML Database File
-		if(argc != 3) throw eARGS;
-		std::string xmlDB= argv[2];
-		std::string vREF= argv[1];
+		if(argc != 2) throw eARGS;
+		std::string xmlDB= argv[1];
 
 
 		//Read Database
@@ -59,39 +58,28 @@ int main( int argc, char *argv[] ){
 		db->print();
 
 
-		//Extract the birthmark from the verilog
-		printf("[REF] -- Reading Reference Design\n");
-		std::string cmd = "python scripts/processRef.py " + vREF; 
-		system(cmd.c_str());
-
-		std::string xmlREF = "data/reference.xml";
-		std::string xmldata= "";
-		std::string xmlline;
-		std::ifstream refStream;
-		refStream.open(xmlREF.c_str());
-		if (!refStream.is_open()) throw eFILE;
-		while(getline(refStream, xmlline))
-			xmldata+= xmlline + "\n";
-
-		xml_document<> xmldoc;
-		char* cstr = new char[xmldata.size() + 1];
-		strcpy(cstr, xmldata.c_str());
-
-		//Parse the XML Data
-		printf("[REF] -- Generating Reference Birthmark\n");
-		xmldoc.parse<0>(cstr);
-		xml_node<>* cktNode= xmldoc.first_node();
-		Birthmark* refBirthmark = new Birthmark();
-		if(!refBirthmark->importXML(cktNode)) throw eBIRTHMARK;
-
-		timeval start_time, end_time;
-		gettimeofday(&start_time, NULL); //----------------------------------
-		std::vector<double> fsim;
-		db->searchDatabase(refBirthmark, fsim);
 		
-		/*
+		timeval start_time, end_time;
 		std::ofstream ofs;
-		ofs.open("data/fsim.csv");
+		std::ofstream ofs2;
+		ofs.open("data/compareTime.dat");
+		ofs2.open("data/avgseqlength.dat");
+		for(unsigned int i = 0; i < db->getSize(); i++){
+			gettimeofday(&start_time, NULL); //----------------------------------
+			std::vector<double> fsim;
+			db->searchDatabase(db->getBirthmark(i), fsim);
+
+			gettimeofday(&end_time, NULL); //----------------------------------
+		double elapsedTime = (end_time.tv_sec - start_time.tv_sec) * 1000.0;
+		elapsedTime += (end_time.tv_usec - start_time.tv_usec) / 1000.0;
+		printf("[REF] -- Elapsed search time: %f\n", elapsedTime/1000.0);
+		ofs<<elapsedTime/1000<<"\n";
+		ofs2<<db->getBirthmark(i)->getAvgSequenceLength()<<"\n";
+		}
+		ofs.close();
+		ofs2.close();
+
+		/*
 		for(unsigned int i = 0; i < fsim.size(); i++){
 			printf("fSIM %7.4f\tCircuit: %s\n", fsim[i], db->getBirthmark(i)->getName().c_str());
 			ofs<<fsim[i]<<"\n";
@@ -100,8 +88,6 @@ int main( int argc, char *argv[] ){
 		*/
 
 
-		delete refBirthmark;
-		gettimeofday(&end_time, NULL); //----------------------------------
 		double elapsedTime = (end_time.tv_sec - start_time.tv_sec) * 1000.0;
 		elapsedTime += (end_time.tv_usec - start_time.tv_usec) / 1000.0;
 		printf("[REF] -- Elapsed search time: %f\n", elapsedTime/1000.0);

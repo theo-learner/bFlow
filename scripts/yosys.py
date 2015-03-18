@@ -36,6 +36,7 @@ def create_yosys_script(fileName, scriptName):
 	script = script + "memory_collect; opt;\n\n";
 	script = script + "flatten "+ top +"; opt\n";
 	script = script + "wreduce; opt\n\n";
+	script = script + "stat " + top + "\n\n";
 	script = script + "show -width -format dot -prefix ./dot/" + top + "_df " + top + "\n";
 
 
@@ -57,10 +58,18 @@ def execute(scriptFile):
 	msg = ""
 	hasError = False;
 	with open("data/.pyosys.log") as f:
+		fsc = open("data/statcell.dat", "a");
+		fsw = open("data/statwire.dat", "a");
 		for line in f:
 			if("ERROR:" in line or hasError):
 				hasError = True;
 				msg = msg + line;
+			elif("Number of cells:" in line):
+				fsc.write(line);
+			elif("Number of wire bits:" in line):
+				fsw.write(line);
+		fsc.close()
+		fsw.close()
 
 
 	if hasError:

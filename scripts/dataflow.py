@@ -13,6 +13,7 @@ import copy;
 import error;
 import timeit
 from collections import Counter
+import yosys;
 
 def Entropy(text):
     import math
@@ -155,57 +156,6 @@ def numAlpha(seqList):
 	return len(setList);
 
 	
-def findMaxAlphaPath(dfg, node, dst, marked, path, maxNumAlpha, maxPath, maxPathList, labelAttr, shapeAttr):
-	
-	if node == dst:
-		path.append(node);
-		newSequence = extractSWString(path, labelAttr, shapeAttr);
-		numAlphabet = numAlpha(newSequence);
-		if numAlphabet > maxNumAlpha:
-			maxPathList[:] = [];
-			maxPath = copy.deepcopy(path);
-			maxPathList.append(maxPath);
-			maxNumAlpha = numAlphabet
-		elif numAlphabet == maxNumAlpha:
-			maxPath = copy.deepcopy(path);
-			maxPathList.append(maxPath);
-			
-			
-		path.pop(len(path)-1);
-		return maxNumAlpha;
-
-	path.append(node);
-	marked.add(node);	
-
-	predList = dfg.predecessors(node);
-
-	for pred in predList:
-		if pred not in marked:
-			maxNumAlpha= findMaxAlphaPath(dfg, pred, dst,  marked, path, maxNumAlpha, maxPath, maxPathList, labelAttr, shapeAttr);
-		else:
-			for mp in maxPathList:
-				try:
-					index = mp.index(pred);
-					tempPath = path + mp[index:]
-					newSequence = extractSWString(tempPath, labelAttr, shapeAttr);
-					numAlphabet = numAlpha(newSequence);
-
-					if numAlphabet > maxNumAlpha:
-						maxPathList[:] = [];
-						maxPath = copy.deepcopy(tempPath);
-						maxPathList.append(maxPath);
-						maxNumAlpha = numAlphabet
-					elif numAlphabet == maxNumAlpha:
-						maxPath = copy.deepcopy(tempPath);
-						maxPathList.append(maxPath);
-						break;
-				except ValueError:
-					continue;
-				
-	path.pop(len(path)-1);
-	return maxNumAlpha;
-
-
 def findMaxAlphaPath(dfg, node, dst, marked, path, pathSequence, maxNumAlpha, maxPathList, maxSequenceList, labelAttr, shapeAttr):
 	if node == dst:
 		path.append(node);
@@ -458,13 +408,15 @@ def longest_path(G):
 
 
 def extractDataflow(fileName):
+	start_time = timeit.default_timer();
 	# Read in dot file of the dataflow
 	print "[DFX] -- Extracting structural features..."# from : " + fileName;
 	if(".dot" not in fileName):
 		print "[ERROR] -- Input file does not seem to be a dot file"
 		exit()	
+	
+	fileData = yosys.getFileData(fileName);
 
-	start_time = timeit.default_timer();
 	dfg = nx.DiGraph(nx.read_dot(fileName));
 
 	#Get the nodes and edges of the graph
@@ -684,32 +636,27 @@ def extractDataflow(fileName):
 	minPathCount= 0;
 
 	maxNumAlpha = 0;
+	pathHistory = [];
 
 	for out in outNodeList:
 		count = 0;
-
 		for constant in constantList:
 			if(nx.has_path(dfg, constant, out)):
 				count = count + 1;
 
 		for inNode in inNodeList:
-			if(not nx.has_path(dfg, inNode, out)):
-				continue;
+			#if(not nx.has_path(dfg, inNode, out)):
+			#	continue;
 			
-			#OUtput input path
-			count = count + 1;
-
-
-			
-
 			#Necessary for recursion
 			marked = set();
 			path= [];
 			maxLen= 0;
 			maxPathList= [];
-			#findMaxAlphaPath(dfg, out, inNode, marked, path, 0, maxPath, maxPathList, labelAttr, shapeAttr);
 			#print " -- Finding max paths"
 			maxLen = findMaxPath(dfg, inNode, out, marked, path, maxLen, maxPathList);
+			if(maxLen == 0):
+				continue
 			
 			#print " -- Finding Max ALpha paths"
 			marked = set();
@@ -723,9 +670,7 @@ def extractDataflow(fileName):
 			marked = set();
 			path= [];
 			minPathList = []
-
 			findMinPath(dfg, inNode, out, marked, path, maxLen+10, minPathList);
-			elapsed = timeit.default_timer() - start_time;
 
 			#Extract the sequence representation, make sure to ignore representations that is already in maxList
 			#print " -- Extracting Sequence"
@@ -762,19 +707,20 @@ def extractDataflow(fileName):
 				elif(nAlpha == maxNumAlpha):
 					alphaList.add(alphaSequence);
 
+			count = count + 1;
 			
 		#Number of inputs the output depends on;
 		inc(fpDict["outC"], count)
 	
 	
 	
-	compstr = repr(len(fpDict)) ;
-	for n, fp in fpDict.iteritems():		
-		compstr = compstr + "\n" + n + "\t" + repr(len(fp)) + " ";
-		for k, v in fp.iteritems():		
-			compstr = compstr +repr(k) + " " + repr(v) + "   ";
+	#compstr = repr(len(fpDict)) ;
+	#for n, fp in fpDict.iteritems():		
+	#	compstr = compstr + "\n" + n + "\t" + repr(len(fp)) + " ";
+	#	for k, v in fp.iteritems():		
+	#		compstr = compstr +repr(k) + " " + repr(v) + "   ";
 		
-	print compstr
+	#print compstr
 
 
 	###########################################################################
@@ -784,17 +730,17 @@ def extractDataflow(fileName):
 	swMax = list(maxList);
 	swMax.sort(lambda x, y: -1*(cmp(len(x), len(y))));
 	maxList = getTopSequence(maxSeq, swMax)
-	print "MAXLIST: " + repr(maxList);
+	#print "MAXLIST: " + repr(maxList);
 
 	swMin = list(minList);
 	swMin.sort(lambda x, y: -1*(cmp(len(x), len(y))));
 	minList = getTopSequence(maxSeq, swMin)
-	print "MINLIST: " + repr(minList);
+	#print "MINLIST: " + repr(minList);
 	
 	swAlpha = list(alphaList);
 	swAlpha.sort(lambda x, y: -1*(cmp(len(x), len(y))));
 	alphaList= getTopSequence(maxSeq, swAlpha)
-	print "ALPHALIST: " + repr(swAlpha);
+	#print "ALPHALIST: " + repr(swAlpha);
 	
 	
 	
@@ -803,7 +749,7 @@ def extractDataflow(fileName):
 
 
 	#Output Constant Data
-	print "[DFX] -- Extracting constant features..."# from : " + fileName;
+	#print "[DFX] -- Extracting constant features..."# from : " + fileName;
 	constSet = set();
 	constStr = "";
 	for constant in constantList:
@@ -815,15 +761,15 @@ def extractDataflow(fileName):
 			if(len(cnstVal) > 19):
 				cnstVal = "9999999999999999";
 			constSet.add(cnstVal);
+			if(cnstVal == "0"):
+				cnstVal = "-1"
 			constStr = constStr + cnstVal+ ",";
 		else:
 			cnstVal = cnstVal.group(1);
 			if('x' in cnstVal):   #DON'T CARE
-				cnstVal = -2;
-				continue;
+				cnstVal = "-2";
 			elif('z' in cnstVal): #HIGH IMPEDANCE
-				cnstVal = -3;
-				continue;
+				cnstVal = "-3";
 			else:
 				cnstVal = repr(int(cnstVal, 2));
 				cnstVal.replace("L", "")
@@ -831,15 +777,20 @@ def extractDataflow(fileName):
 					cnstVal = "9999999999999999";
 
 			constSet.add(cnstVal);
+			if(cnstVal == "0"):
+				cnstVal = "-1"
+
 			constStr = constStr + cnstVal + ",";
 
+	#fs = open("data/" + fileData[1] + ".dat", "w" );
+	#fs.write(constStr[:-1]);
 	#print "CONST: " + repr(constSet);
 
 	
 	
 	print "[DFX] -- Extracting additional features..."
-	print "AVG MAXPATH LEN: " + repr(float(maxPathCount)/float(totalMaxPaths));
-	print "AVG MINPATH LEN: " + repr(float(minPathCount)/float(totalMinPaths));
+	#print "AVG MAXPATH LEN: " + repr(float(maxPathCount)/float(totalMaxPaths));
+	#print "AVG MINPATH LEN: " + repr(float(minPathCount)/float(totalMinPaths));
 	statstr = repr(len(nodeList)) + "," + repr(len(edgeList)) + ","
 	statstr = statstr + repr(len(inNodeList)) + "," + repr(len(outNodeList)) + ","
 	statstr = statstr + repr(maxFanin) + "," + repr(maxFanout) + ",";
@@ -853,6 +804,9 @@ def extractDataflow(fileName):
 	elapsed = timeit.default_timer() - start_time;
 	print "[DFX] -- ELAPSED: " +  repr(elapsed);
 	print
+	fsd = open("data/dataflowtime.dat", "a");
+	fsd.write(repr(elapsed)+ "\n")
+	fsd.close()
 
 	result = (maxList, minList, constSet, fpDict, statstr, alphaList);
 	return result;

@@ -318,7 +318,7 @@ double SIMILARITY::align(std::list<std::string>& ref, std::list<std::string>& db
 
 			//printf("GAP: %d  GAPOPEN: %d  GAPEXTEND: %d\n", scoreGap(s_Score), scoreGapOpen(s_Score), scoreGapExtend(s_Score));
 			int score = localAlignment(s_Align, s_Score);
-			/printAlignment();
+			//printAlignment();
 
 			//////////////////////////////////////////////////////////////
 			TRowIterator it1 = begin(row(s_Align,0));
@@ -354,7 +354,7 @@ double SIMILARITY::align(std::list<std::string>& ref, std::list<std::string>& db
 			double cursim = sim * sizeRatio;
 			score *= sizeRatio;
 			if(cursim > maxSim) maxSim = cursim;
-			printf("[SIM] -- SCORE: %7.4f - %5d   ALIGN: %s - %s\n", cursim, score, iRef->c_str(), iSeq->c_str());
+			//printf("[SIM] -- SCORE: %7.4f - %5d   ALIGN: %s - %s\n", cursim, score, iRef->c_str(), iSeq->c_str());
 			totalScore += score;
 		}
 		//printf("***************************************************\n");
@@ -536,7 +536,7 @@ double SIMILARITY::calculateSimilarity(std::map<unsigned, unsigned>& fingerprint
 		std::map<unsigned, unsigned>& fingerprint2){
 
 	double sim;
-	if(fingerprint1.size() == 0 and fingerprint2.size() == 0)
+	if(fingerprint1.size() == 0 && fingerprint2.size() == 0)
 		sim = -1.00;
 	else
 		sim = tanimotoWindow_size(fingerprint1, fingerprint2);

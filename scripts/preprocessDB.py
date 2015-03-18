@@ -61,12 +61,19 @@ try:
 		print "[PPDB] -- Extracting feature from verilog file: " + line;
 		print "--------------------------------------------------------------------------------"
 
+		start_yosys = timeit.default_timer();
 		val  = yosys.create_yosys_script(line, scriptName)
 		top = val[1];
 
 		rVal = yosys.execute(scriptName);
 		if(rVal != ""):
 			raise error.YosysError(rVal);
+		elapsed = timeit.default_timer() - start_yosys;
+		print "[PPDB] -- ELAPSED: " +  repr(elapsed);
+		fsy = open("data/yosystime.dat", "a");
+		fsy.write(repr(elapsed)+ "\n")
+		fsy.close()
+		print
 
 
 		ckttag = processRef.generateXML(val[0], ID, top, soup)
@@ -76,6 +83,9 @@ try:
 	
 		elapsed = timeit.default_timer() - start_time;
 		print "ELASPED TIME: " + repr(elapsed);
+		fse = open("data/elapsedtime.dat", "a");
+		fse.write(repr(elapsed)+ "\n")
+		fse.close()
 		print
 		
 	#print soup.prettify()

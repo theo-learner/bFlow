@@ -43,6 +43,9 @@ autocor: $(OBJS) autocor.o
 refTest: $(OBJREF) refTest.o 
 	$(CXX) $(OBJREF) refTest.o -o refTest
 
+dbTest: $(OBJREF) dbTest.o 
+	$(CXX) $(OBJREF) dbTest.o -o dbTest
+
 mainopt: $(OBJS) swparam_opt.o
 	$(CXX) $(OBJS) swparam_opt.o -o opt_sswparam 
 

@@ -182,6 +182,22 @@ int Birthmark::getID(){
 }
 
 
+double Birthmark::getAvgSequenceLength(){
+	std::list<std::string>::iterator it;
+	int totalLength = 0;
+	for(it = m_MaxSequence.begin(); it != m_MaxSequence.end(); it++)
+		totalLength += it->length();	
+	for(it = m_MinSequence.begin(); it != m_MinSequence.end(); it++)
+		totalLength += it->length();	
+	for(it = m_AlphaSequence.begin(); it != m_AlphaSequence.end(); it++)
+		totalLength += it->length();	
+
+	int numSequence = m_MaxSequence.size() + m_MinSequence.size() + m_AlphaSequence.size();
+
+	return (double) totalLength / (double) numSequence;
+
+}
+
 
 
 

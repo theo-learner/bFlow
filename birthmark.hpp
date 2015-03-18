@@ -47,6 +47,7 @@ class Birthmark{
 		void getAlphaSequence(std::list<std::string>&);
 		void getConstants(std::set<int>&);
 		void getFingerprint(std::map<std::string, Feature*> &);
+		double getAvgSequenceLength();
 		std::string getName();
 		int getID();
 		

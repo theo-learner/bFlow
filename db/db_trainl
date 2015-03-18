@@ -20,7 +20,7 @@
 2 #mem
 9 #ram
 4 #spi
-17 #uart
+15 #uart
 1 #edgedet
 3 #brg
 2 #addTree

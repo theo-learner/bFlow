@@ -58,6 +58,7 @@ class Database{
 	  void searchDatabase(Birthmark*);
 		void searchDatabase(Birthmark*, std::vector<double>&);
 		Birthmark* getBirthmark(unsigned);
+		unsigned getSize();
 
 		void printXML();
 		void print();
