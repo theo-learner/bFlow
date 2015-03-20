@@ -283,6 +283,106 @@ double SIMILARITY::tanimoto(std::map<unsigned, unsigned>& data1, std::map<unsign
 }
 
 
+
+
+double SIMILARITY::euclidean(std::map<unsigned, unsigned>& data1, std::map<unsigned,unsigned>& data2){
+	std::map<unsigned, unsigned>::iterator iMap;
+	std::map<unsigned, unsigned>::iterator iMap2;
+	std::map<unsigned, unsigned>::iterator iTemp;
+	std::map<unsigned, unsigned>::iterator iMapF;
+	std::set<unsigned> marked1;
+	std::set<unsigned> marked2;
+
+	//Count the number of bits that are the same
+	double sum = 0.0;
+	for(iMap = data1.begin(); iMap != data1.end(); iMap++){
+		iTemp = data2.find(iMap->first);	
+		if(iTemp != data2.end())
+			sum += (double)((iTemp->second - iMap->second)*(iTemp->second - iMap->second));
+		else
+			sum += (double)(iMap->second* iMap->second);
+	}
+	
+	for(iMap = data2.begin(); iMap != data2.end(); iMap++){
+		iTemp = data1.find(iMap->first);	
+		if(iTemp == data1.end())
+			sum += (double)(iMap->second* iMap->second);
+	}
+
+	return sqrt(sum);
+}
+
+
+
+
+double SIMILARITY::euclidean(std::vector<unsigned>& data1, std::vector<unsigned>& data2){
+	assert(data1.size() == data2.size());
+
+	double sum = 0.0;
+	for(unsigned int i =  0; i < data1.size(); i++)
+		sum += (double)((data1[i]- data2[i])*(data1[i]- data2[i]));
+	
+	return sqrt(sum);
+}
+
+
+double SIMILARITY::cosine(std::map<unsigned, unsigned>& data1, std::map<unsigned,unsigned>& data2){
+	if(data1.size() == 0 || data2.size() == 0) return 0.0;
+	std::map<unsigned, unsigned>::iterator iMap;
+	std::map<unsigned, unsigned>::iterator iMap2;
+	std::map<unsigned, unsigned>::iterator iTemp;
+	std::map<unsigned, unsigned>::iterator iMapF;
+	std::set<unsigned> marked1;
+	std::set<unsigned> marked2;
+
+	int anorm = 0;
+	for(iMap = data1.begin(); iMap != data1.end(); iMap++)
+		anorm += (iMap->second * iMap->second);
+	
+	int bnorm = 0;
+	for(iMap = data2.begin(); iMap != data2.end(); iMap++)
+		bnorm += (iMap->second * iMap->second);
+
+	double denom = sqrt((double)anorm) * sqrt((double)bnorm);
+
+
+	//Count the number of bits that are the same
+	double sum = 0.0;
+	for(iMap = data1.begin(); iMap != data1.end(); iMap++){
+		iTemp = data2.find(iMap->first);	
+		if(iTemp != data2.end())
+			sum += (double)(iTemp->second * iMap->second);
+	}
+	
+	return sum / denom;
+}
+
+
+
+
+double SIMILARITY::cosine(std::vector<unsigned>& data1, std::vector<unsigned>& data2){
+	assert(data1.size() == data2.size());
+	if(data1.size() == 0 || data2.size() == 0) return 0.0;
+
+	int anorm = 0;
+	for(unsigned int i =  0; i < data1.size(); i++)
+		anorm += (data1[i] * data1[i]);
+	
+	int bnorm = 0;
+	for(unsigned int i =  0; i < data2.size(); i++)
+		bnorm += (data2[i] * data2[i]);
+
+	double denom = sqrt((double)anorm) * sqrt((double)bnorm);
+
+
+	//Count the number of bits that are the same
+	double sum = 0.0;
+	for(unsigned int i =  0; i < data1.size(); i++)
+		sum += (double)(data1[i]* data2[i]);
+	
+	return sum / denom;
+}
+
 /*#############################################################################
  *
  * align 
@@ -290,14 +390,12 @@ double SIMILARITY::tanimoto(std::map<unsigned, unsigned>& data1, std::map<unsign
  *  the similarity of the alignment (AVG SIM) 
  *
  *#############################################################################*/
-double SIMILARITY::align(std::list<std::string>& ref, std::list<std::string>& db, int& alignScore){
+int SIMILARITY::align(std::list<std::string>& ref, std::list<std::string>& db){
 	//	timeval start_time, end_time;
 	//	gettimeofday(&start_time, NULL); //----------------------------------
 
-
 	std::list<std::string>::iterator iSeq;	
 	std::list<std::string>::iterator iRef;	
-	double maxSim = 0.0;
 	unsigned totalScore = 0;
 
 	for(iRef= ref.begin(); iRef!= ref.end(); iRef++){
@@ -314,9 +412,6 @@ double SIMILARITY::align(std::list<std::string>& ref, std::list<std::string>& db
 			else
 				sizeRatio = (double)iSeq->length()/ (double)iRef->length();
 
-			//int score = localAlignment(s_Align, Score<int, Simple>(10, -10, -8, -1));
-
-			//printf("GAP: %d  GAPOPEN: %d  GAPEXTEND: %d\n", scoreGap(s_Score), scoreGapOpen(s_Score), scoreGapExtend(s_Score));
 			int score = localAlignment(s_Align, s_Score);
 			//printAlignment();
 
@@ -325,52 +420,23 @@ double SIMILARITY::align(std::list<std::string>& ref, std::list<std::string>& db
 			TRowIterator it2 = begin(row(s_Align,1));
 			TRowIterator it1End = end(row(s_Align,0));
 
-			double penalty = 0.0;
-			double match = 0.0;
-			double gaps = 0.0;
 			for (; it1 != it1End; ++it1){
-				if (isGap(it1)){
-					gaps += 1.0;
-					match += 0.2;
-					score += CircuitGapPenaltyMatrix[*it2];
-
-				}
-				else if(isGap(it2)){
-					match += 0.2;
-					score += CircuitGapPenaltyMatrix[*it1];
-				}
-				else if(*it2 != *it1)   penalty += 0.75;
-				else                    match += 1.0;
+				if (isGap(it1))        score += CircuitGapPenaltyMatrix[*it2];
+				else if(isGap(it2))    score += CircuitGapPenaltyMatrix[*it1];
 				++it2;
 			}
 
-			double refSizeWithGap = ((double)(length(value(stringSet(s_Align), 0))) + gaps);
-			double sim = (match - penalty) / refSizeWithGap;
 			////////////////////////////////////////////////////////////////
 
 
 
-			//double cursim = alignScore() * sizeRatio;
-			double cursim = sim * sizeRatio;
-			score *= sizeRatio;
-			if(cursim > maxSim) maxSim = cursim;
 			//printf("[SIM] -- SCORE: %7.4f - %5d   ALIGN: %s - %s\n", cursim, score, iRef->c_str(), iSeq->c_str());
-			totalScore += score;
+			totalScore += score * sizeRatio;
 		}
 		//printf("***************************************************\n");
 	}
 
-	/*
-	   gettimeofday(&end_time, NULL); //----------------------------------
-	   double elapsedTime = (end_time.tv_sec - start_time.tv_sec) * 1000.0;
-	   elapsedTime += (end_time.tv_usec - start_time.tv_usec) / 1000.0;
-	   printf("[SIM] -- Align elapsed time: %f\n", elapsedTime/1000.0);
-	 */
-
-	alignScore = totalScore;
-	return maxSim;
-	//return totalScore;
-
+	return totalScore;
 }
 
 /*#############################################################################
@@ -380,7 +446,7 @@ double SIMILARITY::align(std::list<std::string>& ref, std::list<std::string>& db
  *  the similarity of the alignment (AVG SIM) 
  *
  *#############################################################################*/
-double SIMILARITY::align(std::list<std::string>& ref, std::list<std::string>& db){
+double SIMILARITY::align2(std::list<std::string>& ref, std::list<std::string>& db){
 	//	timeval start_time, end_time;
 	//	gettimeofday(&start_time, NULL); //----------------------------------
 

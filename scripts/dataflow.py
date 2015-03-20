@@ -588,35 +588,35 @@ def extractDataflow(fileName):
 
 
 	#Need to wait till all the inputs have been found during node processing
-	if (float(len(inNodeList) + len(constantList)) * 0.25 > len(ffList)) or len(ffList) == 1:
-		for node in ffList:	
-			count = 0;
-			for inNode in inNodeList:
-				if(nx.has_path(dfg, inNode, node)):
-					count = count + 1;
+	#if (float(len(inNodeList) + len(constantList)) * 0.25 > len(ffList)) or len(ffList) == 1:
+	#	for node in ffList:	
+	#		count = 0;
+	#		for inNode in inNodeList:
+	#			if(nx.has_path(dfg, inNode, node)):
+	#				count = count + 1;
 
-			for inNode in constantList:
-				if(nx.has_path(dfg, inNode, node)):
-					count = count + 1;
+	#		for inNode in constantList:
+	#			if(nx.has_path(dfg, inNode, node)):
+	#				count = count + 1;
 
-			inc(fpDict["ffC"], count)
-	else:
-		inFanout = {};
-		for inNode in inNodeList:
-			fanout = nx.dfs_successors(dfg, inNode);
-			inFanout[inNode] = fanout
-		
-		for inNode in constantList:
-			fanout = nx.dfs_successors(dfg, inNode);
-			inFanout[inNode] = fanout
+	#		inc(fpDict["ffC"], count)
+	#else:
+	inFanout = {};
+	for inNode in inNodeList:
+		fanout = nx.dfs_successors(dfg, inNode);
+		inFanout[inNode] = fanout
+	
+	for inNode in constantList:
+		fanout = nx.dfs_successors(dfg, inNode);
+		inFanout[inNode] = fanout
 
-		ffCounts = dict()	
-		for n, fanout in inFanout.iteritems():
-			ffNodes = [fanoutnode for fanoutnode in  fanout for ff in ffList if ff == fanoutnode]
-			for ff in ffNodes:
-				ffCounts[ff] = ffCounts.get(ff, 0) + 1;
-		
-		fpDict["ffC"] = Counter(ffCounts.values());
+	ffCounts = dict()	
+	for n, fanout in inFanout.iteritems():
+		ffNodes = [fanoutnode for fanoutnode in  fanout for ff in ffList if ff == fanoutnode]
+		for ff in ffNodes:
+			ffCounts[ff] = ffCounts.get(ff, 0) + 1;
+	
+	fpDict["ffC"] = Counter(ffCounts.values());
 					
 		
 
@@ -755,6 +755,8 @@ def extractDataflow(fileName):
 	for constant in constantList:
 		cnstVal = labelAttr[constant];
 		cnstVal = re.search('\'(.*)', cnstVal);
+
+#Integer
 		if(cnstVal == None):
 			cnstVal = labelAttr[constant];
 			cnstVal = cnstVal.replace("L","")
@@ -764,6 +766,8 @@ def extractDataflow(fileName):
 			if(cnstVal == "0"):
 				cnstVal = "-1"
 			constStr = constStr + cnstVal+ ",";
+
+#Bit tick
 		else:
 			cnstVal = cnstVal.group(1);
 			if('x' in cnstVal):   #DON'T CARE
@@ -773,7 +777,7 @@ def extractDataflow(fileName):
 			else:
 				cnstVal = repr(int(cnstVal, 2));
 				cnstVal.replace("L", "")
-				if(len(cnstVal) > 19):
+				if(len(cnstVal) > 32):
 					cnstVal = "9999999999999999";
 
 			constSet.add(cnstVal);
@@ -820,7 +824,9 @@ def main():
 		exit();
 	
 	dotfile = sys.argv[1];
-	extractDataflow(dotfile);
+	result = extractDataflow(dotfile);
+	print result[2];
+
 
 
 if __name__ == '__main__':

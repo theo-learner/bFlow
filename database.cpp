@@ -1,37 +1,53 @@
 /*@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@
-	@
-	@      database.cpp
+	@  database.cpp
 	@      
-	@      @AUTHOR:Kevin Zeng
-	@      Copyright 2012 – 2013 
-	@      Virginia Polytechnic Institute and State University
-	@
+	@  @AUTHOR:Kevin Zeng
+	@  Copyright 2012 – 2015
+	@  Virginia Polytechnic Institute and State University
 	@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@*/
 
 #include "database.hpp"
 using namespace rapidxml;
 
+/**
+ * Constructor
+ *  Initializes alignment function for pairwise alignment
+ */
 Database::Database(){	
 	SIMILARITY::initAlignment();
 }
 
+/**
+ * Constructor
+ *  Imports an existing database XML file
+ *  Initializes alignment function for pairwise alignment
+ */
 Database::Database(std::string file){	
 	SIMILARITY::initAlignment();
 	importDatabase(file);
 }
 
+/**
+ * Destructor 
+ */
 Database::~Database(){
-	/*
-	std::list<Birthmark*>::iterator it;
-	for(it = m_Database.begin(); it != m_Database.end(); it++)
-		*/
 	for(unsigned int i = 0; i < m_Database.size(); i++) 
 		delete m_Database[i];
 }
 
-unsigned Database::getSize(){
-	return m_Database.size();
-}
+
+
+
+
+
+
+
+
+
+/**
+ * importDatabase 
+ *  Imports a database XML file into memory
+ */
 bool Database::importDatabase(std::string path){
 	printf("[DATABASE] -- Importing database from XML file: %s\n", path.c_str());
 	m_XML.clear();
@@ -39,12 +55,8 @@ bool Database::importDatabase(std::string path){
 	//Open XML File for parsing
 	std::ifstream xmlfile;
 	xmlfile.open(path.c_str());
-	if (!xmlfile.is_open())	{
-		fprintf(stderr, "[ERROR] -- Cannot open the xml file for import...exiting\n");
-		fprintf(stderr, "\n***************************************************\n\n");
-		exit(-1);
-	}
-
+	if (!xmlfile.is_open()) 
+		throw Exception("Database::importDatabase LINE: 54. Cannot open file");
 
 	//Read in contents in the XML File
 	std::string xmlstring = "";
@@ -56,419 +68,275 @@ bool Database::importDatabase(std::string path){
 	char* cstr = new char[xmlstring.size() + 1];
 	strcpy(cstr, xmlstring.c_str());
 
-
-	//Parse the XML Data
 	m_XML.parse<0>(cstr);
-	//printXML();
 	printf("[DATABASE] -- XML File imported. Parsing...");
 
-	enum Error {
-		eDatabaseNotEmpty,
-		eNodeNull,
-		eNoAttr, 
-		eDATABASE_FE,
-		eCIRCUIT_FE,
-		eCNAME_FE, 
-		eSC_FE,
-		eFeature_FE,
-		eCIRCUIT_ATTR_FE,
-		eNoAttrSC
-	};
 
-	try{
-		if(m_Database.size() != 0) throw eDatabaseNotEmpty;
+	//Make sure Database doesn't have content TODO: Append database	
+		if(m_Database.size() != 0) 
+			throw Exception("(Database::importDatabase:T1) Attempting to overwrite an existing database");
+
 		xml_node<>* rootNode= m_XML.first_node();
-		if(rootNode == NULL) throw eNodeNull;
+		if(rootNode == NULL)
+			throw Exception("(Database::importDatabase:T2) Root node of XML is NULL");
 
 		//Make sure first node is DATABASE
 		std::string rootNodeName = rootNode->name();
-		if(rootNodeName != "DATABASE") throw eDATABASE_FE;
-		xml_node<>* cktNode= rootNode->first_node();
+		if(rootNodeName != "DATABASE")
+			throw Exception("(Database::importDatabase:T3) No Database Node found");
 
+		xml_node<>* cktNode= rootNode->first_node();
 		//Look through the circuits in the Database
 		while (cktNode!= NULL){
 			Birthmark* bm = new Birthmark();
-			if(!bm->importXML(cktNode)) throw eCIRCUIT_FE;
+			bm->importXML(cktNode);
 
 			//Store the fingerprintlist of the circuit 
 			m_Database.push_back(bm);
 			cktNode = cktNode->next_sibling(); 
 		}
 
-	}
-
-	catch (Error error){
-		printf("\n");
-		if(error == eNodeNull) printf("[ERROR] -- XML root node is empty\n");
-		else if(error == eNodeNull) printf("[ERROR] -- Database is not empty. Aborting import\n");
-		else if(error == eNoAttrSC) printf("[ERROR] -- XML node expected a size or count attribute \n");
-		else if(error == eNoAttr) printf("[ERROR] -- XML node expected an attribute\n");
-		else if(error == eDATABASE_FE) printf("[ERROR] -- XML File has a different format then expected (DATABASE)\n");
-		else if(error == eCIRCUIT_FE) printf("[ERROR] -- XML File has a different format then expected (CIRCUIT)\n");
-		else if(error == eCIRCUIT_ATTR_FE) printf("[ERROR] -- XML File has a different format then expected (CIRCUIT name or id attribute is missing)\n");
-		else if(error == eFeature_FE) printf("[ERROR] -- XML File has a different format then expected (ATTR size or count attribute is missing)\n");
-		else if(error == eCNAME_FE) printf("[ERROR] -- XML File has a different format then expected (Size Count has a value that is unknown)\n");
-
-		printf("\n");
-		return false;
-	}
-
-
 	printf("COMPLETE!\n\n");
 	return true;
 
 }
 
-void Database::searchDatabase(Birthmark* reference, std::vector<double>& fsim){
-	//Get FComponent
-	std::list<std::string> maxRef, minRef, alphaRef;
+
+
+
+
+
+
+
+
+
+/**
+ * searchDatabase 
+ *  Searches the database for a circuit similar to the reference 
+ *  Outputs results in ranked order with circuits similar to reference
+ */
+void Database::searchDatabase(Birthmark* reference){
+	//Get the components of the Reference circuit
+	std::list<std::string> maxRef, minRef, alphaRef;  //Functional
 	reference->getMaxSequence(maxRef);
 	reference->getMinSequence(minRef);
 	reference->getAlphaSequence(alphaRef);
 
-	//Get SComponent
-	std::map<std::string, Feature*> featureRef;
-	
-	//Get CComponent
-	std::set<int> constantRef;
-	reference->getConstants(constantRef);
-/*
-	std::list<Birthmark*>::iterator iList;
-	for(iList = m_Database.begin(); iList != m_Database.end(); iList++){
-		*/
-	fsim.reserve(m_Database.size());
-	std::set<Score, setCompare> avgscores;
-	std::set<Score, setCompare> scores;
-	std::set<Score, setCompare> sims;
-	double maxAvg = 0.0;
-	double minAvg = 100000.0;
-	double axW = 0.3;
-	double inW = 0.1;
-	double alW = 0.6;
-	int sc;
-	reference->print();
-
-	for(unsigned int i = 0; i < m_Database.size(); i++) {
-		//printf("-------------------------------------------------------\n");
-		printf("\n[DB] -- Comparing reference to %s\n", m_Database[i]->getName().c_str());
-		//printf("-------------------------------------------------------\n");
-		//Align the max sequences
-		//printf("     -- Comparing functional components...\n");
-		std::list<std::string> maxDB;
-		m_Database[i]->getMaxSequence(maxDB);
-		double maxScore = SIMILARITY::align(maxRef, maxDB, sc);
-		//printf("TOTAL SCORE: %4d\tAVG: %f\n", sc, double(sc) / ((double)maxRef.size() * (double)maxDB.size()));;
-		int totalScore = sc;
-		double totalAvg = (double(sc) / ((double)maxRef.size() * (double)maxDB.size())) * 0.75;
-
-		//Align the min sequences
-		std::list<std::string> minDB;
-		m_Database[i]->getMinSequence(minDB);
-		double minScore = SIMILARITY::align(minRef, minDB, sc);
-		totalAvg += double(sc) / ((double)minRef.size() * (double)minDB.size());
-		//printf("TOTAL SCORE: %4d\tAVG: %f\n", sc, double(sc) / ((double)minRef.size() * (double)minDB.size()));
-		totalScore += sc;
-
-		//Align the min sequences
-		std::list<std::string> alphaDB;
-		m_Database[i]->getAlphaSequence(alphaDB);
-		double alphaScore = SIMILARITY::align(alphaRef, alphaDB, sc);
-		totalAvg += (double(sc) / ((double)alphaRef.size() * (double)alphaDB.size())) * 3;
-		//printf("TOTAL SCORE: %4d\tAVG: %f\n", sc, double(sc) / ((double)alphaRef.size() * (double)alphaDB.size()));
-		totalScore += sc;
-
-		if(totalAvg > maxAvg)
-			maxAvg = totalAvg;
-		if(totalAvg < minAvg)
-			minAvg = totalAvg;
-
-
-		//double fScore = (maxScore*axW + minScore* inW + alphaScore * alW);
-		//printf("        * FSCORE: %f\n\n",fScore);
-		//printf("\n\n");
-		
-		
-		//printf(" -- Comparing Structural Components...\n");
-		std::map<std::string, Feature*> featureDB;
-		std::map<std::string, Feature*>::iterator iFeat;
-		std::map<std::string, Feature*>::iterator iFeatRef;
-		m_Database[i]->getFingerprint(featureDB);
-
-		double sScore= 0.0;
-		double tsim;
-		double uniqueType = 0.0;
-		for(iFeat = featureDB.begin(); iFeat != featureDB.end(); iFeat++){
-			std::string type = iFeat->first;
-			iFeatRef = featureRef.find(type);
-
-			if(iFeatRef == featureRef.end()) {
-				//printf("[WARNING] -- searchDatabase: Feature Type (%s) not found DB\n", type.c_str());
-				continue;
-			}
-			
-			std::map<unsigned, unsigned> featRef;
-			iFeatRef->second->getFeature(featRef);
-
-			std::map<unsigned, unsigned> featDB;
-			iFeat->second->getFeature(featDB);
-
-			if(featRef.size() == 0 && featDB.size() == 0)
-				tsim = 1.00;
-			else
-				tsim = SIMILARITY::tanimotoWindow_size(featRef, featDB);
-			sScore += tsim;
-
-			//printf("  TYPE: %s\t SSCORE: %f\n", type.c_str(), tsim);
-		}
-		
-		for(iFeat = featureRef.begin(); iFeat != featureRef.end(); iFeat++){
-			std::string type = iFeat->first;
-			iFeatRef = featureDB.find(type);
-
-			if(iFeatRef == featureDB.end()) {
-				//printf("[WARNING] -- searchDatabase: Feature Type (%s) not found in REF\n", type.c_str());
-				uniqueType += 1.0;
-				continue;
-			}
-		}
-
-		sScore /= (featureDB.size() + uniqueType); 
-		//printf("  * SSCORE: %f\n", sScore);
-
-
-
-
-
-
-
-
-		//printf(" -- Comparing Constant Components....\n");
-		std::set<int> constantDB;
-		m_Database[i]->getConstants(constantDB);
-
-		double cScore;
-		if(constantRef.size() == 0 && constantDB.size() == 0) cScore = 1.0;
-		else cScore = SIMILARITY::tanimoto(constantRef, constantDB);
-		//printf("  * CSCORE: %f\n", cScore);
-		
-
-		Score score;
-		score.id = m_Database[i]->getID();
-		score.name = m_Database[i]->getName();
-		score.score = sScore*100.0*0.33 + 
-     				   cScore*100.0*0.33;
-		//printf("Structural and constantSCORE: %f\n", score.score);
-		
-		Score score2;
-		score2.id = m_Database[i]->getID();
-		score2.name = m_Database[i]->getName();
-		score2.score = totalAvg;
-		//printf("TOTAL AVG: %f\n", totalAvg);
-		
-		/*
-		Score sim;
-		sim.id = m_Database[i]->getID();
-		sim.name = m_Database[i]->getName();
-		sim.score = fScore;
-		sims.insert(sim);
-*/
-		avgscores.insert(score2);
-		scores.insert(score);
-	}
-
-	printf("###############################################################\n");
-	printf("###                    SEARCH COMPLETE                      ###\n");
-	printf("###############################################################\n");
-	int count = 1;
-	std::set<Score, setCompare>::iterator iSet;
-	std::set<Score, setCompare>::iterator iSearch;
-	printf("\n\n###############################################################\n\n");
-	std::set<Score, setCompare> normalizedAvgScore;
-	//printf("MAX: %f   MIN: %f\n", maxAvg, minAvg);
-	for(iSet = avgscores.begin(); iSet != avgscores.end(); iSet++){
-		double newScore = (double)(iSet->score - minAvg) / (double)(maxAvg-minAvg);
-		//printf("RANK: %2d   ID: %2d   SCR: %6.2f   CKT:%s\n", count, iSet->id, newScore, iSet->name.c_str());
-		newScore = newScore *0.34 * 100.0;
-	
-		double sScore = -999.0;
-		for(iSearch = scores.begin(); iSearch != scores.end(); iSearch++){
-			if(iSearch->name == iSet->name){
-				sScore = iSearch->score;
-				break;
-			}
-		}
-
-		Score sim;
-		sim.id = iSet->id;
-		sim.name = iSet->name;
-		sim.score = newScore + sScore;
-		normalizedAvgScore.insert(sim);
-
-		count++;
-	}
-
-	printf("\n");
-	
-	count = 1;
-	for(iSet = normalizedAvgScore.begin(); iSet != normalizedAvgScore.end(); iSet++){
-		//printf("RANK: %2d  SCORE: %6.2f   CKT:%s\n", count, iSet->score, iSet->name.c_str());
-		printf(" %2d & %6.2f & %s\n", count, iSet->score, iSet->name.c_str());
-		if(count == 10)
-			break;
-		count++;
-	}
-
-	/*
-	count = 1;
-	for(iSet = scores.begin(); iSet != scores.end(); iSet++){
-		printf("RANK: %2d   ID: %2d   SCR: %6.2f   CKT:%s\n", count, iSet->id, iSet->score, iSet->name.c_str());
-		count++;
-	}
-	printf("\n\n###############################################################\n\n");
-	count = 1;
-	for(iSet = sims.begin(); iSet != sims.end(); iSet++){
-		printf("RANK: %2d   ID: %2d   SCR: %6.2f   CKT:%s\n", count, iSet->id, iSet->score, iSet->name.c_str());
-		count++;
-	}
-	*/
-	printf("\n");
-}
-
-
-
-
-
-
-
-
-void Database::searchDatabase(Birthmark* reference){
-	//Get FComponent
-	std::list<std::string> maxRef, minRef;
-	reference->getMaxSequence(maxRef);
-	reference->getMinSequence(minRef);
-	
-	//Get SComponent
-	std::map<std::string, Feature*> featureRef;
+	std::map<std::string, Feature*> featureRef;       //Structural
 	reference->getFingerprint(featureRef);
 	
-	//Get CComponent
-	std::set<int> constantRef;
-	reference->getConstants(constantRef);
+	std::vector<unsigned> constantRef;                //Constant
+	reference->getBinnedConstants(constantRef);
 
-	std::set<Score, setCompare> results;
+	std::vector<Score> fs;
+	std::vector<Score> ss;
+	std::vector<Score> cs;
+	fs.reserve(m_Database.size());
+	cs.reserve(m_Database.size());
+	ss.reserve(m_Database.size());
 
-/*
-	std::list<Birthmark*>::iterator iList;
-	for(iList = m_Database.begin(); iList != m_Database.end(); iList++){
-		*/
+	double maxf = 0.0;
+	double minf = 100000000.0;
+	double maxs = 0.0;
+	double mins = 100000000.0;
+	double maxc = 0.0;
+	double minc = 100000000.0;
+
 	for(unsigned int i = 0; i < m_Database.size(); i++) {
 		printf("[DB] -- Comparing reference to %s\n", m_Database[i]->getName().c_str());
-		//Align the max sequences
-		printf("       -- Comparing functional components...\n");
-		printf("MAx\n");
+
+		/////////////////////////////////////////////////////////////////////////////
+		//   FUNCTIONAL SEQUENCE COMARPISON
+		//     Score returned by alignment is all the alignemnt scores among the list
+		//     Average to take into account different number os sequences
+		//     Final functional score is the sum of all the scores
+		/////////////////////////////////////////////////////////////////////////////
 		std::list<std::string> maxDB;
 		m_Database[i]->getMaxSequence(maxDB);
-		double maxScore = SIMILARITY::align(maxRef, maxDB);
+		int maxScore = SIMILARITY::align(maxRef, maxDB);
+		double fScore = (double(maxScore) / ((double)maxRef.size() * (double)maxDB.size())) * 0.75;
+		//printf("MAXSCORE: %4d\tAVG: %f\n", maxScore, double(maxScore) / ((double)maxRef.size() * (double)maxDB.size()));;
 
-		//Align the min sequences
-		printf("Min\n");
 		std::list<std::string> minDB;
 		m_Database[i]->getMinSequence(minDB);
-		double minScore = SIMILARITY::align(minRef, minDB);
+		int minScore = SIMILARITY::align(minRef, minDB);
+		fScore += double(minScore) / ((double)minRef.size() * (double)minDB.size());
+		//printf("TOTAL SCORE: %4d\tAVG: %f\n", minScore, double(minScore) / ((double)minRef.size() * (double)minDB.size()));
 
-		double fScore = (maxScore*0.650 + minScore* 0.350);
-		printf(" * FSCORE: %f\n",fScore);
-		
+		std::list<std::string> alphaDB;
+		m_Database[i]->getAlphaSequence(alphaDB);
+		int alphaScore = SIMILARITY::align(alphaRef, alphaDB);
+		fScore += (double(alphaScore) / ((double)alphaRef.size() * (double)alphaDB.size())) * 3;
+		//printf("TOTAL SCORE: %4d\tAVG: %f\n", alphaScore, double(alphaScore) / ((double)alphaRef.size() * (double)alphaDB.size()));
+
+		if(fScore > maxf)  maxf = fScore;
+		if(fScore < minf)  minf = fScore;
 
 
-		printf(" -- Comparing Structural Components...\n");
+	
+
+
+		/////////////////////////////////////////////////////////////////////////////
+		//   STRUCTURAL SEQUENCE COMARPISON
+		//     Score is the total euclidean distance of all the features 
+		/////////////////////////////////////////////////////////////////////////////
+		//printf(" -- Comparing Structural Components...\n");
 		std::map<std::string, Feature*> featureDB;
-		std::map<std::string, Feature*>::iterator iFeat;
 		std::map<std::string, Feature*>::iterator iFeatRef;
+		std::map<std::string, Feature*>::iterator iFeatDB;
 		m_Database[i]->getFingerprint(featureDB);
 
 		double sScore= 0.0;
-		double tsim;
-		for(iFeat = featureDB.begin(); iFeat != featureDB.end(); iFeat++){
-			std::string type = iFeat->first;
-			iFeatRef = featureRef.find(type);
+		for(iFeatDB= featureDB.begin(); iFeatDB != featureDB.end(); iFeatDB++){
+			std::string type = iFeatDB->first;
+			iFeatRef = featureRef.find(type);        //See if reference bm has same type
 
-			if(iFeatRef == featureRef.end()) {
-				printf("[WARNING] -- searchDatabase: Feature Type (%s) not found\n", type.c_str());
-				continue;
-			}
-			
 			std::map<unsigned, unsigned> featRef;
-			featureRef[type]->getFeature(featRef);
-
+			if(iFeatRef != featureRef.end())         //If no feature, empty (OK:Distance)
+				iFeatRef->second->getFeature(featRef); //Load REF Feature
+			
 			std::map<unsigned, unsigned> featDB;
-			iFeat->second->getFeature(featDB);
+			iFeatDB->second->getFeature(featDB);       //Load DB Feature
 
-			tsim = SIMILARITY::calculateSimilarity(featRef, featDB);
-			if(tsim >= 0)
+			double tsim = SIMILARITY::euclidean(featRef, featDB);
+			sScore += tsim;
+			//printf("  TYPE: %s\t SSCORE: %f\n", type.c_str(), tsim);
+		}
+	
+		//Capture missed data where the ref has features the db does not 
+		for(iFeatRef = featureRef.begin(); iFeatRef != featureRef.end(); iFeatRef++){
+			std::string type = iFeatRef->first;
+			iFeatDB = featureDB.find(type);
+
+			//Look for features not found in Db since features in DB already calced
+			if(iFeatDB == featureDB.end()) {
+				std::map<unsigned, unsigned> featDB;
+				std::map<unsigned, unsigned> featRef;
+				iFeatRef->second->getFeature(featRef);
+
+				double tsim = SIMILARITY::euclidean(featRef, featDB);
 				sScore += tsim;
-			else
-				sScore += (-1.0 * tsim);
+			}
 		}
 
-		sScore /= featureDB.size(); 
-		printf("  * SSCORE: %f\n", sScore);
+		//Note: Don't care are features not accounted for in both since distance is 0
+		//printf("  * SSCORE: %f\n", sScore);
+		if(sScore> maxs)    maxs = sScore;
+		if(sScore< mins)    mins = sScore;
 
 
 
 
 
+		/////////////////////////////////////////////////////////////////////////////
+		//   CONSTANT SEQUENCE COMARPISON
+		//     Score is the total euclidean distance of binned constant vector 
+		/////////////////////////////////////////////////////////////////////////////
+		//printf(" -- Comparing Constant Components....\n");
+		std::vector<unsigned> constantDB;
+		m_Database[i]->getBinnedConstants(constantDB);
+		double cScore = SIMILARITY::euclidean(constantRef, constantDB);
+
+		//printf("  * CSCORE: %f\n", cScore);
+		if(cScore > maxc)    maxc = cScore;
+		if(cScore < minc)    minc = cScore;
 
 
+		Score scoref;
+		scoref.id = m_Database[i]->getID();
+		scoref.name = m_Database[i]->getName();
+		scoref.score = fScore;
 
-		printf(" -- Comparing Constant Components....\n");
-		std::set<int> constantDB;
-		m_Database[i]->getConstants(constantDB);
+		Score scores;
+		scores.id = m_Database[i]->getID();
+		scores.name = m_Database[i]->getName();
+		scores.score = sScore;
 
-		double cScore;
-		if(constantRef.size() == 0 && constantDB.size() == 0) cScore = 1.0;
-		else cScore = SIMILARITY::tanimoto(constantRef, constantDB);
-		printf("  * CSCORE: %f\n", cScore);
+		Score scorec;
+		scorec.id = m_Database[i]->getID();
+		scorec.name = m_Database[i]->getName();
+		scorec.score = cScore;
 
-
-
-		Score result;
-		result.id = m_Database[i]->getID();
-		result.name = m_Database[i]->getName();
-		result.score = fScore*100.0*0.67 +
-		               sScore*100.0*0.21 + 
-     				   cScore*100.0*0.12;
-
-		results.insert(result);
-		printf(" ## OVERALL SCORE: %f\n\n", result.score);
+		//Need to store for normalization later. Data is in different scales
+		fs.push_back(scoref);
+		ss.push_back(scores);
+		cs.push_back(scorec);
 	}
+
 	printf("###############################################################\n");
 	printf("###                    SEARCH COMPLETE                      ###\n");
 	printf("###############################################################\n");
-	int count = 1;
-	std::set<Score, setCompare>::iterator iSet;
-	for(iSet = results.begin(); iSet != results.end(); iSet++){
-		printf("RANK: %2d   ID: %2d   SCR: %6.2f   CKT:%s\n", count, iSet->id, iSet->score, iSet->name.c_str());
-		count++;
+
+	//Weights
+	double fweight = 0.34;
+	double sweight = 0.33;
+	double cweight = 0.33;
+	//Need to normalize data
+	std::set<Score, setCompare> normalizedFinalScore;
+
+	for(unsigned int i = 0; i < fs.size(); i++){
+		//Normalization of the scores to the range of 0-1
+		double newScoref = (double)(fs[i].score - minf) / (double)(maxf-minf);  
+		double newScores = (double)(ss[i].score - mins) / (double)(maxs-mins);
+		double newScorec = (double)(cs[i].score - minc) / (double)(maxc-minc);
+		
+		double newScore = newScoref * fweight * 100.0 + 
+		       (1 - newScores) * sweight * 100.0 +      //1 is dissimilar. Need to switch
+					 (1 - newScorec) * cweight * 100.0;
+
+		Score sim;
+		sim.id = fs[i].id;
+		sim.name = fs[i].name;
+		sim.score = newScore;
+		normalizedFinalScore.insert(sim);
 	}
 
+	int count = 1;
+	std::set<Score, setCompare>::iterator iSet;
+	for(iSet = normalizedFinalScore.begin(); iSet != normalizedFinalScore.end(); iSet++){
+		printf("RANK: %2d  SCORE: %6.2f   CKT:%s\n", count, iSet->score, iSet->name.c_str());
+		//printf(" %2d & %6.2f & %s\n", count, iSet->score, iSet->name.c_str()); //latex table
+		count++;
+	}
 }
-		
+
+
+
+
+
+
+
+
+
+
+/**
+ * getBirthmark 
+ *  Returns birthmark at the given index
+ */
 Birthmark* Database::getBirthmark(unsigned index){
 	return m_Database[index];
 }
 
 
+/**
+ * printXML
+ *  Prints the XML 
+ */
 void Database::printXML(){
 	std::cout << m_XML << "\n";
 }
 
 
+/**
+ * print
+ *  Prints the contents of all the birthmarks in the database
+ */
 void Database::print(){
-	/*
-	std::list<Birthmark*>::iterator iList;
-	for(iList = m_Database.begin(); iList != m_Database.end(); iList++){
-		*/
 	for(unsigned int i = 0; i < m_Database.size(); i++) 
 		m_Database[i]->print();
 }
+
+
+
+
+

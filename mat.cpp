@@ -979,6 +979,41 @@ int main(int argc, char** argv){
 			std::map<unsigned, unsigned>::iterator iVal;
 			iFP = fpDatabase.begin(); 
 			int numVec = iFP->second.size();
+			unsigned int cIndex = 0;
+			
+			//POPULATE THE constasnt statistics
+			std::vector<unsigned> ccount;
+			ccount.resize(1048578, 0);
+
+			std::map<std::string, std::set<int> >::iterator iCc;
+			int numX = 0; 
+			int numZ = 0; 
+			for(cIndex = 0; cIndex < cktname.size(); cIndex++){
+				iCc = constantDatabase.find(cktname[cIndex]);
+				std::set<int>::iterator iSet;
+				for(iSet = iCc->second.begin(); iSet != iCc->second.end(); iSet++){
+					if(*iSet  == -2)
+						numX++;
+					else if(*iSet  == -3)
+						numZ++;
+					else if(*iSet < 0)
+						ccount[1048577]++;
+					else if(*iSet > 1048576)
+						ccount[1048577]++;
+					else
+						ccount[*iSet]++;
+				}
+			}
+
+			std::ofstream cfs;
+			cfs.open("data/constant_count.csv");
+
+			for(unsigned int i = 0; i < (ccount.size()-1); i++)
+				cfs<<ccount[i]<<",";
+			cfs<<ccount[ccount.size()-1];
+			cfs.close();
+			ccount.clear();
+			ccount.resize(0);
 
 			//SET UP THE VECTOR TABLE for fingerprint
 			//Vec of each circuit, vec of each fingerprint, vec of the count
@@ -997,7 +1032,6 @@ int main(int argc, char** argv){
 
 
 			//POPULATE THE VECTOR TABLE with fingerprint data
-			unsigned int cIndex = 0;
 			//printf("Number of circuits: %d\n", (int)fpDatabase.size());
 			//printf("Number of circuits: %d\n", (int)cktname.size());
 			for(cIndex = 0; cIndex < cktname.size(); cIndex++){
@@ -1023,16 +1057,18 @@ int main(int argc, char** argv){
 			//POPULATE THE VECTOR TABLE with constant data
 			std::vector<std::vector<int> > ctable;
 			ctable.reserve(fpDatabase.size());
-			unsigned int numbin = 94;
+			unsigned int numbin = 304//94;
 			for(unsigned int i = 0; i < fpDatabase.size(); i++){
 				std::vector<int> vv;
-				vv.resize(numbin);
+				vv.resize(numbin+2);
 				ctable.push_back(vv);
 			}
 
 			std::map<std::string, std::set<int> >::iterator iC;
 			std::stringstream cstream;
 			std::string nameTable = "";
+			unsigned numX = 0;
+			unsigned numZ = 0;
 			for(cIndex = 0; cIndex < cktname.size(); cIndex++){
 				iC = constantDatabase.find(cktname[cIndex]);
 				std::set<int>::iterator iSet;
@@ -1040,13 +1076,17 @@ int main(int argc, char** argv){
 					cstream<<*iSet<<",";
 					//If the size of the fingerprint is smaller than the table, resize table
 
-					if((*iSet) < 0)
+					if((*iSet) == -2)
+						ctable[cIndex][numbin]	= 1;
+					else if((*iSet) == -3)
+						ctable[cIndex][numbin+1]	= 1;
+					else if((*iSet) < 0)
 						ctable[cIndex][numbin-1]	= 1;
-					else if((*iSet) <= 64)
+					else if((*iSet) <= 256)
 						ctable[cIndex][*iSet] = 1;
 					else{
-						unsigned startIndex = 65;
-						unsigned base = 128;
+						unsigned startIndex = 257;
+						unsigned base = 512;
 						bool binned = false;
 
 						for(;startIndex < (numbin-1); startIndex++){
@@ -1076,6 +1116,8 @@ int main(int argc, char** argv){
 				cstream<<"\n";
 				nameTable += cktname[cIndex] + ",";
 			}
+			
+			
 
 			std::stringstream tablestr;
 			std::stringstream cstr;

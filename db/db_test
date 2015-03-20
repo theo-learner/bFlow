@@ -1,6 +1,1 @@
-v/cf_fft_256_8.v
-v/qdiv2.v
-v/cam.v
-
-
-v/ncsu_arbiter.v
+v/cf_fft_512_16.v

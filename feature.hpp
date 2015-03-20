@@ -1,13 +1,10 @@
 /*@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@
-	@
 	@  feature.hpp
 	@  
 	@  @AUTHOR:Kevin Zeng
-	@  Copyright 2012 – 2013 
+	@  Copyright 2012 – 2015
 	@  Virginia Polytechnic Institute and State University
-	@
 	@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@*/
-
 
 #ifndef FEATURE_GUARD
 #define FEATURE_GUARD
@@ -23,32 +20,20 @@
 
 class Feature{
 	private: 
-		//std::string m_FeatureName;
-		//std::vector<unsigned> m_Sizes;
-		//std::vector<unsigned> m_Counts;
-
 		std::map<unsigned, unsigned> m_SizeCount;
 
 	public:
 		Feature();
 		Feature(std::vector<unsigned>&, std::vector<unsigned>&);
-		Feature(unsigned, unsigned);
+		Feature(unsigned, unsigned);                     //PARAM: Size, Count
 
-		//void getSizes(std::vector<unsigned>&);
-		//void getCounts(std::vector<unsigned>&);
 		void getFeature(std::map<unsigned, unsigned>&);
-
-		//unsigned getSize(unsigned);
-		unsigned getCount(unsigned);
+		unsigned getCount(unsigned);                     //PARAM: Size
 		
-		//void setSizes(std::vector<unsigned>&);
-		//void setCounts(std::vector<unsigned>&);
 		void setFeatures(std::map<unsigned, unsigned>&);
 		
-		void addEntry(unsigned, unsigned); //PARAM: size, count
+		void addEntry(unsigned, unsigned);               //PARAM: Size, Count
 
-		//std::string getName(unsigned);
-		//void setName(std::string);
 		void print();
 
 	

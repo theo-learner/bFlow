@@ -86,8 +86,7 @@ int main( int argc, char *argv[] ){
 
 		timeval start_time, end_time;
 		gettimeofday(&start_time, NULL); //----------------------------------
-		std::vector<double> fsim;
-		db->searchDatabase(refBirthmark, fsim);
+		db->searchDatabase(refBirthmark);
 		
 		/*
 		std::ofstream ofs;

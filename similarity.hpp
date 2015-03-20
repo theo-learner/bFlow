@@ -36,6 +36,10 @@ namespace SIMILARITY{
 	double tanimoto(std::map<unsigned, unsigned>&, std::map<unsigned, unsigned>&);
 	double tanimotoWindow(std::map<unsigned, unsigned> , std::map<unsigned,unsigned> );
 	double tanimotoWindow_size(std::map<unsigned, unsigned>& , std::map<unsigned,unsigned>& );
+	double euclidean(std::map<unsigned, unsigned>& , std::map<unsigned,unsigned>& );
+	double euclidean(std::vector<unsigned>& , std::vector<unsigned>& );
+	double cosine(std::map<unsigned, unsigned>& , std::map<unsigned,unsigned>& );
+	double cosine(std::vector<unsigned>& , std::vector<unsigned>& );
 
 
 
@@ -58,8 +62,8 @@ namespace SIMILARITY{
 	static TAlign s_Align;
 	
 	void initAlignment();
-	double align(std::list<std::string>&, std::list<std::string>&);
-	double align(std::list<std::string>&, std::list<std::string>&, int&);
+	int align(std::list<std::string>&, std::list<std::string>&);
+	double align2(std::list<std::string>&, std::list<std::string>&);
 	double alignScore();
 	void printAlignment();
 

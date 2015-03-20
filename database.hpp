@@ -1,11 +1,9 @@
 /*@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@
-	@
-	@      database.hpp
+	@  database.hpp
 	@      
-	@      @AUTHOR:Kevin Zeng
-	@      Copyright 2012 – 2013 
-	@      Virginia Polytechnic Institute and State University
-	@
+	@  @AUTHOR:Kevin Zeng
+	@  Copyright 2012 – 2015
+	@  Virginia Polytechnic Institute and State University
 	@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@*/
 
 #ifndef DATABASE_GUARD
@@ -24,18 +22,27 @@
 
 #include "birthmark.hpp"
 #include "similarity.hpp"
+#include "error.hpp"
 
 #include "libs/rapidxml/rapidxml.hpp"
 #include "libs/rapidxml/rapidxml_print.hpp"
 
-//Used to sort the id and name by the score
+/**
+ * Score
+ *  Used to sort the id and name by the score
+ *  Primarily to ease the sorting process
+ */
 struct Score{
 	double score;
 	unsigned id;
 	std::string name;
 };
 
-//Used to compare the cScore so that it is sorted by the score
+/**
+ * setCompare 
+ *  Comparator for input to set templace 
+ *  Used to compare the score of the Score object above
+ */
 struct setCompare{
 	bool operator()(const Score& lhs, const Score& rhs) const{
 		return lhs.score >= rhs.score;
@@ -43,20 +50,20 @@ struct setCompare{
 };
 
 
+
+
 class Database{
 	private:
 		rapidxml::xml_document<> m_XML;
-		//rapidxml::xml_node<>* m_Root;
-		
 		std::vector<Birthmark*> m_Database;
 
 	public:
 		Database();
 		Database(std::string);
 		~Database();
+
 		bool importDatabase(std::string);   //PARAM: File Name
 	  void searchDatabase(Birthmark*);
-		void searchDatabase(Birthmark*, std::vector<double>&);
 		Birthmark* getBirthmark(unsigned);
 		unsigned getSize();
 
