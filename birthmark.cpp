@@ -92,6 +92,8 @@ bool Birthmark::importXML(xml_node<>* cktNode){
 				addAlphaSequence(featureNode->value());
 			else if(featureNodeName == "CONSTANT")
 				addConstant(s2i::string2int(featureNode->value()));
+			else if(featureNodeName == "STAT")
+				setStatstr(featureNode->value());
 			else if(featureNodeName == "FP"){
 
 				//Get the name and ID of the circuit 
@@ -103,6 +105,7 @@ bool Birthmark::importXML(xml_node<>* cktNode){
 
 				//########################################################
 				xml_node<>* attrNode =  featureNode->first_node();
+				if(attrNode == NULL) addFingerprint(featureName, new Feature());
 
 				//Store the attribute of each fingerprint 
 				while (attrNode!= NULL){
@@ -133,6 +136,8 @@ bool Birthmark::importXML(xml_node<>* cktNode){
 				//########################################################
 
 			}
+			else throw Exception("(Birthmark::importXML:T12) Unknown tag found in XML: " + featureNodeName);
+
 
 			featureNode= featureNode->next_sibling(); 
 		}
@@ -205,6 +210,22 @@ int Birthmark::getID(){
 	return m_ID;
 }
 
+/**
+ * getNumFPSubcomponents
+ *  Returns the number of subcomponents the fingerprint represents
+ */
+unsigned Birthmark::getNumFPSubcomponents(){
+	return m_Fingerprint.size();
+}
+
+/**
+ * getStatstr
+ *  Returns the statistics string 
+ */
+std::string Birthmark::getStatstr(){
+	return m_Statstr;
+}
+
 
 /**
  * getAvgSequenceLength
@@ -244,7 +265,7 @@ void Birthmark::getBinnedConstants(std::vector<unsigned>& rval){
 		if((*iSet) == -2)        rval[m_NumBin]++;
 
 		//If -3, constant is high impedance
-		else if((*iSet) == -2)   rval[m_NumBin+1]++;
+		else if((*iSet) == -3)   rval[m_NumBin+1]++;
 
 		//If number is higher than the highest bin, place in highest bin
 		else if((*iSet) < 0)     rval[m_NumBin-1]++;
@@ -284,9 +305,6 @@ void Birthmark::getBinnedConstants(std::vector<unsigned>& rval){
 
 		}
 	}
-	for(unsigned int i = 0; i < rval.size(); i++)
-		printf("%d ", rval[i]);
-		printf("\n");
 }
 
 
@@ -354,6 +372,14 @@ void Birthmark::setName(std::string name){
  */
 void Birthmark::setID(int id){
 	m_ID = id;
+}
+
+/**
+ * setStatstr
+ *  Sets the statistics str
+ */
+void Birthmark::setStatstr(std::string stat){
+	m_Statstr= stat;
 }
 
 
@@ -430,8 +456,8 @@ void Birthmark::addFingerprint(std::string featureName, unsigned size, unsigned 
 
 
 /**
- * addFingerprint
- *  Constructs a new feature and adds it into the fingerprint list 
+ * print
+ *  Prints the contents of the birthmark 
  */
 void Birthmark::print(){
 	printf("---------------------------------------------------------------\n"); 
@@ -465,3 +491,8 @@ void Birthmark::print(){
 	}
 	printf("---------------------------------------------------------------\n"); 
 }
+
+
+
+
+

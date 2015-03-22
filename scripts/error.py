@@ -16,3 +16,7 @@ class YosysError(Error):
 class SizeError(Error):
 	def __init__(self, msg):
 		self.msg = msg;
+
+class ArgError(Error):
+	def __init__(self):
+		pass

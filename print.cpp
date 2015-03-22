@@ -1,3 +1,12 @@
+/*@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@
+	@  print.cpp
+	@    Printing functions 
+  @	
+  @  @AUTHOR:Kevin Zeng
+	@  Copyright 2012 – 2015
+	@  Virginia Polytechnic Institute and State University
+	@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@*/
+
 #include "print.hpp"
 
 void cprint(std::vector<std::map<unsigned, unsigned> >& str){
@@ -20,14 +29,11 @@ void cprint(std::vector<double >& str){
 	if(str.size() == 0) {
 		printf("EMPTY\n");
 		return;
-
 	}
 	
-	for(unsigned int i = 0; i < str.size(); i++){
+	for(unsigned int i = 0; i < str.size(); i++)
 		printf("%f ", str[i]);
-	}
 	printf("\n");
-
 }
 
 void cprint(std::vector<std::vector<int> >& str){
@@ -37,13 +43,11 @@ void cprint(std::vector<std::vector<int> >& str){
 	}
 	
 	for(unsigned int i = 0; i < str.size(); i++){
-		for(unsigned int q = 0; q < str[i].size(); q++){
+		for(unsigned int q = 0; q < str[i].size(); q++)
 			printf("%d ", str[i][q]);
-		}
 		printf("\n");
 	}
 	printf("\n");
-
 }
 
 void cprint(std::map<unsigned, unsigned>& str){

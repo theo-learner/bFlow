@@ -29,28 +29,27 @@ OBJREF= \
 	print.o \
 	$
 
-all: 
-	mkdir -p dot
+all: bench_matlab rsearch bench_db cserver
 
 #build subdirectories
 	
-msim: $(OBJREF) mat.o 
-	$(CXX) $(OBJREF) mat.o -o matlab 
+bench_matlab: $(OBJREF) bench_matlab.o 
+	$(CXX) $(OBJREF) bench_matlab.o -o bench_matlab 
 
 autocor: $(OBJS) autocor.o 
 	$(CXX) $(OBJS) autocor.o -o autocor 
 
-refTest: $(OBJREF) refTest.o 
-	$(CXX) $(OBJREF) refTest.o -o refTest
+rsearch: $(OBJREF) rsearch.o 
+	$(CXX) $(OBJREF) rsearch.o -o rsearch
 
-dbTest: $(OBJREF) dbTest.o 
-	$(CXX) $(OBJREF) dbTest.o -o dbTest
+bench_db: $(OBJREF) bench_db.o 
+	$(CXX) $(OBJREF) bench_db.o -o bench_db
 
 mainopt: $(OBJS) swparam_opt.o
 	$(CXX) $(OBJS) swparam_opt.o -o opt_sswparam 
 
-mainserver:  $(OBJSERVER) mainserver.o
-	$(CXX) -o serverMain $(OBJSERVER) mainserver.o 
+cserver:  $(OBJSERVER) cserver.o
+	$(CXX) -o cserver $(OBJSERVER) cserver.o 
 	
 
 %.o: %.cpp 
@@ -59,7 +58,7 @@ mainserver:  $(OBJSERVER) mainserver.o
 
 
 clean: 
-	rm -v *.o hbflow serverMain matlab refTest  dbTest
+	rm -v *.o hbflow cserver rsearch bench_db bench_matlab
 
 cleanall: 
-	rm -v *.o hbflow serverMain matlab refTest dbTest  scripts/*.pyc  data/*.csv data/*.dat data/*.log db/*.xml
+	rm -v *.o hbflow cserver rsearch bench_db bench_matlab scripts/*.pyc  data/*.csv data/*.dat data/*.log db/*.xml

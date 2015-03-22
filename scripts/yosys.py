@@ -34,7 +34,7 @@ def create_yosys_script(fileName, scriptName):
 	script = script + "hierarchy -check\n";
 	script = script + "proc; opt; fsm; opt;\n\n";
 	script = script + "memory_collect; opt;\n\n";
-	script = script + "techmap -map /usr/local/share/yosys/pmux2mux.v;\n\n"
+	#script = script + "techmap -map /usr/local/share/yosys/pmux2mux.v;\n\n"
 	script = script + "flatten "+ top +"; opt\n";
 	script = script + "wreduce; opt\n\n";
 	script = script + "stat " + top + "\n\n";

@@ -1,11 +1,9 @@
 /*@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@
-	@
 	@  server.hpp
 	@  
 	@  @AUTHOR:Kevin Zeng
-	@  Copyright 2012 – 2013 
+	@  Copyright 2012 – 2015
 	@  Virginia Polytechnic Institute and State University
-	@
 	@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@*/
 
 

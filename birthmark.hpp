@@ -40,6 +40,8 @@ class Birthmark{
 		//CONSTANT
 		std::set<int> m_Constants;                //Constants in the circuit
 
+		//STAT
+		std::string m_Statstr;
 
 		//STRUCTURAL
 		//Name of feature, map of the size of feature : Num of occurance
@@ -59,6 +61,8 @@ class Birthmark{
 		double getAvgSequenceLength();                           //Gets AVG SEQ LEN of all SEQ
 		std::string getName();
 		int getID();
+		unsigned getNumFPSubcomponents();
+		std::string getStatstr();
 		
 		void setMaxSequence(std::list<std::string>&);
 		void setMinSequence(std::list<std::string>&);
@@ -67,6 +71,7 @@ class Birthmark{
 		void setFingerprint(std::map<std::string, Feature*> &);
 		void setName(std::string);
 		void setID(int);
+		void setStatstr(std::string);
 		
 		void addMaxSequence(std::string);
 		void addMinSequence(std::string);

@@ -19,41 +19,31 @@ import timeit
 import processRef
 
 
-if len(sys.argv) != 3: 
-	print "[ERROR] -- Not enough argument. Provide direction of DOT files to process";
-	print "        -- ARG1: list of .v, ARG2: Name of sql database";
-	exit();
-	
-#xmlFile= sys.argv[1];
-#handler = open(xmlFile);
-#xmlContent = handler.read();
-#soup = BeautifulSoup(xmlContent,  'xml');
-#cList = soup.DATABASE.find_all('CIRCUIT');
-#for circuit in cList:
-#	content = circuit.MAXSEQUENCE.string	
-#	content = re.sub(r"\s+", "", content);
-#	print content;
-
-cfiles= sys.argv[1];
-dbFile= sys.argv[2];
 
 try:
+	if len(sys.argv) != 3: 
+		raise error.ArgError()
+		
+	cfiles= sys.argv[1];
+	dbFile= sys.argv[2];
+
 	print
 	print "########################################################################";
 	print "[PPDB] -- Begin Circuit Database Preprocessing..."
 	print "########################################################################";
 	print
 
+	#Initialize the XML creator
 	soup = BeautifulSoup();
 	dbtag = soup.new_tag("DATABASE");
 	soup.append(dbtag)
-
 
 	ID = 0;
 	scriptName = "data/yoscript"
 	fstream = open(cfiles);
 	flines = fstream.readlines();
 
+	#Go through each circuit in the circuit list
 	for line in flines:
 		start_time = timeit.default_timer();
 		line= re.sub(r"\s+", "", line);
@@ -61,12 +51,14 @@ try:
 		print "[PPDB] -- Extracting feature from verilog file: " + line;
 		print "--------------------------------------------------------------------------------"
 
+		# Processes the verilog files 
 		start_yosys = timeit.default_timer();
 		val  = yosys.create_yosys_script(line, scriptName)
 		top = val[1];
+		dotfile = val[0];
 
 		rVal = yosys.execute(scriptName);
-		if(rVal != ""):
+		if(rVal != ""):                       #Make sure no Error occurred during synthesis
 			raise error.YosysError(rVal);
 		elapsed = timeit.default_timer() - start_yosys;
 		print "[PPDB] -- ELAPSED: " +  repr(elapsed);
@@ -76,11 +68,11 @@ try:
 		print
 
 
-		ckttag = processRef.generateXML(val[0], ID, top, soup)
+		#Goes through the AST extracted from yosys and gets the birthmark components
+		ckttag = processRef.generateXML(dotfile, ID, top, soup)
 		dbtag.append(ckttag)
 		ID = ID + 1;
 
-	
 		elapsed = timeit.default_timer() - start_time;
 		print "ELASPED TIME: " + repr(elapsed);
 		fse = open("data/elapsedtime.dat", "a");
@@ -99,18 +91,27 @@ try:
 	
 	print " -- XML File saved  : " + dbFile;
 	print " -- Files processed : " + repr(ID);
-	
-
-except error.YosysError as e:
-	print "[ERROR] -- Yosys has encountered an error...";
-	print e.msg;
-except error.YosysError as e:
-	print "[ERROR] -- Yosys Error...";
-	print "        -- " +  e.msg;
-except Exception as e:
-	print e;
-	traceback.print_exc(file=sys.stdout);
-finally:
 	print "-----------------------------------------------------------------------"
 	print "[PPDB] -- COMPLETE!";
 	print 
+	
+
+except error.ArgError as e:
+	if len(sys.argv) == 1 :
+		print("\n  preprocessDB");
+		print("  ==========================================================================");
+		print("    This program reads in a list of circuits in Verilog to process ");
+		print("    The preprocessing extracts and stores the birthmark representation");
+		print("    Results are stored in an XML file");
+		print("\n  Usage: python preprocessDB.py [List of Verilog]  [Output XML]\n");
+	else:
+		print "[ERROR] -- Not enough argument. Provide list of circuits and a XML file ";
+		print("           Usage: python preprocessDB.py [List of Verilog]  [Output XML]\n");
+
+except error.YosysError as e:
+	print "[ERROR] -- Yosys has encountered an error...";
+	print "        -- " +  e.msg;
+
+except Exception as e:
+	print e;
+	traceback.print_exc(file=sys.stdout);

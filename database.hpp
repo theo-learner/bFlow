@@ -56,6 +56,7 @@ class Database{
 	private:
 		rapidxml::xml_document<> m_XML;
 		std::vector<Birthmark*> m_Database;
+		bool m_SuppressOutput;
 
 	public:
 		Database();
@@ -64,8 +65,10 @@ class Database{
 
 		bool importDatabase(std::string);   //PARAM: File Name
 	  void searchDatabase(Birthmark*);
+
 		Birthmark* getBirthmark(unsigned);
 		unsigned getSize();
+		void suppressOutput();
 
 		void printXML();
 		void print();

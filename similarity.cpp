@@ -1,15 +1,248 @@
 /*@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@ 
-  @
-  @  SIMILARITY.cpp
-  @  
-  @  @AUTHOR:Kevin Zeng
-  @  Copyright 2012 – 2013 
-  @  Virginia Polytechnic Institute and State University
-  @
-  @#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@*/
+	@  similarity.cpp
+	@  
+	@  @AUTHOR:Kevin Zeng
+	@  Copyright 2012 – 2015
+	@  Virginia Polytechnic Institute and State University
+	@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@*/
 
 #include "similarity.hpp"
 
+
+/**
+ * euclidean
+ *  Finds the euclidean distance
+ */
+double SIMILARITY::euclidean(std::map<unsigned, unsigned>& data1, std::map<unsigned,unsigned>& data2){
+	std::map<unsigned, unsigned>::iterator iMap;
+	std::map<unsigned, unsigned>::iterator iMap2;
+	std::map<unsigned, unsigned>::iterator iTemp;
+	std::map<unsigned, unsigned>::iterator iMapF;
+	std::set<unsigned> marked1;
+	std::set<unsigned> marked2;
+
+	double sum = 0.0;
+	for(iMap = data1.begin(); iMap != data1.end(); iMap++){
+		iTemp = data2.find(iMap->first);	
+		if(iTemp != data2.end())
+			sum += (double)((iTemp->second - iMap->second)*(iTemp->second - iMap->second));
+		else
+			sum += (double)(iMap->second* iMap->second);
+	}
+	
+	for(iMap = data2.begin(); iMap != data2.end(); iMap++){
+		iTemp = data1.find(iMap->first);	
+		if(iTemp == data1.end())
+			sum += (double)(iMap->second* iMap->second);
+	}
+
+	return sqrt(sum);
+}
+
+/**
+ * euclidean
+ *  Finds the euclidean distance
+ */
+double SIMILARITY::euclidean(std::vector<unsigned>& data1, std::vector<unsigned>& data2){
+	assert(data1.size() == data2.size());
+
+	double sum = 0.0;
+	for(unsigned int i =  0; i < data1.size(); i++)
+		sum += (double)((data1[i]- data2[i])*(data1[i]- data2[i]));
+	
+	return sqrt(sum);
+}
+
+
+/**
+ * cosine 
+ *  Finds the cosine similarity of two dataset 
+ */
+double SIMILARITY::cosine(std::map<unsigned, unsigned>& data1, std::map<unsigned,unsigned>& data2){
+	if(data1.size() == 0 || data2.size() == 0) return 0.0;
+	std::map<unsigned, unsigned>::iterator iMap;
+	std::map<unsigned, unsigned>::iterator iMap2;
+	std::map<unsigned, unsigned>::iterator iTemp;
+	std::map<unsigned, unsigned>::iterator iMapF;
+	std::set<unsigned> marked1;
+	std::set<unsigned> marked2;
+
+	int anorm = 0;
+	for(iMap = data1.begin(); iMap != data1.end(); iMap++)
+		anorm += (iMap->second * iMap->second);
+	
+	int bnorm = 0;
+	for(iMap = data2.begin(); iMap != data2.end(); iMap++)
+		bnorm += (iMap->second * iMap->second);
+
+	double denom = sqrt((double)anorm) * sqrt((double)bnorm);
+
+
+	//Count the number of bits that are the same
+	double sum = 0.0;
+	for(iMap = data1.begin(); iMap != data1.end(); iMap++){
+		iTemp = data2.find(iMap->first);	
+		if(iTemp != data2.end())
+			sum += (double)(iTemp->second * iMap->second);
+	}
+	
+	return sum / denom;
+}
+
+/**
+ * cosine 
+ *  Finds the cosine similarity of two dataset 
+ */
+double SIMILARITY::cosine(std::vector<unsigned>& data1, std::vector<unsigned>& data2){
+	assert(data1.size() == data2.size());
+	if(data1.size() == 0 || data2.size() == 0) return 0.0;
+
+	int anorm = 0;
+	for(unsigned int i =  0; i < data1.size(); i++)
+		anorm += (data1[i] * data1[i]);
+	
+	int bnorm = 0;
+	for(unsigned int i =  0; i < data2.size(); i++)
+		bnorm += (data2[i] * data2[i]);
+
+	double denom = sqrt((double)anorm) * sqrt((double)bnorm);
+
+
+	//Count the number of bits that are the same
+	double sum = 0.0;
+	for(unsigned int i =  0; i < data1.size(); i++)
+		sum += (double)(data1[i]* data2[i]);
+	
+	return sum / denom;
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * align 
+ *  given a list of sequences (REF and DB), align the sequences and extract
+ *  the similarity of the alignment (AVG SIM) 
+ */
+int SIMILARITY::align(std::list<std::string>& ref, std::list<std::string>& db){
+	//	timeval start_time, end_time;
+	//	gettimeofday(&start_time, NULL); //----------------------------------
+
+	std::list<std::string>::iterator iSeq;	
+	std::list<std::string>::iterator iRef;	
+	unsigned totalScore = 0;
+
+	for(iRef= ref.begin(); iRef!= ref.end(); iRef++){
+		for(iSeq = db.begin(); iSeq != db.end(); iSeq++){
+			//Assign the alignment structure with the sequences
+			TSequence seq1 = *iRef;
+			TSequence seq2 = *iSeq;
+			assignSource(row(s_Align, 0), seq1);
+			assignSource(row(s_Align, 1), seq2);
+			
+			//Alignment of the sequence
+			int score = localAlignment(s_Align, s_Score);
+			//printAlignment();
+
+			//Calcuate the difference in the size ratios
+			double sizeRatio;
+			if(iRef->length() < iSeq->length())
+				sizeRatio = (double)iRef->length()/ (double)iSeq->length();
+			else
+				sizeRatio = (double)iSeq->length()/ (double)iRef->length();
+
+
+			//Go through the aligned sequence and add additional gap penalty
+			TRowIterator it1 = begin(row(s_Align,0));
+			TRowIterator it2 = begin(row(s_Align,1));
+			TRowIterator it1End = end(row(s_Align,0));
+			for (; it1 != it1End; ++it1){
+				if (isGap(it1))      score += CircuitGapPenaltyMatrix[*it2];
+				else if(isGap(it2))  score += CircuitGapPenaltyMatrix[*it1];
+				++it2;
+			}
+
+
+			//printf("[SIM] -- %5d   ALIGN: %s - %s\n=============================\n", score, iRef->c_str(), iSeq->c_str());
+			//Sum the entire score
+			totalScore += (score * sizeRatio);
+		}
+	}
+
+	return totalScore;
+}
+
+/**
+ * printAlignment 
+ *  Prints the result of the alignment 
+ */
+void SIMILARITY::printAlignment(){
+	TRowIterator it1 = begin(row(s_Align,0));
+	TRowIterator it2 = begin(row(s_Align,1));
+	TRowIterator it1End = end(row(s_Align,0));
+	TRowIterator it2End = end(row(s_Align,1));
+	for (; it1 != it1End; ++it1){
+		if (isGap(it1))    std::cout << gapValue<char>();
+		else              std::cout << *it1;
+	}
+	std::cout << std::endl;
+
+	it1 = begin(row(s_Align,0));
+	it2 = begin(row(s_Align,1));
+	for (; it1 != it1End; ++it1){
+		if (isGap(it1))         std::cout << "*" ;
+		else if(isGap(it2))     std::cout << "*" ;
+		else if(*it2 != *it1)  	std::cout << "X";
+		else                    std::cout << "|";
+		++it2;
+	}
+	std::cout << std::endl;
+
+	it1 = begin(row(s_Align,0));
+	it2 = begin(row(s_Align,1));
+	for (; it2 != it2End; ++it2){
+		if (isGap(it2))   std::cout << gapValue<char>();
+		else              std::cout << *it2;
+	}
+	std::cout << std::endl;
+	std::cout << std::endl;
+}
+
+/**
+ * initAlignment 
+ *   Initializes the alignment to do pairwise alignment
+ *   Sets the default score matrix
+ */
+void SIMILARITY::initAlignment(){
+	//Set up the aligner
+	resize(rows(s_Align), 2);
+
+	//Set up the scoring scheme using a custom scoring matrix
+	//Located in lib/seqan/score/scorematrixwithdata
+	setDefaultScoreMatrix(s_Score, CircuitScoringMatrix());
+	showScoringMatrix(s_Score);
+
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * findMinDistance
+ *  Finds the size who's distance is the mininum to a value 
+ */
 int SIMILARITY::findMinDistance(std::map<unsigned, unsigned>& data, std::set<unsigned>& marked, unsigned value, std::map<unsigned, unsigned>::iterator& minIt){
 	std::map<unsigned, unsigned>::iterator iMap;
 	int minDiff = 10000;
@@ -33,8 +266,11 @@ int SIMILARITY::findMinDistance(std::map<unsigned, unsigned>& data, std::set<uns
 
 
 
-
-
+/**
+ * tanimotoWindow_size 
+ *  Finds the tanimoto coefficient using a 5 space window technique
+ *  Disregards the count
+ */
 double SIMILARITY::tanimotoWindow_size(std::map<unsigned, unsigned>& data1, std::map<unsigned,unsigned>& data2){
 	if(data1.size() == 0 || data2.size() == 0){
 		//return -1.0;
@@ -111,6 +347,11 @@ double SIMILARITY::tanimotoWindow_size(std::map<unsigned, unsigned>& data1, std:
 
 
 
+/**
+ * tanimotoWindow
+ *  Finds the tanimoto coefficient using a 5 space window technique
+ *  Takes the count into account
+ */
 double SIMILARITY::tanimotoWindow(std::map<unsigned, unsigned> data1, std::map<unsigned,unsigned> data2){
 	if(data1.size() == 0 || data2.size() == 0){
 		//return -1.0;
@@ -229,6 +470,10 @@ double SIMILARITY::tanimotoWindow(std::map<unsigned, unsigned> data1, std::map<u
 
 
 
+/**
+ * tanimoto
+ *  Finds the tanimoto coefficient
+ */
 double SIMILARITY::tanimoto(std::set<int>& data1, std::set<int>& data2){
 	double N_f1 = data1.size();
 	double N_f2 = data2.size();
@@ -256,6 +501,10 @@ double SIMILARITY::tanimoto(std::set<int>& data1, std::set<int>& data2){
 }
 
 
+/**
+ * tanimoto
+ *  Finds the tanimoto coefficient
+ */
 double SIMILARITY::tanimoto(std::map<unsigned, unsigned>& data1, std::map<unsigned, unsigned>& data2){
 	double N_f1 = data1.size();
 	double N_f2 = data2.size();
@@ -284,168 +533,7 @@ double SIMILARITY::tanimoto(std::map<unsigned, unsigned>& data1, std::map<unsign
 
 
 
-
-double SIMILARITY::euclidean(std::map<unsigned, unsigned>& data1, std::map<unsigned,unsigned>& data2){
-	std::map<unsigned, unsigned>::iterator iMap;
-	std::map<unsigned, unsigned>::iterator iMap2;
-	std::map<unsigned, unsigned>::iterator iTemp;
-	std::map<unsigned, unsigned>::iterator iMapF;
-	std::set<unsigned> marked1;
-	std::set<unsigned> marked2;
-
-	//Count the number of bits that are the same
-	double sum = 0.0;
-	for(iMap = data1.begin(); iMap != data1.end(); iMap++){
-		iTemp = data2.find(iMap->first);	
-		if(iTemp != data2.end())
-			sum += (double)((iTemp->second - iMap->second)*(iTemp->second - iMap->second));
-		else
-			sum += (double)(iMap->second* iMap->second);
-	}
-	
-	for(iMap = data2.begin(); iMap != data2.end(); iMap++){
-		iTemp = data1.find(iMap->first);	
-		if(iTemp == data1.end())
-			sum += (double)(iMap->second* iMap->second);
-	}
-
-	return sqrt(sum);
-}
-
-
-
-
-double SIMILARITY::euclidean(std::vector<unsigned>& data1, std::vector<unsigned>& data2){
-	assert(data1.size() == data2.size());
-
-	double sum = 0.0;
-	for(unsigned int i =  0; i < data1.size(); i++)
-		sum += (double)((data1[i]- data2[i])*(data1[i]- data2[i]));
-	
-	return sqrt(sum);
-}
-
-
-double SIMILARITY::cosine(std::map<unsigned, unsigned>& data1, std::map<unsigned,unsigned>& data2){
-	if(data1.size() == 0 || data2.size() == 0) return 0.0;
-	std::map<unsigned, unsigned>::iterator iMap;
-	std::map<unsigned, unsigned>::iterator iMap2;
-	std::map<unsigned, unsigned>::iterator iTemp;
-	std::map<unsigned, unsigned>::iterator iMapF;
-	std::set<unsigned> marked1;
-	std::set<unsigned> marked2;
-
-	int anorm = 0;
-	for(iMap = data1.begin(); iMap != data1.end(); iMap++)
-		anorm += (iMap->second * iMap->second);
-	
-	int bnorm = 0;
-	for(iMap = data2.begin(); iMap != data2.end(); iMap++)
-		bnorm += (iMap->second * iMap->second);
-
-	double denom = sqrt((double)anorm) * sqrt((double)bnorm);
-
-
-	//Count the number of bits that are the same
-	double sum = 0.0;
-	for(iMap = data1.begin(); iMap != data1.end(); iMap++){
-		iTemp = data2.find(iMap->first);	
-		if(iTemp != data2.end())
-			sum += (double)(iTemp->second * iMap->second);
-	}
-	
-	return sum / denom;
-}
-
-
-
-
-double SIMILARITY::cosine(std::vector<unsigned>& data1, std::vector<unsigned>& data2){
-	assert(data1.size() == data2.size());
-	if(data1.size() == 0 || data2.size() == 0) return 0.0;
-
-	int anorm = 0;
-	for(unsigned int i =  0; i < data1.size(); i++)
-		anorm += (data1[i] * data1[i]);
-	
-	int bnorm = 0;
-	for(unsigned int i =  0; i < data2.size(); i++)
-		bnorm += (data2[i] * data2[i]);
-
-	double denom = sqrt((double)anorm) * sqrt((double)bnorm);
-
-
-	//Count the number of bits that are the same
-	double sum = 0.0;
-	for(unsigned int i =  0; i < data1.size(); i++)
-		sum += (double)(data1[i]* data2[i]);
-	
-	return sum / denom;
-}
-
-/*#############################################################################
- *
- * align 
- *  given a list of sequences (REF and DB), align the sequences and extract
- *  the similarity of the alignment (AVG SIM) 
- *
- *#############################################################################*/
-int SIMILARITY::align(std::list<std::string>& ref, std::list<std::string>& db){
-	//	timeval start_time, end_time;
-	//	gettimeofday(&start_time, NULL); //----------------------------------
-
-	std::list<std::string>::iterator iSeq;	
-	std::list<std::string>::iterator iRef;	
-	unsigned totalScore = 0;
-
-	for(iRef= ref.begin(); iRef!= ref.end(); iRef++){
-		for(iSeq = db.begin(); iSeq != db.end(); iSeq++){
-
-			TSequence seq1 = *iRef;
-			TSequence seq2 = *iSeq;
-			assignSource(row(s_Align, 0), seq1);
-			assignSource(row(s_Align, 1), seq2);
-
-			double sizeRatio;
-			if(iRef->length() < iSeq->length())
-				sizeRatio = (double)iRef->length()/ (double)iSeq->length();
-			else
-				sizeRatio = (double)iSeq->length()/ (double)iRef->length();
-
-			int score = localAlignment(s_Align, s_Score);
-			//printAlignment();
-
-			//////////////////////////////////////////////////////////////
-			TRowIterator it1 = begin(row(s_Align,0));
-			TRowIterator it2 = begin(row(s_Align,1));
-			TRowIterator it1End = end(row(s_Align,0));
-
-			for (; it1 != it1End; ++it1){
-				if (isGap(it1))        score += CircuitGapPenaltyMatrix[*it2];
-				else if(isGap(it2))    score += CircuitGapPenaltyMatrix[*it1];
-				++it2;
-			}
-
-			////////////////////////////////////////////////////////////////
-
-
-
-			//printf("[SIM] -- SCORE: %7.4f - %5d   ALIGN: %s - %s\n", cursim, score, iRef->c_str(), iSeq->c_str());
-			totalScore += score * sizeRatio;
-		}
-		//printf("***************************************************\n");
-	}
-
-	return totalScore;
-}
-
-/*#############################################################################
- *
- * align 
- *  given a list of sequences (REF and DB), align the sequences and extract
- *  the similarity of the alignment (AVG SIM) 
- *
- *#############################################################################*/
+/*
 double SIMILARITY::align2(std::list<std::string>& ref, std::list<std::string>& db){
 	//	timeval start_time, end_time;
 	//	gettimeofday(&start_time, NULL); //----------------------------------
@@ -515,12 +603,10 @@ double SIMILARITY::align2(std::list<std::string>& ref, std::list<std::string>& d
 		//printf("***************************************************\n");
 	}
 
-	/*
 	   gettimeofday(&end_time, NULL); //----------------------------------
 	   double elapsedTime = (end_time.tv_sec - start_time.tv_sec) * 1000.0;
 	   elapsedTime += (end_time.tv_usec - start_time.tv_usec) / 1000.0;
 	   printf("[SIM] -- Align elapsed time: %f\n", elapsedTime/1000.0);
-	 */
 
 	return maxSim;
 	//return totalScore;
@@ -554,59 +640,4 @@ double SIMILARITY::alignScore(){
 	double sim = (match - penalty) / refSizeWithGap;
 	return sim;
 }
-
-void SIMILARITY::printAlignment(){
-	TRowIterator it1 = begin(row(s_Align,0));
-	TRowIterator it2 = begin(row(s_Align,1));
-	TRowIterator it1End = end(row(s_Align,0));
-	TRowIterator it2End = end(row(s_Align,1));
-	for (; it1 != it1End; ++it1){
-		if (isGap(it1))    std::cout << gapValue<char>();
-		else              std::cout << *it1;
-	}
-	std::cout << std::endl;
-
-	it1 = begin(row(s_Align,0));
-	it2 = begin(row(s_Align,1));
-	for (; it1 != it1End; ++it1){
-		if (isGap(it1))         std::cout << "*" ;
-		else if(isGap(it2))     std::cout << "*" ;
-		else if(*it2 != *it1)  	std::cout << "X";
-		else                    std::cout << "|";
-		++it2;
-	}
-	std::cout << std::endl;
-
-	it1 = begin(row(s_Align,0));
-	it2 = begin(row(s_Align,1));
-	for (; it2 != it2End; ++it2){
-		if (isGap(it2))   std::cout << gapValue<char>();
-		else              std::cout << *it2;
-	}
-	std::cout << std::endl;
-	std::cout << std::endl;
-}
-
-void SIMILARITY::initAlignment(){
-	//Set up the aligner
-	resize(rows(s_Align), 2);
-
-	//Set up the scoring scheme using a custom scoring matrix
-	//Located in header file
-	setDefaultScoreMatrix(s_Score, CircuitScoringMatrix());
-	showScoringMatrix(s_Score);
-
-}
-
-double SIMILARITY::calculateSimilarity(std::map<unsigned, unsigned>& fingerprint1,
-		std::map<unsigned, unsigned>& fingerprint2){
-
-	double sim;
-	if(fingerprint1.size() == 0 && fingerprint2.size() == 0)
-		sim = -1.00;
-	else
-		sim = tanimotoWindow_size(fingerprint1, fingerprint2);
-
-	return sim;
-}
-
+*/
