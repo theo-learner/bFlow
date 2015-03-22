@@ -15,6 +15,7 @@ using namespace rapidxml;
  */
 Database::Database(){	
 	SIMILARITY::initAlignment();
+	m_SuppressOutput = false;
 }
 
 /**
@@ -25,6 +26,7 @@ Database::Database(){
 Database::Database(std::string file){	
 	SIMILARITY::initAlignment();
 	importDatabase(file);
+	m_SuppressOutput = false;
 }
 
 /**
@@ -73,32 +75,51 @@ bool Database::importDatabase(std::string path){
 
 
 	//Make sure Database doesn't have content TODO: Append database	
-		if(m_Database.size() != 0) 
-			throw Exception("(Database::importDatabase:T1) Attempting to overwrite an existing database");
+	if(m_Database.size() != 0) 
+		throw Exception("(Database::importDatabase:T1) Attempting to overwrite an existing database");
 
-		xml_node<>* rootNode= m_XML.first_node();
-		if(rootNode == NULL)
-			throw Exception("(Database::importDatabase:T2) Root node of XML is NULL");
+	xml_node<>* rootNode= m_XML.first_node();
+	if(rootNode == NULL)
+		throw Exception("(Database::importDatabase:T2) Root node of XML is NULL");
 
-		//Make sure first node is DATABASE
-		std::string rootNodeName = rootNode->name();
-		if(rootNodeName != "DATABASE")
-			throw Exception("(Database::importDatabase:T3) No Database Node found");
+	//Make sure first node is DATABASE
+	std::string rootNodeName = rootNode->name();
+	if(rootNodeName != "DATABASE")
+		throw Exception("(Database::importDatabase:T3) No Database Node found");
 
-		xml_node<>* cktNode= rootNode->first_node();
-		//Look through the circuits in the Database
-		while (cktNode!= NULL){
-			Birthmark* bm = new Birthmark();
-			bm->importXML(cktNode);
+	xml_node<>* cktNode= rootNode->first_node();
+	//Look through the circuits in the Database
+	while (cktNode!= NULL){
+		Birthmark* bm = new Birthmark();
+		bm->importXML(cktNode);
 
-			//Store the fingerprintlist of the circuit 
-			m_Database.push_back(bm);
-			cktNode = cktNode->next_sibling(); 
+		//Store the fingerprintlist of the circuit 
+		m_Database.push_back(bm);
+		cktNode = cktNode->next_sibling(); 
+	}
+
+
+
+	//Integrity check to make sure all components in the database have the same subcomponent types
+	printf("[DB] -- Checking Database Integrity...");
+	std::map<std::string, Feature*> fp;
+	m_Database[0]->getFingerprint(fp);
+
+	for(unsigned int i = 1; i < m_Database.size(); i++){
+		std::map<std::string, Feature*> fp2;
+		m_Database[i]->getFingerprint(fp2);
+
+		std::map<std::string, Feature*>::iterator iFP1;
+		std::map<std::string, Feature*>::iterator iFP2;
+		iFP2 = fp2.begin();
+		for(iFP1 = fp.begin(); iFP1 != fp.end(); iFP1++){
+			assert(iFP1->first == iFP2->first);
+			iFP2++;
 		}
+	}
 
 	printf("COMPLETE!\n\n");
 	return true;
-
 }
 
 
@@ -124,7 +145,7 @@ void Database::searchDatabase(Birthmark* reference){
 
 	std::map<std::string, Feature*> featureRef;       //Structural
 	reference->getFingerprint(featureRef);
-	
+
 	std::vector<unsigned> constantRef;                //Constant
 	reference->getBinnedConstants(constantRef);
 
@@ -136,14 +157,16 @@ void Database::searchDatabase(Birthmark* reference){
 	ss.reserve(m_Database.size());
 
 	double maxf = 0.0;
-	double minf = 100000000.0;
+	double minf = 10000000000.0;
 	double maxs = 0.0;
-	double mins = 100000000.0;
+	double mins = 10000000000.0;
 	double maxc = 0.0;
-	double minc = 100000000.0;
+	double minc = 10000000000.0;
 
 	for(unsigned int i = 0; i < m_Database.size(); i++) {
+		//printf("###########################################################################################################\n");
 		printf("[DB] -- Comparing reference to %s\n", m_Database[i]->getName().c_str());
+		//printf("###########################################################################################################\n");
 
 		/////////////////////////////////////////////////////////////////////////////
 		//   FUNCTIONAL SEQUENCE COMARPISON
@@ -161,16 +184,17 @@ void Database::searchDatabase(Birthmark* reference){
 		m_Database[i]->getMinSequence(minDB);
 		int minScore = SIMILARITY::align(minRef, minDB);
 		fScore += double(minScore) / ((double)minRef.size() * (double)minDB.size());
-		//printf("TOTAL SCORE: %4d\tAVG: %f\n", minScore, double(minScore) / ((double)minRef.size() * (double)minDB.size()));
+		//printf("MINSCORE: %4d\tAVG: %f\n", minScore, double(minScore) / ((double)minRef.size() * (double)minDB.size()));
 
 		std::list<std::string> alphaDB;
 		m_Database[i]->getAlphaSequence(alphaDB);
 		int alphaScore = SIMILARITY::align(alphaRef, alphaDB);
 		fScore += (double(alphaScore) / ((double)alphaRef.size() * (double)alphaDB.size())) * 3;
-		//printf("TOTAL SCORE: %4d\tAVG: %f\n", alphaScore, double(alphaScore) / ((double)alphaRef.size() * (double)alphaDB.size()));
+		//printf("ALPHA SCORE: %4d\tAVG: %f\n", alphaScore, double(alphaScore) / ((double)alphaRef.size() * (double)alphaDB.size()));
 
 		if(fScore > maxf)  maxf = fScore;
 		if(fScore < minf)  minf = fScore;
+		//printf("  * FSCORE: %f\n", fScore);
 
 
 	
@@ -187,38 +211,22 @@ void Database::searchDatabase(Birthmark* reference){
 		m_Database[i]->getFingerprint(featureDB);
 
 		double sScore= 0.0;
+		iFeatRef = featureRef.begin();
 		for(iFeatDB= featureDB.begin(); iFeatDB != featureDB.end(); iFeatDB++){
-			std::string type = iFeatDB->first;
-			iFeatRef = featureRef.find(type);        //See if reference bm has same type
-
+			assert(iFeatRef->first == iFeatDB->first);  //Make sure the types are the same
 			std::map<unsigned, unsigned> featRef;
-			if(iFeatRef != featureRef.end())         //If no feature, empty (OK:Distance)
-				iFeatRef->second->getFeature(featRef); //Load REF Feature
+			iFeatRef->second->getFeature(featRef);      //Load REF Feature
 			
 			std::map<unsigned, unsigned> featDB;
-			iFeatDB->second->getFeature(featDB);       //Load DB Feature
+			iFeatDB->second->getFeature(featDB);        //Load DB Feature
 
 			double tsim = SIMILARITY::euclidean(featRef, featDB);
 			sScore += tsim;
 			//printf("  TYPE: %s\t SSCORE: %f\n", type.c_str(), tsim);
+
+			iFeatRef++;
 		}
 	
-		//Capture missed data where the ref has features the db does not 
-		for(iFeatRef = featureRef.begin(); iFeatRef != featureRef.end(); iFeatRef++){
-			std::string type = iFeatRef->first;
-			iFeatDB = featureDB.find(type);
-
-			//Look for features not found in Db since features in DB already calced
-			if(iFeatDB == featureDB.end()) {
-				std::map<unsigned, unsigned> featDB;
-				std::map<unsigned, unsigned> featRef;
-				iFeatRef->second->getFeature(featRef);
-
-				double tsim = SIMILARITY::euclidean(featRef, featDB);
-				sScore += tsim;
-			}
-		}
-
 		//Note: Don't care are features not accounted for in both since distance is 0
 		//printf("  * SSCORE: %f\n", sScore);
 		if(sScore> maxs)    maxs = sScore;
@@ -263,40 +271,44 @@ void Database::searchDatabase(Birthmark* reference){
 		cs.push_back(scorec);
 	}
 
-	printf("###############################################################\n");
-	printf("###                    SEARCH COMPLETE                      ###\n");
-	printf("###############################################################\n");
+	if(!m_SuppressOutput){
+		printf("###############################################################\n");
+		printf("###                    SEARCH COMPLETE                      ###\n");
+		printf("###############################################################\n");
 
-	//Weights
-	double fweight = 0.34;
-	double sweight = 0.33;
-	double cweight = 0.33;
-	//Need to normalize data
-	std::set<Score, setCompare> normalizedFinalScore;
+		//Weights
+		double fweight = 0.34;
+		double sweight = 0.33;
+		double cweight = 0.33;
+		//Need to normalize data
+		std::set<Score, setCompare> normalizedFinalScore;
 
-	for(unsigned int i = 0; i < fs.size(); i++){
-		//Normalization of the scores to the range of 0-1
-		double newScoref = (double)(fs[i].score - minf) / (double)(maxf-minf);  
-		double newScores = (double)(ss[i].score - mins) / (double)(maxs-mins);
-		double newScorec = (double)(cs[i].score - minc) / (double)(maxc-minc);
-		
-		double newScore = newScoref * fweight * 100.0 + 
-		       (1 - newScores) * sweight * 100.0 +      //1 is dissimilar. Need to switch
-					 (1 - newScorec) * cweight * 100.0;
+		for(unsigned int i = 0; i < fs.size(); i++){
+			//Normalization of the scores to the range of 0-1
+			double newScoref = (double)(fs[i].score - minf) / (double)(maxf-minf);  
+			double newScores = (double)(ss[i].score - mins) / (double)(maxs-mins);
+			double newScorec = (double)(cs[i].score - minc) / (double)(maxc-minc);
 
-		Score sim;
-		sim.id = fs[i].id;
-		sim.name = fs[i].name;
-		sim.score = newScore;
-		normalizedFinalScore.insert(sim);
-	}
+			double newScore = newScoref * fweight * 100.0 + 
+				(1 - newScores) * sweight * 100.0 +      //1 is dissimilar. Need to switch
+				(1 - newScorec) * cweight * 100.0;
 
-	int count = 1;
-	std::set<Score, setCompare>::iterator iSet;
-	for(iSet = normalizedFinalScore.begin(); iSet != normalizedFinalScore.end(); iSet++){
-		printf("RANK: %2d  SCORE: %6.2f   CKT:%s\n", count, iSet->score, iSet->name.c_str());
-		//printf(" %2d & %6.2f & %s\n", count, iSet->score, iSet->name.c_str()); //latex table
-		count++;
+			Score sim;
+			sim.id = fs[i].id;
+			sim.name = fs[i].name;
+			sim.score = newScore;
+			normalizedFinalScore.insert(sim);
+		}
+
+		int count = 1;
+		std::set<Score, setCompare>::iterator iSet;
+		for(iSet = normalizedFinalScore.begin(); iSet != normalizedFinalScore.end(); iSet++){
+			printf("RANK: %2d  SCORE: %6.2f   CKT:%s\n", count, iSet->score, iSet->name.c_str());
+			//printf(" %2d & %6.2f & %s\n", count, iSet->score, iSet->name.c_str()); //latex table
+			if(count == 20) break;
+			count++;
+		}
+
 	}
 }
 
@@ -317,6 +329,21 @@ Birthmark* Database::getBirthmark(unsigned index){
 	return m_Database[index];
 }
 
+/**
+ * getSize
+ *  Returns the database size 
+ */
+unsigned Database::getSize(){
+	return m_Database.size();
+}
+
+/**
+ * suppressOutput 
+ *  Prevents result output 
+ */
+void Database::suppressOutput(){
+	m_SuppressOutput = true;
+}
 
 /**
  * printXML

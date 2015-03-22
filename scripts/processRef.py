@@ -65,6 +65,11 @@ def generateXML(dotfile, ID,  cktName, soup):
 		seqtag = soup.new_tag("ALPHASEQ");
 		seqtag.string = seq 
 		ckttag.append(seqtag);
+	
+	statstr = result[4];
+	stattag = soup.new_tag("STAT");
+	stattag.string = statstr;
+	ckttag.append(stattag);
 
 	return ckttag
 

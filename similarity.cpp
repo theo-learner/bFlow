@@ -421,17 +421,17 @@ int SIMILARITY::align(std::list<std::string>& ref, std::list<std::string>& db){
 			TRowIterator it1End = end(row(s_Align,0));
 
 			for (; it1 != it1End; ++it1){
-				if (isGap(it1))        score += CircuitGapPenaltyMatrix[*it2];
-				else if(isGap(it2))    score += CircuitGapPenaltyMatrix[*it1];
+				if (isGap(it1))      score += CircuitGapPenaltyMatrix[*it2];
+				else if(isGap(it2))  score += CircuitGapPenaltyMatrix[*it1];
+				//else if(*it2 != *it1)   score += -10;
 				++it2;
 			}
 
 			////////////////////////////////////////////////////////////////
 
 
-
-			//printf("[SIM] -- SCORE: %7.4f - %5d   ALIGN: %s - %s\n", cursim, score, iRef->c_str(), iSeq->c_str());
-			totalScore += score * sizeRatio;
+			//printf("[SIM] -- %5d   ALIGN: %s - %s\n=============================\n", score, iRef->c_str(), iSeq->c_str());
+			totalScore += (score * sizeRatio);
 		}
 		//printf("***************************************************\n");
 	}
