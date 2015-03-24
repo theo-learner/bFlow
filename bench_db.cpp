@@ -54,7 +54,10 @@ int main( int argc, char *argv[] ){
 		ofs.open("data/c2DB_Time.dat");
 		ofs2.open("data/avgSeqLength.dat");
 
+
+		//Time how long it takes for each circuit in the database to complete a circuit across the database
 		gettimeofday(&start_time, NULL);
+		printf("[BENCH_DB] -- Performing single pass through database vs database\n");
 		for(unsigned int i = 0; i < db->getSize(); i++){
 			printf("[BENCH_DB] -- Reference Circuit: %s\n", db->getBirthmark(i)->getName().c_str());
 			gettimeofday(&start_search, NULL); 
@@ -66,7 +69,7 @@ int main( int argc, char *argv[] ){
 			ofs<<elapsedTime/1000<<"\n";
 			ofs2<<db->getBirthmark(i)->getAvgSequenceLength()<<"\n";
 
-			printf("[BENCH_DB] -- Elapsed search time: %f\n\n", elapsedTime/1000.0);
+			printf("[BENCH_DB] --  * Elapsed search time: %f\n\n", elapsedTime/1000.0);
 		}
 		ofs.close();
 		ofs2.close();
@@ -76,7 +79,15 @@ int main( int argc, char *argv[] ){
 		double elapsedTime = (end_time.tv_sec - start_time.tv_sec) * 1000.0;
 		elapsedTime += (end_time.tv_usec - start_time.tv_usec) / 1000.0;
 		printf("[BENCH_DB] -- Elapsed search time: %f\n", elapsedTime/1000.0);
-		printf("------------------------------------------------------------\n");
+		printf("------------------------------------------------------------\n\n");
+
+
+
+		//Autocorrelate the database
+		printf("[BENCH_DB] -- Autocorrelating the database...\n");
+		db->suppressOutput();
+		db->autoCorrelate();
+
 		printf(" -- COMPLETE!\n");
 	}
 	catch(Exception e){

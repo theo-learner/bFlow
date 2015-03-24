@@ -65,6 +65,7 @@ class Database{
 
 		bool importDatabase(std::string);   //PARAM: File Name
 	  void searchDatabase(Birthmark*);
+	  void autoCorrelate();
 
 		Birthmark* getBirthmark(unsigned);
 		unsigned getSize();
