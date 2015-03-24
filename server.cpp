@@ -152,9 +152,8 @@ bool Server::sendData(std::string data){
 
 	int result = write(m_ClientSktID, data.c_str(), data.length());	
 
-	if(result < 0){
+	if(result < 0)
 		throw Exception("(Server::sendData:T2) Failed to send message");
-	}
 
 	return true;
 }
