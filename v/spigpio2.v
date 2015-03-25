@@ -1,13 +1,13 @@
-//////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////// ////
 ////                                                              ////
-//// SPI GPIO IP Core                                             ////
+//// SPI SLAVE IP Core                                            ////
 ////                                                              ////
-//// This file is part of the spigpio project                     ////
+//// This file is part of the spislave project                     ////
 //// http://www.opencores.org/project,spislave                    ////
 ////                                                              ////
 //// Description                                                  ////
 //// Implementation of spislave IP core according to              ////
-//// spigpio IP core specification document.                      ////
+//// spislave IP core specification document.                     ////
 ////                                                              ////
 //// To Do:                                                       ////
 ////   -                                                          ////
@@ -43,107 +43,49 @@
 //// from http://www.opencores.org/lgpl.shtml                     ////
 ////                                                              ////
 //////////////////////////////////////////////////////////////////////
-////       RTL program for SPI GPIO --                            ////  
+////       RTL program for SPI GPIO -- shift 8 bit register       ////  
 
-`define		P0_OP		7'b0000000 //0x00
-`define		P1_OP		7'b0000001 //0x01
-`define		P2_OP		7'b0000010 //0x02
-`define		P3_OP		7'b0000011 //0x03
-`define		P4_OP		7'b0000100 //0x04
-`define		P5_OP		7'b0000101 //0x05
-`define		P6_OP		7'b0000110 //0x06
-`define		P7_OP		7'b0000111 //0x07
-`define		P8_OP		7'b0001000 //0x08
-`define		P9_OP		7'b0001001 //0x09
-
-`define		P0_P9_OP	7'b0001010 //0x0A
-`define		P0_P3_OP	7'b0001011 //0x0B
-`define		P4_P7_OP	7'b0001100 //0x0C
-`define		P8_P9_OP	7'b0001101 //0x0D
-
-`define		PO_P7_IP	7'b0001110 //0x0E	
-`define		P8_P9_IP	7'b0001111 //0x0F
-
-`define		RAM	        7'b0010011 //0x13
-
-module spigpio(clk, cs, sr_in, gpioin, gpioout, sr_out);
+`define		P0_P9_OP	8'b10101010 //0xAA
+`define		P0_P3_OP	8'b11111111 //0xFF
+`define		P4_P7_OP	8'b11111110 //0xFE
+ 
+module spigpio(clk, cs, sr_in, gpioout, sr_out);
   
 	input clk, cs;
 	input sr_in;
-	input [9:0] gpioin;
+	output sr_out;
+	output [7:0] gpioout;
+
+	reg [7:0] gpioout;
+	reg sr_out;
 	
-	output reg sr_out;
-	output reg [9:0] gpioout;
-
-
-	reg [7:0] ram;
-	wire [6:0] addr;
-	wire [7:0] data;	
 	wire rw;
-	reg [15:0] sr;
+	reg [7:0] sr;
 
-	assign rw = sr[15];	
-	assign addr = sr[14:8];
-	assign data = sr[7:0];
-
-	always@(posedge clk or posedge cs)
+	assign rw = sr[7];	
+	
+	always@(posedge clk )
 	begin
 		if (cs == 1'b0)
 		begin 
-			sr_out <= sr[15];
-			sr[15:1] <= sr[14:0];
+			sr_out <= sr[7];
+			sr[7:1] <= sr[6:0];
 			sr[0] <= sr_in;
 		end 		
 		
 		if (cs == 1'b1)
 		begin 
 		
-			if (rw == 1'b0)
+			if (rw == 1'b1)
 			begin 
 			
-				case (addr)
-				`P0_OP    : gpioout[0] <= data[0];
-				`P1_OP    : gpioout[1] <= data[0];
-				`P2_OP    : gpioout[2] <= data[0];
-				`P3_OP    : gpioout[3] <= data[0];
-				`P4_OP    : gpioout[4] <= data[0];
-				`P5_OP    : gpioout[5] <= data[0];
-				`P6_OP    : gpioout[6] <= data[0];
-				`P7_OP    : gpioout[7] <= data[0];
-				`P8_OP    : gpioout[8] <= data[0];
-				`P9_OP    : gpioout[9] <= data[0];
-				
-				`P0_P9_OP : gpioout[9:0] <= {data[0], data[0], data[0], data[0], data[0],
-							     data[0], data[0], data[0], data[0], data[0]};
-				`P0_P3_OP : gpioout[3:0] <= {data[0], data[0], data[0], data[0]};
-				`P4_P7_OP : gpioout[7:4] <= {data[0], data[0], data[0], data[0]};
-				`P8_P9_OP : gpioout[9:8] <= {data[0], data[0]};
-				`RAM      : ram[7:0] <= data[7:0];					
+				case (sr)
+				`P0_P9_OP : gpioout[7:0] <= { sr[0], sr[1], sr[2], sr[3],
+							      sr[4], sr[5], sr[6], sr[7]};
+				`P0_P3_OP : gpioout[3:0] <= {sr[0], sr[1], sr[2], sr[3]};
+				`P4_P7_OP : gpioout[7:4] <= { sr[4], sr[5], sr[6], sr[7]};
+				default   : gpioout[0] <= sr[0];
 				endcase	
-			end
-			
-			if (rw == 1'b1)             // READ THE PORT LEVEL
-			begin 
-		
-				case (addr)
-				`P0_OP	  : sr[7:0] <= {7'b0, gpioout[0]};
-				`P1_OP    : sr[7:0] <= {7'b0, gpioout[1]};
-				`P2_OP    : sr[7:0] <= {7'b0, gpioout[2]};
-				`P3_OP    : sr[7:0] <= {7'b0, gpioout[3]};
-				`P4_OP    : sr[7:0] <= {7'b0, gpioout[4]};
-				`P5_OP    : sr[7:0] <= {7'b0, gpioout[5]};
-				`P6_OP    : sr[7:0] <= {7'b0, gpioout[6]};
-				`P7_OP    : sr[7:0] <= {7'b0, gpioout[7]};
-				`P8_OP    : sr[7:0] <= {7'b0, gpioout[8]};
-				`P9_OP    : sr[7:0] <= {7'b0, gpioout[9]};
-				`P0_P9_OP : sr[7:0] <= {7'b0, gpioout[0]};
-				`P0_P3_OP : sr[7:0] <= {7'b0, gpioout[0]};
-				`P4_P7_OP : sr[7:0] <= {7'b0, gpioout[4]};
-				`P8_P9_OP : sr[7:0] <= {7'b0, gpioout[8]};
-				`PO_P7_IP : sr[7:0] <= gpioin[7:0];
-				`P8_P9_IP : sr[7:0] <= gpioin[9:8];
-				`RAM 	  : sr[7:0] <= ram[7:0];						
-				endcase
 			end
 	 	end
 	end
