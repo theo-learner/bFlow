@@ -61,4 +61,4 @@ clean:
 	rm -v *.o hbflow cserver rsearch bench_db bench_matlab
 
 cleanall: 
-	rm -v *.o hbflow cserver rsearch bench_db bench_matlab scripts/*.pyc  data/*.csv data/*.dat data/*.log db/*.xml
+	rm -v *.o hbflow cserver rsearch bench_db bench_matlab scripts/*.pyc  data/*.csv data/*.dat data/*.log db/*.xml data/yoscript

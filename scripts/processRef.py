@@ -78,14 +78,11 @@ def generateXML(dotfile, ID,  cktName, soup):
 
 
 def generateYosysScript(verilogFile):
-	if(".v" not in verilogFile):
-		print "[ERROR] -- File does not have verilog extension";
-		exit();
-
 	scriptName = "data/yoscript"
 	scriptResult = yosys.create_yosys_script(verilogFile, scriptName)
-	dotfile = scriptResult[0];
-	return (scriptName, dotfile);
+	dotFiles = scriptResult[0];
+	top = scriptResult[1];
+	return (scriptName, dotFiles, top);
 
 
 
@@ -101,18 +98,23 @@ def main():
 		fileName = yosys.getFileData(vfile);
 
 		#Preprocess yosys script
-		(scriptName, dotfile) = generateYosysScript(vfile);
+		(scriptName, dotFiles, top) = generateYosysScript(vfile);
 		rVal = yosys.execute(scriptName);
 		soup = BeautifulSoup();
-		ckttag = generateXML(dotfile, -1, fileName[1], soup)
-		soup.append(ckttag);
+
+		ckttag = generateXML("./dot/" + top+".dot", -1, top, soup)
+		
 		
 		fileStream = open("data/reference.xml", 'w');
 		fileStream.write(repr(soup));
 		fileStream.close();
+
 	except error.YosysError as e:
 		print "[ERROR] -- Yosys has encountered an error...";
 		print e.msg;
+
+	except error.GenError as e:
+		print "[ERROR] -- " + e.msg;
 
 
 

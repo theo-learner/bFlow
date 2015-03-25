@@ -65,10 +65,12 @@ v/altera_ram_dual.v
 v/altera_ram_infer.v
 v/ram_sp_ar_sw.v
 v/ram_sp_sr_sw.v
+v/spigpio2.v
 v/spiifc.v
 v/tiny_spi.v
 v/simple_spi_top.v
 v/SPIxIF.v
+v/uart16550
 v/uart_simple.v
 v/uart_tx_only.v
 v/uart_tx_only2.v
@@ -112,7 +114,7 @@ v/sobel2.v
 v/sobel3.v
 v/prewitt.v
 v/median_findHi.v
-v/median.d
+v/median
 v/CIC_N1_M1_16bit_fixed.v
 v/CIC_N2_M1_16bit_fixed.v
 v/CIC_N4_M1_16bit_fixed.v
@@ -141,8 +143,8 @@ v/cf_fft_256_16.v
 v/cf_fft_512_8.v
 v/cf_fft_512_18.v
 v/cf_fft_512_16.v
-v/pipelined_fft_64.d
-v/pipelined_fft_256.d
+v/pipelined_fft_64
+v/pipelined_fft_256
 v/fft8.v
 v/fft16.v
 v/spiraldft_4_4_stream_date.v

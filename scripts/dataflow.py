@@ -12,10 +12,10 @@ import re;
 import copy;
 import error;
 import timeit
-from collections import Counter
 import yosys;
 import math
 from bExtractor import BirthmarkExtractor
+from collections import Counter
 
 
 	
@@ -60,9 +60,7 @@ def main():
 	'''
 	try:
 		if len(sys.argv) != 2: 
-			print "[ERROR] -- Not enough argument. Provide DOT File to process";
-			print "        -- ARG1: dot file";
-			exit();
+			raise error.ArgError();
 		
 		dotfile = sys.argv[1];
 		result = extractDataflow(dotfile);

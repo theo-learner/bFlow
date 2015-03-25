@@ -20,3 +20,7 @@ class SizeError(Error):
 class ArgError(Error):
 	def __init__(self):
 		pass
+
+class GenError(Error):
+	def __init__(self, msg):
+		self.msg = msg;

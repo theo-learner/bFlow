@@ -55,11 +55,12 @@ try:
 		start_yosys = timeit.default_timer();
 		val  = yosys.create_yosys_script(line, scriptName)
 		top = val[1];
-		dotfile = val[0];
+		dotFiles = val[0];
 
 		rVal = yosys.execute(scriptName);
 		if(rVal != ""):                       #Make sure no Error occurred during synthesis
 			raise error.YosysError(rVal);
+
 		elapsed = timeit.default_timer() - start_yosys;
 		print "[PPDB] -- ELAPSED: " +  repr(elapsed);
 		fsy = open("data/yosystime.dat", "a");
@@ -69,9 +70,12 @@ try:
 
 
 		#Goes through the AST extracted from yosys and gets the birthmark components
-		ckttag = processRef.generateXML(dotfile, ID, top, soup)
-		dbtag.append(ckttag)
-		ID = ID + 1;
+		for dotfile in dotFiles:
+			print "MODULE: " + dotfile
+			dotfile = "./dot/"+dotfile+".dot";
+			ckttag = processRef.generateXML(dotfile, ID, top, soup)
+			dbtag.append(ckttag)
+			ID = ID + 1;
 
 		elapsed = timeit.default_timer() - start_time;
 		print "ELASPED TIME: " + repr(elapsed);
@@ -111,6 +115,9 @@ except error.ArgError as e:
 except error.YosysError as e:
 	print "[ERROR] -- Yosys has encountered an error...";
 	print "        -- " +  e.msg;
+	
+except error.GenError as e:
+	print "[ERROR] -- " + e.msg;
 
 except Exception as e:
 	print e;

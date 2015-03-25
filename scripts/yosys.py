@@ -8,44 +8,52 @@
 import os;
 import sys;
 import re;
-import time;
+import timeit;
 import datetime;
 from subprocess import call
 import error;
+import constructHierarchy as hier;
 
 def create_yosys_script(fileName, scriptName):
-	data = getFileData(fileName);
-	path = data[0];
-	top= data[1];
-	ext= data[2];
-
 	script = "";	
 	script = script + "echo on\n";
 
-	if (ext == 'v'):
-		script = script + "read_verilog " + fileName;
-	if(ext == 'd' or ext == 'd/'):
-		files = fileName +   "/files"
-		with open(files) as f:
-			for line in f:
-				script = script + "read_verilog " + line;
+	moduleList = dict();
+	fileList = hier.extractModuleNames(moduleList, fileName);
+	if(len(fileList) == 0):
+		raise error.GenError("File list is empty")
+
+	topModules = hier.findModuleChildren(moduleList);
+	top = topModules[0];
+
+	for vfile in fileList:
+		script = script + "read_verilog " + vfile + "\n";
 
 	script = script + "\n\n";
 	script = script + "hierarchy -check\n";
 	script = script + "proc; opt; fsm; opt;\n\n";
 	script = script + "memory_collect; opt;\n\n";
 	#script = script + "techmap -map /usr/local/share/yosys/pmux2mux.v;\n\n"
-	script = script + "flatten "+ top +"; opt\n";
+	script = script + "flatten; opt\n";
 	script = script + "wreduce; opt\n\n";
 	script = script + "stat " + top + "\n\n";
-	script = script + "show -width -format dot -prefix ./dot/" + top + "_df " + top + "\n";
+
+
+	dotFile = [];
+	for k,v in moduleList.iteritems():
+		if(k == top):
+			dotName = top
+		else:
+			dotName = top + "__" + k
+
+		script = script + "show -width -format dot -prefix ./dot/"+ dotName +" " + k + "\n";
+		dotFile.append(dotName);
 
 
 	fileStream = open(scriptName, 'w');
 	fileStream.write(script);
 	fileStream.close();
 
-	dotFile = "./dot/"+top+"_df.dot";
 	return (dotFile, top);
 
 
@@ -93,5 +101,47 @@ def getFileData(fileName):
 
 
 
+def main():
+	'''
+    MAIN 
+		 Main function: Creates Yosys script and runs yosys
+	'''
+	try:
+		if len(sys.argv) != 2: 
+			raise error.ArgError();
+
+
+		start_time = timeit.default_timer();
+
+		scriptName = "data/yoscript"
+		(dotFiles, top) = create_yosys_script(sys.argv[1], scriptName)
+		execute(scriptName)
+
+		elapsed = timeit.default_timer() - start_time;
+		print "[HIER] -- ELAPSED: " +  repr(elapsed) + "\n";
+
+		print dotFiles;
+		print "TOP: " + top
+		
+
+	except error.ArgError as e:
+		if len(sys.argv) == 1 :
+			print("\n  yosys");
+			print("  ================================================================================");
+			print("    This program reads the files in a directory or a verilog file");
+			print("    Creates a yosys script and runs it");
+			print("\n  Usage: python yosys.py [Verilog or folder]\n");
+		else:
+			print "[ERROR] -- Not enough argument. Provide DOT File to process";
+			print("           Usage: python yosys.py [Verilog or folder]\n");
+	except error.GenError as e:
+		print "[ERROR] -- " + e.msg;
+
+
+
+
+
+if __name__ == '__main__':
+	main();
 
 

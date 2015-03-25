@@ -13,8 +13,8 @@
 3 #regfile
 2 #mem
 9 #ram
-4 #spi
-14 #uart
+5 #spi
+15 #uart
 1 #edgedet
 3 #brg
 2 #addTree
