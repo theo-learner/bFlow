@@ -44,6 +44,8 @@ try:
 	flines = fstream.readlines();
 
 	#Go through each circuit in the circuit list
+	processedTop = set();
+	multipleTop= set();
 	for line in flines:
 		start_time = timeit.default_timer();
 		line= re.sub(r"\s+", "", line);
@@ -72,8 +74,14 @@ try:
 		#Goes through the AST extracted from yosys and gets the birthmark components
 		for dotfile in dotFiles:
 			print "MODULE: " + dotfile
+			if dotfile in processedTop:
+				print "[WARNING] -- Module " + dotfile + " already exists...skipping...";
+				multipleTop.add(dotfile);
+
+
+			processedTop.add(dotfile);
 			dotfile = "./dot/"+dotfile+".dot";
-			ckttag = processRef.generateXML(dotfile, ID, top, soup)
+			ckttag = processRef.generateXML(dotfile, ID, dotfile, soup)
 			dbtag.append(ckttag)
 			ID = ID + 1;
 
@@ -95,6 +103,10 @@ try:
 	
 	print " -- XML File saved  : " + dbFile;
 	print " -- Files processed : " + repr(ID);
+	print " -- Multiple modules found:"
+	for top in multipleTop:
+		print "   * " + top;
+
 	print "-----------------------------------------------------------------------"
 	print "[PPDB] -- COMPLETE!";
 	print 

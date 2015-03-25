@@ -33,7 +33,7 @@ def extractDataflow(fileName):
 	'''
 	start_time = timeit.default_timer();
 	# Read in dot file of the dataflow
-	print "[DFX] -- Extracting structural features..."# from : " + fileName;
+
 	if(".dot" not in fileName):
 		print "[ERROR] -- Input file does not seem to be a dot file"
 		exit()	

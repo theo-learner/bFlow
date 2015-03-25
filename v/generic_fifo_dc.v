@@ -281,6 +281,104 @@ endmodule
 
 
 
+//////////////////////////////////////////////////////////////////////
+////                                                              ////
+////  Generic Dual-Port Synchronous RAM                           ////
+////                                                              ////
+////  This file is part of memory library available from          ////
+////  http://www.opencores.org/cvsweb.shtml/generic_memories/     ////
+////                                                              ////
+////  Description                                                 ////
+////  This block is a wrapper with common dual-port               ////
+////  synchronous memory interface for different                  ////
+////  types of ASIC and FPGA RAMs. Beside universal memory        ////
+////  interface it also provides behavioral model of generic      ////
+////  dual-port synchronous RAM.                                  ////
+////  It also contains a fully synthesizeable model for FPGAs.    ////
+////  It should be used in all OPENCORES designs that want to be  ////
+////  portable accross different target technologies and          ////
+////  independent of target memory.                               ////
+////                                                              ////
+////  Supported ASIC RAMs are:                                    ////
+////  - Artisan Dual-Port Sync RAM                                ////
+////  - Avant! Two-Port Sync RAM (*)                              ////
+////  - Virage 2-port Sync RAM                                    ////
+////                                                              ////
+////  Supported FPGA RAMs are:                                    ////
+////  - Generic FPGA (VENDOR_FPGA)                                ////
+////    Tested RAMs: Altera, Xilinx                               ////
+////    Synthesis tools: LeonardoSpectrum, Synplicity             ////
+////  - Xilinx (VENDOR_XILINX)                                    ////
+////  - Altera (VENDOR_ALTERA)                                    ////
+////                                                              ////
+////  To Do:                                                      ////
+////   - fix Avant!                                               ////
+////   - add additional RAMs (VS etc)                             ////
+////                                                              ////
+////  Author(s):                                                  ////
+////      - Richard Herveille, richard@asics.ws                   ////
+////      - Damjan Lampret, lampret@opencores.org                 ////
+////                                                              ////
+//////////////////////////////////////////////////////////////////////
+////                                                              ////
+//// Copyright (C) 2000 Authors and OPENCORES.ORG                 ////
+////                                                              ////
+//// This source file may be used and distributed without         ////
+//// restriction provided that this copyright statement is not    ////
+//// removed from the file and that any derivative work contains  ////
+//// the original copyright notice and the associated disclaimer. ////
+////                                                              ////
+//// This source file is free software; you can redistribute it   ////
+//// and/or modify it under the terms of the GNU Lesser General   ////
+//// Public License as published by the Free Software Foundation; ////
+//// either version 2.1 of the License, or (at your option) any   ////
+//// later version.                                               ////
+////                                                              ////
+//// This source is distributed in the hope that it will be       ////
+//// useful, but WITHOUT ANY WARRANTY; without even the implied   ////
+//// warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR      ////
+//// PURPOSE.  See the GNU Lesser General Public License for more ////
+//// details.                                                     ////
+////                                                              ////
+//// You should have received a copy of the GNU Lesser General    ////
+//// Public License along with this source; if not, download it   ////
+//// from http://www.opencores.org/lgpl.shtml                     ////
+////                                                              ////
+//////////////////////////////////////////////////////////////////////
+//
+// CVS Revision History
+//
+// $Log: not supported by cvs2svn $
+// Revision 1.2  2001/11/08 19:11:31  samg
+// added valid checks to behvioral model
+//
+// Revision 1.1.1.1  2001/09/14 09:57:10  rherveille
+// Major cleanup.
+// Files are now compliant to Altera & Xilinx memories.
+// Memories are now compatible, i.e. drop-in replacements.
+// Added synthesizeable generic FPGA description.
+// Created "generic_memories" cvs entry.
+//
+// Revision 1.1.1.2  2001/08/21 13:09:27  damjan
+// *** empty log message ***
+//
+// Revision 1.1  2001/08/20 18:23:20  damjan
+// Initial revision
+//
+// Revision 1.1  2001/08/09 13:39:33  lampret
+// Major clean-up.
+//
+// Revision 1.2  2001/07/30 05:38:02  lampret
+// Adding empty directories required by HDL coding guidelines
+//
+//
+ 
+//`include "timescale.v"
+ 
+//`define VENDOR_FPGA
+//`define VENDOR_XILINX
+//`define VENDOR_ALTERA
+ 
 module generic_dpram(
 	// Generic synchronous dual-port RAM interface
 	rclk, rrst, rce, oe, raddr, do,
@@ -529,160 +627,3 @@ module generic_dpram(
 `endif // !VENDOR_FPGA
  
 endmodule
- 
-//
-// Black-box modules
-//
- 
-`ifdef VENDOR_ALTERA
-	module altera_ram_dp(
-		data,
-		wraddress,
-		rdaddress,
-		wren,
-		wrclock,
-		wrclocken,
-		rdclock,
-		rdclocken,
-		q) /* synthesis black_box */;
- 
-		parameter awidth = 7;
-		parameter dwidth = 8;
- 
-		input [dwidth -1:0] data;
-		input [awidth -1:0] wraddress;
-		input [awidth -1:0] rdaddress;
-		input               wren;
-		input               wrclock;
-		input               wrclocken;
-		input               rdclock;
-		input               rdclocken;
-		output [dwidth -1:0] q;
- 
-		// synopsis translate_off
-		// exemplar translate_off
- 
-		syn_dpram_rowr #(
-			"UNUSED",
-			dwidth,
-			awidth,
-			1 << awidth
-		)
-		altera_dpram_model (
-			// read port
-			.RdClock(rdclock),
-			.RdClken(rdclocken),
-			.RdAddress(rdaddress),
-			.RdEn(1'b1),
-			.Q(q),
- 
-			// write port
-			.WrClock(wrclock),
-			.WrClken(wrclocken),
-			.WrAddress(wraddress),
-			.WrEn(wren),
-			.Data(data)
-		);
- 
-		// exemplar translate_on
-		// synopsis translate_on
- 
-	endmodule
-`endif // VENDOR_ALTERA
- 
-`ifdef VENDOR_XILINX
-	module xilinx_ram_dp (
-		ADDRA,
-		CLKA,
-		ADDRB,
-		CLKB,
-		DIA,
-		WEA,
-		DIB,
-		WEB,
-		ENA,
-		ENB,
-		RSTA,
-		RSTB,
-		DOA,
-		DOB) /* synthesis black_box */ ;
- 
-	parameter awidth = 7;
-	parameter dwidth = 8;
- 
-	// port_a
-	input               CLKA;
-	input               RSTA;
-	input               ENA;
-	input [awidth-1:0]  ADDRA;
-	input [dwidth-1:0]  DIA;
-	input               WEA;
-	output [dwidth-1:0] DOA;
- 
-	// port_b
-	input               CLKB;
-	input               RSTB;
-	input               ENB;
-	input [awidth-1:0]  ADDRB;
-	input [dwidth-1:0]  DIB;
-	input               WEB;
-	output [dwidth-1:0] DOB;
- 
-	// insert simulation model
- 
- 
-	// synopsys translate_off
-	// exemplar translate_off
- 
-	C_MEM_DP_BLOCK_V1_0 #(
-		awidth,
-		awidth,
-		1,
-		1,
-		"0",
-		1 << awidth,
-		1 << awidth,
-		1,
-		1,
-		1,
-		1,
-		1,
-		1,
-		1,
-		1,
-		1,
-		1,
-		1,
-		1,
-		1,
-		"",
-		16,
-		0,
-		0,
-		1,
-		1,
-		1,
-		1,
-		dwidth,
-		dwidth)
-	xilinx_dpram_model (
-		.ADDRA(ADDRA),
-		.CLKA(CLKA),
-		.ADDRB(ADDRB),
-		.CLKB(CLKB),
-		.DIA(DIA),
-		.WEA(WEA),
-		.DIB(DIB),
-		.WEB(WEB),
-		.ENA(ENA),
-		.ENB(ENB),
-		.RSTA(RSTA),
-		.RSTB(RSTB),
-		.DOA(DOA),
-		.DOB(DOB));
- 
-		// exemplar translate_on
-		// synopsys translate_on
- 
-	endmodule
-`endif // VENDOR_XILINX_

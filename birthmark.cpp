@@ -48,6 +48,8 @@ Birthmark::~Birthmark(){
  *  Loads data from the XML file into the birthmark 
  */
 bool Birthmark::importXML(xml_node<>* cktNode){
+		if(cktNode== NULL)
+			throw Exception("(Birthmark::importXML:T15) cktNode is NULL") ;
 		std::string cktNodeName = cktNode->name();
 		if(cktNodeName!= "CIRCUIT") throw Exception("(Birthmark::importXML:T1) Tag not found") ;
 

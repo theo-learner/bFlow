@@ -26,19 +26,40 @@ class Module:
 
 
 
+def remove_comments(string):
+	pattern = r"(\".*?\"|\'.*?\')|(/\*.*?\*/|//[^\r\n]*$)"
+	# first group captures quoted strings (double or single)
+	# second group captures comments (//single-line or /* multi-line */)
+	regex = re.compile(pattern, re.MULTILINE|re.DOTALL)
+
+	def _replacer(match):
+		# if the 2nd group (capturing comments) is not None,
+		# it means we have captured a non-quoted (real) comment string.
+		if match.group(2) is not None:
+			return "" # so we will return empty to remove the comment
+		else: # otherwise, we will return the 1st group
+			return match.group(1) # captured quoted-string
+
+	return regex.sub(_replacer, string)
 
 
 def extractModuleNames_single(moduleList, vfile):
 	badchar = '(# '
 
 	#Read in the verilog file
-	fileContent = open(vfile, 'r').readlines() 
+	fileContent = open(vfile, 'r').read() 
+	fileContent = remove_comments(fileContent);
+	fileContent = os.linesep.join([s for s in fileContent.splitlines() if s])
+	fileContent = fileContent.split("\n")
+	
 	
 	#Find the modules located in the file. Note the location and the module name
 	index = 0;	
 	moduleName = "";
 	hasEnd = True;
 	startIndex = 0;
+	comment = False;
+
 	for line in fileContent:
 		splitted = line.split();
 		if len(splitted) > 0:
@@ -48,6 +69,7 @@ def extractModuleNames_single(moduleList, vfile):
 
 				#Remove any unwanted characters such as (
 				moduleName = re.split('#|\(',splitted[1])[0]
+				print "MODULE NAME: " + moduleName
 
 				if(hasEnd):             #Make sure there is an endmodule with every module
 					hasEnd = False
@@ -74,7 +96,7 @@ def extractModuleNames(moduleList, name):
 		vfile = name;
 		print "[HIER] -- Reading Verilog file: " + vfile;
 
-		if(".v" not in vfile):
+		if(".v" !=  vfile[-2:]):
 			raise error.GenError("Make sure file is a verilog file");
 
 		extractModuleNames_single(moduleList, name)
@@ -83,12 +105,14 @@ def extractModuleNames(moduleList, name):
 	elif(os.path.isdir(name)):
 		vdir = name;
 		print "[HIER] -- Reading directory " + vdir;
+		if vdir[-1] != '/':
+			vdir = vdir+ '/';
 	
 		for vfile in listdir(vdir):
 			print " -- Reading in v File: " + vfile;
 	
 			#Make sure the file that is being read in is a DOT file
-			if(".v" not in vfile):
+			if(".v" !=  vfile[-2:]):
 				print "[WARNING] -- Extension does not match that of Verilog. Skipping file";
 				continue;
 
@@ -106,7 +130,7 @@ def findModuleChildren(moduleList):
 
 		#Get the location of the module definitions
 		moduleLines = v.snippet;
-		#print "CHECKING SUBMODULES IN : " + k
+		print "CHECKING SUBMODULES IN : " + k
 		
 		for line in moduleLines:
 			splitted = line.split();
@@ -115,6 +139,7 @@ def findModuleChildren(moduleList):
 				#Get the module that was found in the line
 				matching = [s for s in moduleList.keys() if s == splitted[0]]
 				if len(matching) > 0:
+					print " * SUBMODULE FOUND: " + matching[0]
 					v.children.append(matching[0]);
 					moduleHasParent.add(matching[0]);    #Used to find top module
 

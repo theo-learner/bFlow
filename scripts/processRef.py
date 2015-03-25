@@ -103,6 +103,8 @@ def main():
 		soup = BeautifulSoup();
 
 		ckttag = generateXML("./dot/" + top+".dot", -1, top, soup)
+		soup.append(ckttag);
+
 		
 		
 		fileStream = open("data/reference.xml", 'w');

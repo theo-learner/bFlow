@@ -37,6 +37,8 @@ assign clk_out = ((pos_cnt != 2) && (neg_cnt != 2));
 
 endmodule
 
+
+/*
 // Testbench to check the divide_by_3 logic
 module test();
 reg reset, clk_in;
@@ -58,3 +60,4 @@ end
 always #1 clk_in = ~clk_in;
 
 endmodule
+*/

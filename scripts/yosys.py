@@ -118,7 +118,7 @@ def main():
 		execute(scriptName)
 
 		elapsed = timeit.default_timer() - start_time;
-		print "[HIER] -- ELAPSED: " +  repr(elapsed) + "\n";
+		print "[YOSYS] -- ELAPSED: " +  repr(elapsed) + "\n";
 
 		print dotFiles;
 		print "TOP: " + top

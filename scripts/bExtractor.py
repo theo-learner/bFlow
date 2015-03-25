@@ -12,9 +12,11 @@ import re;
 import copy;
 import error;
 import timeit
+import time;
 from collections import Counter
 import yosys;
 import math
+import multiprocessing
 
 class BirthmarkExtractor(object):
 
@@ -59,27 +61,31 @@ class BirthmarkExtractor(object):
 		self.lutStr    = ["$lut"]
 		self.memStr    = ["$mem"]
 		
-		self.constantList= [];
 		self.fpDict = {}
 		name = ["add", "mul", "div", "sh", "mux", "eq", "cmp", "reg", "mem", "log", "bb", "ffC", "outC" ];
 		for s in name:
 			self.fpDict[s] = {};
 
 		self.statstr = "";
-	
-	
-	
-	def inc(self, name, size):
-		'''
-			 Increments the counter dictionary value of size
-			 @PARAM: counter- the fingerprint feature dictionary
-			 @PARAM: size   - the specific size of the feature
-		'''
-		if(size in self.fpDict[name]):
-			self.fpDict[name][size] = self.fpDict[name][size] + 1;
-		else:
-			self.fpDict[name][size] = 1;
+		self.statstrf = "";
+		
+			
+		self.constantList= [];
+		self.outNodeList= [];
+		self.inNodeList= [];
+		for node in self.nodeList:
+			predList = self.dfg.predecessors(node);
 
+			if 'v' in node:                     # Check to see if it is a  constant
+				self.constantList.append(node);
+			elif self.shapeAttr[node] == "octagon":  # Check to see if it is a port node
+				if len(predList) == 0:
+					self.inNodeList.append(node);
+				else:
+					self.outNodeList.append(node);
+	
+	
+	
 
 
 	def Entropy(self, text):
@@ -237,9 +243,7 @@ class BirthmarkExtractor(object):
 			 @PARAM: seqList- List of letters of the datapath
 			 @RETURN number of unique letters in the sequence
 		'''
-		setList = set();
-		setList.update(seqList);
-
+		setList = set(seqList);
 		return len(setList);
 
 
@@ -438,10 +442,9 @@ class BirthmarkExtractor(object):
 				Handled in the functional extraction (OUT)
 		'''
 
+		print "[DFX] -- Extracting structural features..."# from : " + fileName;
 		# Preprocess nodes
 		
-		self.outNodeList= [];
-		self.inNodeList= [];
 		ffList = [];
 		multList = [];
 		totalFanin = 0;
@@ -450,9 +453,11 @@ class BirthmarkExtractor(object):
 		maxFanout = 0;
 		nodeCount = 0;
 
+		start_time = timeit.default_timer();
 		for node in self.nodeList:
-			if 'v' in node:                     # Check to see if it is a  constant
-				self.constantList.append(node);
+			if 'v' in node:                     		#Check to see if it is a  constant
+				continue;
+			elif self.shapeAttr[node] == "octagon": #PORT
 				continue;
 
 			predList = self.dfg.predecessors(node);
@@ -460,13 +465,6 @@ class BirthmarkExtractor(object):
 			totalFanin = totalFanin + len(predList)
 			totalFanout = totalFanout + len(sucList)
 			nodeCount = nodeCount + 1;
-
-			if self.shapeAttr[node] == "octagon":  # Check to see if it is a port node
-				if len(predList) == 0:
-					self.inNodeList.append(node);
-				else:
-					self.outNodeList.append(node);
-
 
 			if(len(predList) > maxFanin):
 				maxFanin = len(predList)
@@ -480,7 +478,6 @@ class BirthmarkExtractor(object):
 		
 				if label != None:
 					operation = label.group(1);
-					#labelAttr[node] = operation
 
 					size = 0;
 					for pred in predList:
@@ -502,26 +499,26 @@ class BirthmarkExtractor(object):
 					#Count the number of components
 #TODO
 					if any(s in operation for s in self.muxStr):
-						self.inc("mux", size)
+						self.fpDict["mux"][size] = self.fpDict["mux"].get(size, 0) + 1;
 					elif any(s in operation for s in self.regStr):
-						self.inc("reg", size)
+						self.fpDict["reg"][size] = self.fpDict["reg"].get(size, 0) + 1;
 						ffList.append(node);
 					elif any(s in operation for s in self.addStr):
-						self.inc("add", size)
+						self.fpDict["add"][size] = self.fpDict["add"].get(size, 0) + 1;
 					elif any(s in operation for s in self.logicStr):
-						self.inc("log", size)
+						self.fpDict["log"][size] = self.fpDict["log"].get(size, 0) + 1;
 					elif any(s in operation for s in self.eqStr):
-						self.inc("eq", size)
+						self.fpDict["eq"][size] = self.fpDict["eq"].get(size, 0) + 1;
 					elif any(s in operation for s in self.cmpStr):
-						self.inc("cmp", size)
+						self.fpDict["cmp"][size] = self.fpDict["cmp"].get(size, 0) + 1;
 					elif any(s in operation for s in self.shiftStr):
-						self.inc("sh", size)
+						self.fpDict["sh"][size] = self.fpDict["sh"].get(size, 0) + 1;
 					elif any(s in operation for s in self.multStr):
-						self.inc("mul", size)
+						self.fpDict["mul"][size] = self.fpDict["mul"].get(size, 0) + 1;
 					elif any(s in operation for s in self.divStr):
-						self.inc("div", size)
+						self.fpDict["div"][size] = self.fpDict["div"].get(size, 0) + 1;
 					elif any(s in operation for s in self.memStr):
-						self.inc("mem", size)
+						self.fpDict["mem"][size] = self.fpDict["mem"].get(size, 0) + 1;
 					elif any(s in operation for s in self.macStr):
 						print "[WARNING] -- There is a macc type node: " + operation
 					elif any(s in operation for s in self.aluStr):
@@ -531,10 +528,12 @@ class BirthmarkExtractor(object):
 					elif any(s in operation for s in self.lutStr):
 						print "[WARNING] -- There is a lut node: " + operation
 					else:
-						self.inc("bb", size)
+						self.fpDict["bb"][size] = self.fpDict["bb"].get(size, 0) + 1;
 
 		avgFanin = totalFanin / nodeCount;	
 		avgFanout = totalFanout / nodeCount;	
+		elapsed = timeit.default_timer() - start_time;
+		print "[PNODE] -- ELAPSED: " +  repr(elapsed) + "\n";
 
 		#Need to wait till all the inputs have been found during node processing
 		if (float(len(self.inNodeList) + len(self.constantList)) * 0.25 > len(ffList)) or len(ffList) == 1:
@@ -548,8 +547,10 @@ class BirthmarkExtractor(object):
 					if(nx.has_path(self.dfg, inNode, node)):
 						count = count + 1;
 
-				self.inc("ffC", count)
+				self.fpDict["ffC"][count] = self.fpDict["ffC"].get(count, 0) + 1;
 		else:
+			start_time = timeit.default_timer();
+			print("SUC!")
 			inFanout = {};
 			for inNode in self.inNodeList:
 				fanout = nx.dfs_successors(self.dfg, inNode);
@@ -558,7 +559,10 @@ class BirthmarkExtractor(object):
 			for inNode in self.constantList:
 				fanout = nx.dfs_successors(self.dfg, inNode);
 				inFanout[inNode] = fanout
+			elapsed = timeit.default_timer() - start_time;
+			print "[FAN] -- ELAPSED: " +  repr(elapsed) + "\n";
 
+			start_time = timeit.default_timer();
 			ffCounts = dict()	
 			for n, fanout in inFanout.iteritems():
 				ffNodes = [fanoutnode for fanoutnode in  fanout for ff in ffList if ff == fanoutnode]
@@ -566,6 +570,9 @@ class BirthmarkExtractor(object):
 					ffCounts[ff] = ffCounts.get(ff, 0) + 1;
 			
 			self.fpDict["ffC"] = Counter(ffCounts.values());
+			elapsed = timeit.default_timer() - start_time;
+			print "[CNT] -- ELAPSED: " +  repr(elapsed) + "\n";
+		
 
 		print "[DFX] -- Extracting additional structural features..."
 		#print "AVG MAXPATH LEN: " + repr(float(maxPathCount)/float(totalMaxPaths));
@@ -666,7 +673,8 @@ class BirthmarkExtractor(object):
 				count = count + 1;
 				
 			#Number of inputs the output depends on;
-			self.inc("outC", count)
+			self.fpDict["outC"][count] = self.fpDict["outC"].get(count, 0) + 1;
+
 	
 		# Extract the sequence 
 		maxSeq = 3;
@@ -687,8 +695,16 @@ class BirthmarkExtractor(object):
 		
 		
 		print "[DFX] -- Extracting additional functional features..."
-		self.statstr = self.statstr + repr(float(maxPathCount)/float(totalMaxPaths)) + ',';
-		self.statstr = self.statstr + repr(float(minPathCount)/float(totalMinPaths));
+		if(totalMaxPaths == 0):
+			self.statstrf = self.statstrf + repr(0) + ',';
+		else:
+			self.statstrf = self.statstrf +repr(float(maxPathCount)/float(totalMaxPaths)) + ',';
+
+		if(totalMinPaths == 0):
+			self.statstrf = self.statstrf + repr(0) + ",";
+		else:
+			self.statstrf = self.statstrf + repr(float(minPathCount)/float(totalMinPaths)) + ',';
+
 
 
 
@@ -742,8 +758,36 @@ class BirthmarkExtractor(object):
 		'''
 		 Returns the data for the birthmark
 		'''
+		print "NUMBER OF CORES: " + repr(multiprocessing.cpu_count());
+
+		#f = multiprocessing.Process(target=self.extractFunctional);
+		#s = multiprocessing.Process(target=self.extractStructural);
+
+		#f.start();
+		#time.sleep(1);
+		#s.start();
+		start_time = timeit.default_timer();
+		#self.extractFunctional();
+		elapsed = timeit.default_timer() - start_time;
+		print "[FUNC] -- ELAPSED: " +  repr(elapsed) + "\n";
+		
+		start_time = timeit.default_timer();
 		self.extractStructural();
-		self.extractFunctional();
+		elapsed = timeit.default_timer() - start_time;
+		print "[STRC] -- ELAPSED: " +  repr(elapsed) + "\n";
+
+		start_time = timeit.default_timer();
 		self.extractConstant();
+		elapsed = timeit.default_timer() - start_time;
+		print "[CONS] -- ELAPSED: " +  repr(elapsed) + "\n";
+
+		#print "[DFX] -- Waiting for functional thread to finish..."
+		#f.join();  #Wait till the first is finished
+		#self.statstr = self.statstr + self.statstrf   #Append the stats from the functional
+
+
 		return (self.maxList, self.minList, self.constSet, self.fpDict, self.statstr, self.alphaList);
+
+
+
 

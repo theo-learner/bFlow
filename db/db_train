@@ -78,7 +78,6 @@ v/uart_tx_only3.v
 v/uart_rx_only.v
 v/uart_rx_only2.v
 v/uart_rx_only3.v
-v/uart_opencores.v
 v/mmuart.v
 v/mmuart_transceiver.v
 v/osdvuart.v
