@@ -16,17 +16,21 @@ import yosys;
 import dataflow as dfx
 import traceback
 import timeit
-import processRef
+import xmlExtraction
 
 
 
 try:
-	start_time = timeit.default_timer();
-	if len(sys.argv) != 3: 
+	start_all = timeit.default_timer();
+	if len(sys.argv) < 3 or len(sys.argv) > 4: 
 		raise error.ArgError()
 		
 	cfiles= sys.argv[1];
 	dbFile= sys.argv[2];
+
+	arg = ""
+	if len(sys.argv) == 4 :
+		arg = sys.argv[3];
 
 	print
 	print "########################################################################";
@@ -56,7 +60,11 @@ try:
 
 		# Processes the verilog files 
 		start_yosys = timeit.default_timer();
-		val  = yosys.create_yosys_script(line, scriptName)
+		if arg == 'h':
+			val  = yosys.create_yosys_script(line, scriptName, hier=True)
+		else:
+			val  = yosys.create_yosys_script(line, scriptName)
+
 		top = val[1];
 		dotFiles = val[0];
 
@@ -72,19 +80,27 @@ try:
 		print
 
 
-		#Goes through the AST extracted from yosys and gets the birthmark components
-		for dotfile in dotFiles:
-			print "MODULE: " + dotfile
-			if dotfile in processedTop:
-				print "[WARNING] -- Module " + dotfile + " already exists...skipping...";
-				multipleTop.add(dotfile);
+		start_time= timeit.default_timer();
+		if arg == 'h':
+			#Goes through the AST extracted from yosys and gets the birthmark components
+			for dotfile in dotFiles:
+				print "MODULE: " + dotfile
+				if dotfile in processedTop:
+					print "[WARNING] -- Module " + dotfile + " already exists...skipping...";
+					multipleTop.add(dotfile);
 
-
-			processedTop.add(dotfile);
-			dotfile = "./dot/"+dotfile+".dot";
-			ckttag = processRef.generateXML(dotfile, ID, dotfile, soup)
+				processedTop.add(dotfile);
+				dotfilename = "./dot/"+dotfile+".dot";
+				ckttag = xmlExtraction.generateXML(dotfilename, ID, dotfile, soup)
+				dbtag.append(ckttag)
+				ID = ID + 1;
+		elif arg == "":
+			dotfilename = "./dot/"+dotFiles[0]+".dot";
+			ckttag = xmlExtraction.generateXML(dotfilename, ID, dotFiles[0], soup)
 			dbtag.append(ckttag)
 			ID = ID + 1;
+		else:
+			raise error.GenError("Unknown Argument. Use [h] for hierarchy preprocessing");
 
 		elapsed = timeit.default_timer() - start_time;
 		print "ELASPED TIME: " + repr(elapsed);
@@ -109,7 +125,7 @@ try:
 		print "   * " + top;
 
 	print "-----------------------------------------------------------------------"
-	elapsed = timeit.default_timer() - start_time;
+	elapsed = timeit.default_timer() - start_all;
 	print "[PPDB] -- ELAPSED: " +  repr(elapsed);
 	print "[PPDB] -- COMPLETE!";
 	print 
@@ -122,10 +138,15 @@ except error.ArgError as e:
 		print("    This program reads in a list of circuits in Verilog to process ");
 		print("    The preprocessing extracts and stores the birthmark representation");
 		print("    Results are stored in an XML file");
-		print("\n  Usage: python preprocessDB.py [List of Verilog]  [Output XML]\n");
+		print("    Option to process each module individual as a design [h] option");
+		print("\n  Usage: python preprocessDB.py [List of Verilog]  [Output XML]  [h]");
+		print("    OPTION:");
+		print("       h - process each module as a design\n");
 	else:
 		print "[ERROR] -- Not enough argument. Provide list of circuits and a XML file ";
-		print("           Usage: python preprocessDB.py [List of Verilog]  [Output XML]\n");
+		print("           Usage: python preprocessDB.py [List of Verilog]  [Output XML]  ");
+		print("             OPTION:");
+		print("               h - process each module as a design");
 
 except error.YosysError as e:
 	print "[ERROR] -- Yosys has encountered an error...";

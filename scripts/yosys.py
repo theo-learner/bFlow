@@ -12,18 +12,18 @@ import timeit;
 import datetime;
 from subprocess import call
 import error;
-import constructHierarchy as hier;
+import constructHierarchy as hierarchy;
 
-def create_yosys_script(fileName, scriptName):
+def create_yosys_script(fileName, scriptName, hier = False):
 	script = "";	
 	script = script + "echo on\n";
 
 	moduleList = dict();
-	fileList = hier.extractModuleNames(moduleList, fileName);
+	fileList = hierarchy.extractModuleNames(moduleList, fileName);
 	if(len(fileList) == 0):
 		raise error.GenError("File list is empty")
 
-	topModules = hier.findModuleChildren(moduleList);
+	topModules = hierarchy.findModuleChildren(moduleList);
 	top = topModules[0];
 
 	for vfile in fileList:
@@ -31,7 +31,7 @@ def create_yosys_script(fileName, scriptName):
 
 	script = script + "\n\n";
 	script = script + "hierarchy -check\n";
-	script = script + "proc; opt; fsm; opt;\n\n";
+	script = script + "proc; fsm; opt;\n\n";
 	script = script + "memory_collect; opt;\n\n";
 	#script = script + "techmap -map /usr/local/share/yosys/pmux2mux.v;\n\n"
 	script = script + "flatten; opt\n";
@@ -40,14 +40,18 @@ def create_yosys_script(fileName, scriptName):
 
 
 	dotFile = [];
-	for k,v in moduleList.iteritems():
-		if(k == top):
-			dotName = top
-		else:
-			dotName = top + "__" + k
+	if hier == True:
+		for k,v in moduleList.iteritems():
+			if(k == top):
+				dotName = top
+			else:
+				dotName = top + "__" + k
 
-		script = script + "show -width -format dot -prefix ./dot/"+ dotName +" " + k + "\n";
-		dotFile.append(dotName);
+			script = script + "show -width -format dot -prefix ./dot/"+ dotName +" " + k + "\n";
+			dotFile.append(dotName);
+	else:
+		script = script + "show -width -format dot -prefix ./dot/"+ top +" " + top + "\n";
+		dotFile.append(top);
 
 
 	fileStream = open(scriptName, 'w');

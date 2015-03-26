@@ -153,8 +153,24 @@ def findModuleChildren(moduleList):
 	if len(topModules) == 0:
 		raise error.GenError("No Top Module Found");
 	elif len(topModules) > 1:
-		print "[WARNING] -- Multiple possible top modules"
+		print "[WARNING] -- Multiple possible top modules. Attempting narrow down top module"
 		print topModules
+
+
+		#Attempting to find top
+		i = 0; 
+		for top in topModules:
+			if len(moduleList[top].children) == 0:
+				topModules.pop(i);
+			i = i + 1;
+
+		if len(topModules) == 0:
+			raise error.GenError("No Top Module Found");
+		elif len(topModules) > 1:
+			print "[ERROR] -- Multiple possible top modules"
+			raise error.GenError("Multiple possible top modules found. Please move top module to another project");
+		else:
+			print "[HIER] -- Issue resolved. TOP: " + topModules[0]
 	
 	return topModules
 

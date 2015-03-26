@@ -188,21 +188,6 @@ class BirthmarkExtractor(object):
 
 
 
-	def extractSWString(self, dataflow_node):
-		'''
-			Converts a list of operations into a sequence (list) of letters
-			 @PARAM: dataflow_node- A datapath of the circuit (list of operations)
-			 @RETURN List of the operations converted into a sequence
-		'''
-		#sw = '';
-		#for index in xrange(len(dataflow_node)-2):
-		#	node = dataflow_node[index+1];
-		#	sw = "%s,%s" % (sw, self.extractSequenceLetter(node));
-
-		slist = [self.extractSequenceLetter(dataflow_node[index+1]) for index in xrange(len(dataflow_node)-2)];
-		sw = "".join(slist)
-		return sw;
-
 
 
 	def extractSWStringList(self, dataflowList_node, foundList):
@@ -214,7 +199,8 @@ class BirthmarkExtractor(object):
 		'''
 		swList = set();
 		for dataflow_node in dataflowList_node:
-			sw = self.extractSWString(dataflow_node);
+			slist = [self.extractSequenceLetter(dataflow_node[index+1]) for index in xrange(len(dataflow_node)-2)];
+			sw = "".join(slist)
 
 			if(sw in foundList):
 				continue;
@@ -235,7 +221,7 @@ class BirthmarkExtractor(object):
 
 
 		
-	def findPath(self, node, dst, marked, path, pathSequence, length, pathList, sequenceList):
+	def findPath(self, node, dst, marked, path, simpPath, pathSequence, length, pathList, sequenceList):
 		'''
 			Finds the path from node to dst that has smallest number of nodes 
 			 @PARAM: node           - Source node 
@@ -265,10 +251,9 @@ class BirthmarkExtractor(object):
 					length[1] = newLen 
 				pathList[1].append(newPath);
 			#Alpha
-			numAlphabet = self.numAlpha(pathSequence);
-			letter = self.extractSequenceLetter(node);
-			pathSequence.append(letter)
+			numAlphabet = len(set(pathSequence))
 			if numAlphabet >= length[2]:
+				newLen = len(simpPath) + 1;
 				if numAlphabet > length[2]:
 					pathList[2][:] = [];
 					sequenceList[:] = [];
@@ -280,18 +265,17 @@ class BirthmarkExtractor(object):
 					length[3] = newLen 
 
 				newPathSequence = copy.deepcopy(pathSequence)
-				if(len(newPathSequence) != len(newPath)):
-					print "LEN MISMATCH"
-					sys.exit()
+				newPath = simpPath + [node];
 				pathList[2].append(newPath);
 				sequenceList.append(newPathSequence);
 			
-			pathSequence.pop(len(pathSequence)-1);
 			return length;
 
 
 		letter = self.extractSequenceLetter(node);
-		pathSequence.append(letter)
+		if(letter != ""):
+			pathSequence.append(letter)
+			simpPath.append(node)
 
 		path.append(node);
 		marked.add(node);	
@@ -299,7 +283,7 @@ class BirthmarkExtractor(object):
 
 		for succ in succList:
 			if succ not in marked:
-				length = self.findPath(succ, dst,  marked, path, pathSequence, length, pathList, sequenceList);
+				length = self.findPath(succ, dst,  marked, path, simpPath, pathSequence, length, pathList, sequenceList);
 			else:
 				#MAX
 				for mp in pathList[0]:
@@ -340,9 +324,9 @@ class BirthmarkExtractor(object):
 						index = pathList[2][i].index(succ);
 
 						tmpPathSequence = pathSequence + mp[index:];
-						numAlphabet = self.numAlpha(tmpPathSequence);
-						tmpPath = path + pathList[2][i][index:]
-						newLen = len(path) + len(mp) - index
+						numAlphabet = len(set(tmpPathSequence))
+						newLen = len(simpPath) + len(mp) - index
+						tmpPath = simpPath + pathList[2][i][index:]
 
 						if numAlphabet >= length[2]:
 							if numAlphabet > length[2]:
@@ -368,7 +352,9 @@ class BirthmarkExtractor(object):
 
 
 		del path[-1];
-		del pathSequence[-1];
+		if(letter != ""):
+			del pathSequence[-1];
+			del simpPath[-1];
 		return length
 
 
@@ -574,20 +560,12 @@ class BirthmarkExtractor(object):
 			for inNode in self.inNodeList:
 				marked = set();
 				path= [];
+				simpPath= [];
 				pathSequence= [];
 				pathList= [[],[],[]];
 				swAlpha = [];
 
-				length = self.findPath(inNode, out, marked, path, pathSequence,  [0,sys.maxint,0, 0], pathList, swAlpha);
-				print "SWALPHAS: " + repr(len(swAlpha))
-				print "MAXS: " + repr(len(pathList[1]))
-				print "alS: " + repr(len(pathList[2]))
-				for sw in swAlpha:
-					print  sw
-				sys.exit()
-				if(length[0] == 0):
-					continue
-
+				length = self.findPath(inNode, out, marked, path, simpPath, pathSequence,  [0,sys.maxint,0, 0], pathList, swAlpha);
 				
 				#Extract the sequence representation, make sure to ignore representations that is already in maxList
 				#print " -- Extracting Sequence"
@@ -600,7 +578,7 @@ class BirthmarkExtractor(object):
 				maxSequence = self.findMaxEntropy(swMax);
 				minSequence = self.findMaxEntropy(swMin);
 				alphaSequence = self.findMaxEntropy(swAlpha);
-				nAlpha = self.numAlpha(alphaSequence);
+				nAlpha = len(set(alphaSequence))
 
 				#Store the highest entropy sequence
 				if(maxSequence != ""):

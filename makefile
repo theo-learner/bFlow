@@ -29,7 +29,7 @@ OBJREF= \
 	print.o \
 	$
 
-all: bench_matlab rsearch bench_db cserver
+all: bench_matlab rsearch bench_db cserver compareAST
 
 #build subdirectories
 	
@@ -41,6 +41,9 @@ autocor: $(OBJS) autocor.o
 
 rsearch: $(OBJREF) rsearch.o 
 	$(CXX) $(OBJREF) rsearch.o -o rsearch
+
+compareAST: $(OBJREF) compareAST.o 
+	$(CXX) $(OBJREF) compareAST.o -o compareAST
 
 bench_db: $(OBJREF) bench_db.o 
 	$(CXX) $(OBJREF) bench_db.o -o bench_db
@@ -58,7 +61,7 @@ cserver:  $(OBJSERVER) cserver.o
 
 
 clean: 
-	rm -v *.o hbflow cserver rsearch bench_db bench_matlab
+	rm -v *.o hbflow cserver rsearch bench_db bench_matlab compareAST
 
 cleanall: 
-	rm -v *.o hbflow cserver rsearch bench_db bench_matlab scripts/*.pyc  data/*.csv data/*.dat data/*.log db/*.xml data/yoscript
+	rm -v *.o hbflow cserver rsearch bench_db bench_matlab compareAST scripts/*.pyc  data/*.csv data/*.dat data/*.log db/*.xml data/yoscript

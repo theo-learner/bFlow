@@ -49,7 +49,7 @@ int main( int argc, char *argv[] ){
 
 		//Extract the birthmark from the verilog
 		printf("[REF] -- Reading Reference Design\n");
-		std::string cmd = "python scripts/processRef.py " + vREF; 
+		std::string cmd = "python scripts/processVerilog.py " + vREF; 
 		system(cmd.c_str());
 
 		std::string xmlREF = "data/reference.xml";

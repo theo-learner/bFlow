@@ -127,6 +127,93 @@ bool Database::importDatabase(std::string path){
 
 
 
+void Database::compareBirthmark(Birthmark* bm1, Birthmark* bm2){
+	std::list<std::string> max1, min1, alpha1;  //Functional
+	std::list<std::string> max2, min2, alpha2;  //Functional
+	bm1->getMaxSequence(max1);
+	bm1->getMinSequence(min1);
+	bm1->getAlphaSequence(alpha1);
+	bm2->getMaxSequence(max2);
+	bm2->getMinSequence(min2);
+	bm2->getAlphaSequence(alpha2);
+	
+	
+	std::map<std::string, Feature*> feature1, feature2;       //Structural
+	bm1->getFingerprint(feature1);
+	bm2->getFingerprint(feature2);
+
+	
+	std::vector<unsigned> constant1, constant2;                //Constant
+	bm1->getBinnedConstants(constant1);
+	bm2->getBinnedConstants(constant2);
+		
+		/////////////////////////////////////////////////////////////////////////////
+		//   FUNCTIONAL SEQUENCE COMARPISON
+		//     Score returned by alignment is all the alignemnt scores among the list
+		//     Average to take into account different number os sequences
+		//     Final functional score is the sum of all the scores
+		/////////////////////////////////////////////////////////////////////////////
+		printf("########################################################################\n");
+		SIMILARITY::s_Output = true;
+		int maxScore = SIMILARITY::align(max1, max2, true);
+		double fScore = (double(maxScore) / ((double)max1.size() * (double)max2.size())) * 0.75;
+		printf("MAXSCORE: %4d\tAVG: %f\n", maxScore, fScore);;
+		printf("########################################################################\n");
+
+		int minScore = SIMILARITY::align(min1, min2, true);
+		fScore += double(minScore) / ((double)min1.size() * (double)min2.size()) * 2;
+		printf("MINSCORE: %4d\tAVG: %f\n", minScore, double(minScore) / ((double)min1.size() * (double)min2.size()));
+		printf("########################################################################\n");
+
+		int alphaScore = SIMILARITY::align(alpha1, alpha2, true);
+		fScore += (double(alphaScore) / ((double)alpha1.size() * (double)alpha2.size())) * 3;
+		printf("ALPHA SCORE: %4d\tAVG: %f\n", alphaScore, double(alphaScore) / ((double)alpha1.size() * (double)alpha2.size()));
+		SIMILARITY::s_Output = false;
+		printf("MINSCORE: %4d\tAVG: %f\n", minScore, double(minScore) / ((double)min1.size() * (double)min2.size()));
+		printf("MAXSCORE: %4d\tAVG: %f\n", maxScore, fScore);;
+		printf("  * FSCORE: %f\n", fScore);
+
+
+
+
+
+		/////////////////////////////////////////////////////////////////////////////
+		//   STRUCTURAL SEQUENCE COMARPISON
+		//     Score is the total euclidean distance of all the features 
+		/////////////////////////////////////////////////////////////////////////////
+		std::map<std::string, Feature*>::iterator iFeat1;
+		std::map<std::string, Feature*>::iterator iFeat2;
+
+		double sScore= 0.0;
+		iFeat1 = feature1.begin();
+		for(iFeat2= feature2.begin(); iFeat2 != feature2.end(); iFeat2++){
+			assert(iFeat1->first == iFeat2->first);  //Make sure the types are the same
+			std::map<unsigned, unsigned> feat1;
+			iFeat1->second->getFeature(feat1);      //Load REF Feature
+
+			std::map<unsigned, unsigned> feat2;
+			iFeat2->second->getFeature(feat2);        //Load DB Feature
+
+			double tsim = SIMILARITY::euclidean(feat1, feat2);
+			sScore += tsim;
+			//printf("  TYPE: %s\t SSCORE: %f\n", type.c_str(), tsim);
+
+			iFeat1++;
+		}
+		
+		printf("  * SSCORE: %f\n", sScore);
+
+
+
+
+		/////////////////////////////////////////////////////////////////////////////
+		//   CONSTANT SEQUENCE COMARPISON
+		//     Score is the total euclidean distance of binned constant vector 
+		/////////////////////////////////////////////////////////////////////////////
+		//printf(" -- Comparing Constant Components....\n");
+		double cScore = SIMILARITY::euclidean(constant1, constant2);
+		printf("  * CSCORE: %f\n", cScore);
+}
 
 
 

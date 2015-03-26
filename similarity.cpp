@@ -130,7 +130,7 @@ double SIMILARITY::cosine(std::vector<unsigned>& data1, std::vector<unsigned>& d
  *  given a list of sequences (REF and DB), align the sequences and extract
  *  the similarity of the alignment (AVG SIM) 
  */
-int SIMILARITY::align(std::list<std::string>& ref, std::list<std::string>& db){
+int SIMILARITY::align(std::list<std::string>& ref, std::list<std::string>& db, bool output){
 	//	timeval start_time, end_time;
 	//	gettimeofday(&start_time, NULL); //----------------------------------
 
@@ -148,7 +148,7 @@ int SIMILARITY::align(std::list<std::string>& ref, std::list<std::string>& db){
 			
 			//Alignment of the sequence
 			int score = localAlignment(s_Align, s_Score);
-			//printAlignment();
+			if(output) printAlignment();
 
 			//Calcuate the difference in the size ratios
 			double sizeRatio;
@@ -169,7 +169,8 @@ int SIMILARITY::align(std::list<std::string>& ref, std::list<std::string>& db){
 			}
 
 
-			//printf("[SIM] -- %5d   ALIGN: %s - %s\n=============================\n", score, iRef->c_str(), iSeq->c_str());
+			if(output)
+				printf("[SIM] -- %5d   ALIGN: %s - %s\n==================\n", score, iRef->c_str(), iSeq->c_str());
 			//Sum the entire score
 			totalScore += (score * sizeRatio);
 		}
@@ -214,7 +215,6 @@ void SIMILARITY::printAlignment(){
 		else              std::cout << *it2;
 	}
 	std::cout << std::endl;
-	std::cout << std::endl;
 }
 
 /**
@@ -230,6 +230,7 @@ void SIMILARITY::initAlignment(){
 	//Located in lib/seqan/score/scorematrixwithdata
 	setDefaultScoreMatrix(s_Score, CircuitScoringMatrix());
 	showScoringMatrix(s_Score);
+	s_Output = false;
 
 }
 

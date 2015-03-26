@@ -1,22 +1,12 @@
 #!/usr/bin/python2.7
 
 '''
-	processRef: 
-	  Processes a verilog file and extracts the XML birthmark 
-		for it	
+	xmlExtraction: 
+		Extracts the birthmark from the AST and stores it in XML
 '''
 
-import os;
-import sys;
-import re;
-import time;
-import datetime;
-import yosys;
-import traceback;
-import socket;
 import dataflow as dfx
 from bs4 import BeautifulSoup
-import error;
 
 def generateXML(dotfile, ID,  cktName, soup):
 	result = dfx.extractDataflow(dotfile);
@@ -75,50 +65,3 @@ def generateXML(dotfile, ID,  cktName, soup):
 
 	#return soup
 #######################################################
-
-
-def generateYosysScript(verilogFile):
-	scriptName = "data/yoscript"
-	scriptResult = yosys.create_yosys_script(verilogFile, scriptName)
-	dotFiles = scriptResult[0];
-	top = scriptResult[1];
-	return (scriptName, dotFiles, top);
-
-
-
-def main():
-	try:
-		if len(sys.argv) != 2: 
-			print "[ERROR] -- Not enough argument. Provide V File to process" 
-			print "        -- ARG1: verilog file";
-			exit();
-
-		
-		vfile = sys.argv[1];
-		fileName = yosys.getFileData(vfile);
-
-		#Preprocess yosys script
-		(scriptName, dotFiles, top) = generateYosysScript(vfile);
-		rVal = yosys.execute(scriptName);
-		soup = BeautifulSoup();
-
-		ckttag = generateXML("./dot/" + top+".dot", -1, top, soup)
-		soup.append(ckttag);
-
-		
-		
-		fileStream = open("data/reference.xml", 'w');
-		fileStream.write(repr(soup));
-		fileStream.close();
-
-	except error.YosysError as e:
-		print "[ERROR] -- Yosys has encountered an error...";
-		print e.msg;
-
-	except error.GenError as e:
-		print "[ERROR] -- " + e.msg;
-
-
-
-if __name__ == '__main__':
-	main();

@@ -34,6 +34,7 @@
  *  Includes distance functions, as well as sequence alignment functions (SEQAN)
  */
 namespace SIMILARITY{
+	static bool s_Output = false;
 
 	//Euclidean
 	double euclidean(std::map<unsigned, unsigned>& , std::map<unsigned,unsigned>& );
@@ -53,7 +54,7 @@ namespace SIMILARITY{
 	static TAlign s_Align;
 	
 	void initAlignment();
-	int align(std::list<std::string>&, std::list<std::string>&);
+	int align(std::list<std::string>&, std::list<std::string>&, bool output = false);
 	double alignScore();
 	void printAlignment();
 
