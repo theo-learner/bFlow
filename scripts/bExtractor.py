@@ -194,10 +194,13 @@ class BirthmarkExtractor(object):
 			 @PARAM: dataflow_node- A datapath of the circuit (list of operations)
 			 @RETURN List of the operations converted into a sequence
 		'''
-		sw = '';
-		for index in xrange(len(dataflow_node)-2):
-			node = dataflow_node[index+1];
-			sw = sw + self.extractSequenceLetter(node);
+		#sw = '';
+		#for index in xrange(len(dataflow_node)-2):
+		#	node = dataflow_node[index+1];
+		#	sw = "%s,%s" % (sw, self.extractSequenceLetter(node));
+
+		slist = [self.extractSequenceLetter(dataflow_node[index+1]) for index in xrange(len(dataflow_node)-2)];
+		sw = "".join(slist)
 		return sw;
 
 
@@ -270,8 +273,18 @@ class BirthmarkExtractor(object):
 					pathList[2][:] = [];
 					sequenceList[:] = [];
 					length[2] = numAlphabet
+					length[3] = newLen 
+				elif newLen > length[3]:
+					pathList[2][:] = [];
+					sequenceList[:] = [];
+					length[3] = newLen 
+
+				newPathSequence = copy.deepcopy(pathSequence)
+				if(len(newPathSequence) != len(newPath)):
+					print "LEN MISMATCH"
+					sys.exit()
 				pathList[2].append(newPath);
-				sequenceList.append(copy.deepcopy(pathSequence));
+				sequenceList.append(newPathSequence);
 			
 			pathSequence.pop(len(pathSequence)-1);
 			return length;
@@ -322,18 +335,26 @@ class BirthmarkExtractor(object):
 
 				#ALPHA
 				i = 0;
-				for mp in pathList[2]:
+				for mp in sequenceList:
 					try:
 						index = pathList[2][i].index(succ);
 
 						tmpPathSequence = pathSequence + mp[index:];
 						numAlphabet = self.numAlpha(tmpPathSequence);
 						tmpPath = path + pathList[2][i][index:]
+						newLen = len(path) + len(mp) - index
+
 						if numAlphabet >= length[2]:
 							if numAlphabet > length[2]:
 								pathList[2][:] = [];
 								length[2] = numAlphabet
+								length[3] = newLen 
 								sequenceList[:] = [];
+							elif newLen > length[3]:
+								pathList[2][:] = [];
+								sequenceList[:] = [];
+								length[3] = newLen 
+
 							pathList[2].append(tmpPath);
 							sequenceList.append(tmpPathSequence);
 							break;
@@ -503,12 +524,18 @@ class BirthmarkExtractor(object):
 		#print "[DFX] -- Extracting additional structural features..."
 		#print "AVG MAXPATH LEN: " + repr(float(maxPathCount)/float(totalMaxPaths));
 		#print "AVG MINPATH LEN: " + repr(float(minPathCount)/float(totalMinPaths));
-		self.statstr = self.statstr + repr(len(self.nodeList)) + "," + repr(len(self.edgeList)) + ","
-		self.statstr = self.statstr + repr(len(self.inNodeList)) + "," + repr(len(self.outNodeList)) + ","
-		self.statstr = self.statstr + repr(maxFanin) + "," + repr(maxFanout) + ",";
+		#self.statstr = self.statstr + repr(len(self.nodeList)) + "," + repr(len(self.edgeList)) + ","
+		#self.statstr = self.statstr + repr(len(self.inNodeList)) + "," + repr(len(self.outNodeList)) + ","
+		#self.statstr = self.statstr + repr(maxFanin) + "," + repr(maxFanout) + ",";
+
+		self.statstr = "%s,%s,%s,%s,%s,%s," % (repr(len(self.nodeList)), repr(len(self.edgeList)), repr(len(self.inNodeList)), repr(len(self.outNodeList)), repr(maxFanin), repr(maxFanout));
 		#statstr = statstr + repr(len(list(nx.simple_cycles(dfg)))) + ",";
-		for freq in nx.degree_histogram(self.dfg):
-			self.statstr = self.statstr + "," + repr(freq);
+		#for freq in nx.degree_histogram(self.dfg):
+		#	self.statstr = self.statstr + "," + repr(freq);
+
+		slist = [repr(freq) for freq in nx.degree_histogram(self.dfg)];
+		s = ",".join(slist)
+		self.statstr = "%s,%s" % (self.statstr, s);
 		#print "STAT: " + statstr
 
 
@@ -551,7 +578,13 @@ class BirthmarkExtractor(object):
 				pathList= [[],[],[]];
 				swAlpha = [];
 
-				length = self.findPath(inNode, out, marked, path, pathSequence,  [0,sys.maxint,0], pathList, swAlpha);
+				length = self.findPath(inNode, out, marked, path, pathSequence,  [0,sys.maxint,0, 0], pathList, swAlpha);
+				print "SWALPHAS: " + repr(len(swAlpha))
+				print "MAXS: " + repr(len(pathList[1]))
+				print "alS: " + repr(len(pathList[2]))
+				for sw in swAlpha:
+					print  sw
+				sys.exit()
 				if(length[0] == 0):
 					continue
 
@@ -614,14 +647,14 @@ class BirthmarkExtractor(object):
 		
 		print "[DFX] -- Extracting additional functional features..."
 		if(totalMaxPaths == 0):
-			self.statstrf = self.statstrf + repr(0) + ',';
+			self.statstrf = "%s,%s," % (self.statstrf, repr(0));
 		else:
-			self.statstrf = self.statstrf +repr(float(maxPathCount)/float(totalMaxPaths)) + ',';
+			self.statstrf = "%s,%s," % (self.statstrf, repr(float(maxPathCount)/float(totalMaxPaths)));
 
 		if(totalMinPaths == 0):
-			self.statstrf = self.statstrf + repr(0) + ",";
+			self.statstrf = "%s,%s," % (self.statstrf, repr(0));
 		else:
-			self.statstrf = self.statstrf + repr(float(minPathCount)/float(totalMinPaths)) + ',';
+			self.statstrf = "%s,%s" % (self.statstrf, repr(float(minPathCount)/float(totalMinPaths)));
 
 
 
@@ -707,6 +740,7 @@ class BirthmarkExtractor(object):
 		#print "[DFX] -- Waiting for functional thread to finish..."
 		#f.join();  #Wait till the first is finished
 		#self.statstr = self.statstr + self.statstrf   #Append the stats from the functional
+		self.statstr = "%s,%s" % (self.statstr, self.statstrf);
 
 
 		return (self.maxList, self.minList, self.constSet, self.fpDict, self.statstr, self.alphaList);
