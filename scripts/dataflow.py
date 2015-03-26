@@ -64,7 +64,9 @@ def main():
 		
 		dotfile = sys.argv[1];
 		result = extractDataflow(dotfile);
-		print result;
+		#print result;
+		#f = open("tmpoptimizednew", 'w');
+		#f.write(repr(result))
 
 	except error.ArgError as e:
 		if len(sys.argv) == 1 :

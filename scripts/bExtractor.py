@@ -14,9 +14,9 @@ import error;
 import timeit
 import time;
 from collections import Counter
+import collections
 import yosys;
 import math
-import multiprocessing
 
 class BirthmarkExtractor(object):
 
@@ -37,13 +37,6 @@ class BirthmarkExtractor(object):
 
 		# Preprocess edges 
 		self.edgeAttr = nx.get_edge_attributes(self.dfg, 'label');
-		for edge in self.edgeList:
-			if edge not in self.edgeAttr:
-				self.edgeAttr[edge] = 1;
-			else:
-				label = self.edgeAttr[edge];
-				label = re.search('<(.*)>', label);
-				self.edgeAttr[edge] = label.group(1);
 
 		self.logicStr  = ["$not", "$and", "$or", "$xor", "$xnor", "$reduce", "$logic"]
 		self.regStr    = ["$sr","$dff","$dffe","$adff","$dffsr","$dlatch"]
@@ -73,16 +66,7 @@ class BirthmarkExtractor(object):
 		self.constantList= [];
 		self.outNodeList= [];
 		self.inNodeList= [];
-		for node in self.nodeList:
-			predList = self.dfg.predecessors(node);
 
-			if 'v' in node:                     # Check to see if it is a  constant
-				self.constantList.append(node);
-			elif self.shapeAttr[node] == "octagon":  # Check to see if it is a port node
-				if len(predList) == 0:
-					self.inNodeList.append(node);
-				else:
-					self.outNodeList.append(node);
 	
 	
 	
@@ -248,127 +232,7 @@ class BirthmarkExtractor(object):
 
 
 		
-	def findMaxAlphaPath(self, node, dst, marked, path, pathSequence, maxNumAlpha, maxPathList, maxSequenceList):
-		'''
-			Finds the path from node to dst that has the most unique letters 
-			 @PARAM: node           - Source node 
-			 @PARAM: dst            - Destination node
-			 @PARAM: marked         - Nodes that have been searched through already
-			 @PARAM: path           - Current path of the search
-			 @PARAM: pathSequence   - The sequence of the current path
-			 @PARAM: maxNumAlpha    - The number of most uniqueletters found so far 
-			 @PARAM: maxPathList    - The nodes currently found with the maxNumAlpha
-			 @PARAM: maxSequenceList- The sequence of the maxPathList
-			 @RETURN List of the datapaths from node to dst with the most unique letters
-		'''
-		if node == dst:
-			path.append(node);
-			letter = self.extractSequenceLetter(node);
-			pathSequence.append(letter)
-			numAlphabet = self.numAlpha(pathSequence);
-			if numAlphabet > maxNumAlpha:
-				maxPathList[:] = [];
-				maxSequenceList[:] = [];
-				maxNumAlpha = numAlphabet
-			if numAlphabet >= maxNumAlpha:
-				newPath = copy.deepcopy(path);
-				maxPathList.append(newPath);
-				maxSequenceList.append(copy.deepcopy(pathSequence));
-				
-			path.pop(len(path)-1);
-			pathSequence.pop(len(pathSequence)-1);
-			return maxNumAlpha;
-
-		letter = self.extractSequenceLetter(node);
-		path.append(node);
-		pathSequence.append(letter)
-		marked.add(node);	
-
-		succList = self.dfg.successors(node);
-		for succ in succList:
-			if succ not in marked:
-				maxNumAlpha= self.findMaxAlphaPath(succ, dst,  marked, path, pathSequence, maxNumAlpha, maxPathList, maxSequenceList);
-			else:
-				i = 0;
-				for mp in maxSequenceList:
-					try:
-						index = maxPathList[i].index(succ);
-
-						tmpPathSequence = pathSequence + mp[index:];
-						numAlphabet = self.numAlpha(tmpPathSequence);
-						tmpPath = path + maxPathList[i][index:]
-						
-						if numAlphabet > maxNumAlpha:
-							maxPathList[:] = [];
-							maxSequenceList[:] = [];
-							maxNumAlpha = numAlphabet
-
-						if numAlphabet >= maxNumAlpha:
-							maxPathList.append(tmpPath);
-							maxSequenceList.append(tmpPathSequence);
-							break;
-					except ValueError:
-						continue;
-					finally:
-						i=i+1;
-					
-		pathSequence.pop(len(pathSequence)-1);
-		path.pop(len(path)-1);
-		return maxNumAlpha
-
-
-
-	def findMaxPath(self, node, dst, marked, path, maxLen, maxPathList):
-		'''
-			Finds the path from node to dst that has largest number of nodes 
-			 @PARAM: node           - Source node 
-			 @PARAM: dst            - Destination node
-			 @PARAM: marked         - Nodes that have been searched through already
-			 @PARAM: path           - Current path of the search
-			 @PARAM: maxLen-          The length of max path currently found
-			 @PARAM: maxPathList    - The nodes currently found with maxLen
-			 @RETURN List of the datapaths who's path is maximum
-		'''
-		if node == dst:
-			path.append(node);
-			if len(path) > maxLen:
-				maxPathList[:] = [];
-				maxLen = len(path)
-			if len(path) >= maxLen:
-				newPath = copy.deepcopy(path);
-				maxPathList.append(newPath);
-				
-			path.pop(len(path)-1);
-			return maxLen;
-
-		path.append(node);
-		marked.add(node);	
-		succList = self.dfg.successors(node);
-		for succ in succList:
-			if succ not in marked:
-				maxLen = self.findMaxPath(succ, dst,  marked, path, maxLen, maxPathList);
-			else:
-				for mp in maxPathList:
-					try:
-						index = mp.index(succ);
-						newLen = len(path) + len(mp) - index
-						
-						if newLen > maxLen:
-							maxPathList[:] = [];
-							maxLen = newLen 
-						if newLen >= maxLen:
-							tempPath = path + mp[index:]
-							maxPathList.append(tempPath);
-							break;
-					except ValueError:
-						continue;
-					
-		path.pop(len(path)-1);
-		return maxLen
-
-
-
-	def findMinPath(self, node, dst, marked, path, minLen, maxPathList):
+	def findPath(self, node, dst, marked, path, pathSequence, length, pathList, sequenceList):
 		'''
 			Finds the path from node to dst that has smallest number of nodes 
 			 @PARAM: node           - Source node 
@@ -379,59 +243,124 @@ class BirthmarkExtractor(object):
 			 @PARAM: maxPathList    - The nodes currently found with the minLen
 			 @RETURN List of the datapaths from node to dst who's path is minimum
 		'''
+		#print "Checking node: " + node + ". DST: " + dst
 		if node == dst:
+			#print " * Node is dst!"
 			newLen = len(path) + 1;
-			if newLen  <= minLen:
-				if newLen < minLen:
-					maxPathList[:] = [];
-					minLen = newLen 
-				newPath = path + [node];
-				maxPathList.append(newPath);
-				
-			return minLen;
+
+			#Max
+			newPath = path + [node];
+			if newLen  >= (length[0]):
+				if newLen > length[0]:
+					pathList[0][:] = [];
+					length[0] = newLen 
+				pathList[0].append(newPath);
+			#Min
+			if newLen  <= length[1]:
+				if newLen <  length[1]:
+					pathList[1][:] = [];
+					length[1] = newLen 
+				pathList[1].append(newPath);
+			#Alpha
+			numAlphabet = self.numAlpha(pathSequence);
+			letter = self.extractSequenceLetter(node);
+			pathSequence.append(letter)
+			if numAlphabet >= length[2]:
+				if numAlphabet > length[2]:
+					pathList[2][:] = [];
+					sequenceList[:] = [];
+					length[2] = numAlphabet
+				pathList[2].append(newPath);
+				sequenceList.append(copy.deepcopy(pathSequence));
+			
+			pathSequence.pop(len(pathSequence)-1);
+			return length;
+
+
+		letter = self.extractSequenceLetter(node);
+		pathSequence.append(letter)
 
 		path.append(node);
 		marked.add(node);	
 		succList = self.dfg.successors(node);
+
 		for succ in succList:
 			if succ not in marked:
-				minLen = self.findMinPath(succ, dst,  marked, path, minLen, maxPathList);
+				length = self.findPath(succ, dst,  marked, path, pathSequence, length, pathList, sequenceList);
 			else:
-				for mp in maxPathList:
+				#MAX
+				for mp in pathList[0]:
 					try:
 						index = mp.index(succ);
 						newLen = len(path) + len(mp) - index
 						
-						if newLen <= minLen:
-							if newLen < minLen:
-								minLen = newLen
-								maxPathList[:] = [];
+						if newLen >= length[0]:
+							if newLen > length[0]:
+								length[0] = newLen
+								pathList[0][:] = [];
 							tempPath = path + mp[index:]
-							maxPathList.append(tempPath);
+							pathList[0].append(tempPath);
 							break;
 					except ValueError:
 						continue;
-					
+				
+				#MIN
+				for mp in pathList[1]:
+					try:
+						index = mp.index(succ);
+						newLen = len(path) + len(mp) - index
+						
+						if newLen <= length[1]:
+							if newLen < length[1]:
+								length[1] = newLen
+								pathList[1][:] = [];
+							tempPath = path + mp[index:]
+							pathList[1].append(tempPath);
+							break;
+					except ValueError:
+						continue;
+
+				#ALPHA
+				i = 0;
+				for mp in pathList[2]:
+					try:
+						index = pathList[2][i].index(succ);
+
+						tmpPathSequence = pathSequence + mp[index:];
+						numAlphabet = self.numAlpha(tmpPathSequence);
+						tmpPath = path + pathList[2][i][index:]
+						if numAlphabet >= length[2]:
+							if numAlphabet > length[2]:
+								pathList[2][:] = [];
+								length[2] = numAlphabet
+								sequenceList[:] = [];
+							pathList[2].append(tmpPath);
+							sequenceList.append(tmpPathSequence);
+							break;
+						
+					except ValueError:
+						continue;
+					finally:
+						i=i+1;
+
+
+
+
 		del path[-1];
-		return minLen
+		del pathSequence[-1];
+		return length
 
 
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
+	def faninCone(self, node, marked):
+		marked.add(node);	
+		predList = self.dfg.predecessors(node);
+		for pred in predList:
+			if pred not in marked:
+				self.faninCone(pred,  marked);
 
 
 	def extractStructural(self):
@@ -453,11 +382,10 @@ class BirthmarkExtractor(object):
 		maxFanout = 0;
 		nodeCount = 0;
 
-		start_time = timeit.default_timer();
+		#start_time = timeit.default_timer();
 		for node in self.nodeList:
-			if 'v' in node:                     		#Check to see if it is a  constant
-				continue;
-			elif self.shapeAttr[node] == "octagon": #PORT
+			if 'v' in node:                     # Check to see if it is a  constant
+				self.constantList.append(node);
 				continue;
 
 			predList = self.dfg.predecessors(node);
@@ -465,6 +393,13 @@ class BirthmarkExtractor(object):
 			totalFanin = totalFanin + len(predList)
 			totalFanout = totalFanout + len(sucList)
 			nodeCount = nodeCount + 1;
+			
+			if self.shapeAttr[node] == "octagon":  # Check to see if it is a port node
+				if len(predList) == 0:
+					self.inNodeList.append(node);
+				else:
+					self.outNodeList.append(node);
+				continue;  #TODO: CHECK
 
 			if(len(predList) > maxFanin):
 				maxFanin = len(predList)
@@ -481,12 +416,24 @@ class BirthmarkExtractor(object):
 
 					size = 0;
 					for pred in predList:
-						psize = int(self.edgeAttr[(pred, node)]);
+						if (pred,node) not in self.edgeAttr:
+							psize = 1;
+						else:
+							label = self.edgeAttr[(pred,node)];
+							label = re.search('<(.*)>', label);
+							psize = int(label.group(1));
+
 						if(psize > size):
 							size = psize;
 
 					for succ in sucList:
-						ssize = int(self.edgeAttr[(node, succ)]);
+						if (node, succ) not in self.edgeAttr:
+							ssize = 1;
+						else:
+							label = self.edgeAttr[(node, succ)];
+							label = re.search('<(.*)>', label);
+							ssize = int(label.group(1));
+
 						if(ssize > size):
 							size = ssize;
 
@@ -532,49 +479,28 @@ class BirthmarkExtractor(object):
 
 		avgFanin = totalFanin / nodeCount;	
 		avgFanout = totalFanout / nodeCount;	
-		elapsed = timeit.default_timer() - start_time;
-		print "[PNODE] -- ELAPSED: " +  repr(elapsed) + "\n";
+		#elapsed = timeit.default_timer() - start_time;
+		#print "[PNODE] -- ELAPSED: " +  repr(elapsed) 
 
 		#Need to wait till all the inputs have been found during node processing
-		if (float(len(self.inNodeList) + len(self.constantList)) * 0.25 > len(ffList)) or len(ffList) == 1:
-			for node in ffList:	
-				count = 0;
-				for inNode in self.inNodeList:
-					if(nx.has_path(self.dfg, inNode, node)):
-						count = count + 1;
+		#start_time = timeit.default_timer();
+		inputs = self.inNodeList + self.constantList
+		ffDict = dict();
+		for node in ffList:	
+			marked = set();
+			self.faninCone(node, marked)
+			intoFF = [i for i in inputs if i in marked ]
+			count = len(intoFF)
 
-				for inNode in self.constantList:
-					if(nx.has_path(self.dfg, inNode, node)):
-						count = count + 1;
-
-				self.fpDict["ffC"][count] = self.fpDict["ffC"].get(count, 0) + 1;
-		else:
-			start_time = timeit.default_timer();
-			print("SUC!")
-			inFanout = {};
-			for inNode in self.inNodeList:
-				fanout = nx.dfs_successors(self.dfg, inNode);
-				inFanout[inNode] = fanout
-			
-			for inNode in self.constantList:
-				fanout = nx.dfs_successors(self.dfg, inNode);
-				inFanout[inNode] = fanout
-			elapsed = timeit.default_timer() - start_time;
-			print "[FAN] -- ELAPSED: " +  repr(elapsed) + "\n";
-
-			start_time = timeit.default_timer();
-			ffCounts = dict()	
-			for n, fanout in inFanout.iteritems():
-				ffNodes = [fanoutnode for fanoutnode in  fanout for ff in ffList if ff == fanoutnode]
-				for ff in ffNodes:
-					ffCounts[ff] = ffCounts.get(ff, 0) + 1;
-			
-			self.fpDict["ffC"] = Counter(ffCounts.values());
-			elapsed = timeit.default_timer() - start_time;
-			print "[CNT] -- ELAPSED: " +  repr(elapsed) + "\n";
+			ffDict[count] = ffDict.get(count, 0) + 1;
 		
+		self.fpDict["ffC"] = ffDict;
 
-		print "[DFX] -- Extracting additional structural features..."
+		#elapsed = timeit.default_timer() - start_time;
+		#print "[FF]    -- ELAPSED: " +  repr(elapsed)
+
+
+		#print "[DFX] -- Extracting additional structural features..."
 		#print "AVG MAXPATH LEN: " + repr(float(maxPathCount)/float(totalMaxPaths));
 		#print "AVG MINPATH LEN: " + repr(float(minPathCount)/float(totalMinPaths));
 		self.statstr = self.statstr + repr(len(self.nodeList)) + "," + repr(len(self.edgeList)) + ","
@@ -587,6 +513,9 @@ class BirthmarkExtractor(object):
 
 
 
+
+
+
 	def extractFunctional(self):
 		'''
 		 Extracts the functional component of the circuit	
@@ -594,12 +523,11 @@ class BirthmarkExtractor(object):
 				Needs to be called. 
 		'''
 		print "[DFX] -- Extracting functional features..."# from : " + fileName;
-		dataflowMaxList_node = [];
-		dataflowMinList_node = [];
-
+		self.pathList = set();
 		self.maxList = set();
-		self.alphaList = set();
 		self.minList = set();
+		self.alphaList = set();
+
 		totalMinPaths = 0;
 		totalMaxPaths = 0;
 		maxPathCount= 0;
@@ -610,40 +538,29 @@ class BirthmarkExtractor(object):
 
 		for out in self.outNodeList:
 			count = 0;
-			for constant in self.constantList:
-				if(nx.has_path(self.dfg, constant, out)):
-					count = count + 1;
+
+			cmarked = set()
+			self.faninCone(out, cmarked)
+			intoFF = [i for i in self.constantList if i in cmarked ]
+			count = len(intoFF)
 
 			for inNode in self.inNodeList:
-				#Necessary for recursion
-				marked = set();
-				path= [];
-				maxLen= 0;
-				maxPathList= [];
-				#print " -- Finding max paths"
-				maxLen = self.findMaxPath(inNode, out, marked, path, maxLen, maxPathList);
-				if(maxLen == 0):
-					continue
-				
-				#print " -- Finding Max ALpha paths"
 				marked = set();
 				path= [];
 				pathSequence= [];
-				maxAlphaList= [];
+				pathList= [[],[],[]];
 				swAlpha = [];
-				self.findMaxAlphaPath(inNode, out, marked, path, pathSequence,  0, maxAlphaList, swAlpha);
-				
-				#print " -- Finding shortest paths"
-				marked = set();
-				path= [];
-				minPathList = []
-				self.findMinPath(inNode, out, marked, path, maxLen+10, minPathList);
 
+				length = self.findPath(inNode, out, marked, path, pathSequence,  [0,sys.maxint,0], pathList, swAlpha);
+				if(length[0] == 0):
+					continue
+
+				
 				#Extract the sequence representation, make sure to ignore representations that is already in maxList
 				#print " -- Extracting Sequence"
-				swMax = self.extractSWStringList(maxPathList, self.maxList);
-				swMin = self.extractSWStringList(minPathList, self.minList);
-				swAlpha = self.extractSWStringList(maxAlphaList, self.alphaList);
+				swMax = self.extractSWStringList(pathList[0], self.maxList);
+				swMin = self.extractSWStringList(pathList[1], self.minList);
+				swAlpha = self.extractSWStringList(pathList[2], self.alphaList);
 
 				#print " -- Finding Entropy"
 				#Find the sequences with the highest entropy
@@ -651,7 +568,6 @@ class BirthmarkExtractor(object):
 				minSequence = self.findMaxEntropy(swMin);
 				alphaSequence = self.findMaxEntropy(swAlpha);
 				nAlpha = self.numAlpha(alphaSequence);
-				#print "NUMBER OF ALPHA: " + repr(nAlpha)
 
 				#Store the highest entropy sequence
 				if(maxSequence != ""):
@@ -677,21 +593,23 @@ class BirthmarkExtractor(object):
 
 	
 		# Extract the sequence 
+		#print "MAXLIST: " + repr(self.maxList);
 		maxSeq = 3;
 		swMax = list(self.maxList);
 		swMax.sort(lambda x, y: -1*(cmp(len(x), len(y))));
 		self.maxList = self.getTopSequence(maxSeq, swMax)
 		#print "MAXLIST: " + repr(maxList);
 
+		#print "MINLIST: " + repr(self.minList);
 		swMin = list(self.minList);
 		swMin.sort(lambda x, y: -1*(cmp(len(x), len(y))));
 		self.minList = self.getTopSequence(maxSeq, swMin)
 		#print "MINLIST: " + repr(minList);
 		
+		#print "ALPHALIST: " + repr(self.alphaList);
 		swAlpha = list(self.alphaList);
 		swAlpha.sort(lambda x, y: -1*(cmp(len(x), len(y))));
 		self.alphaList= self.getTopSequence(maxSeq, swAlpha)
-		print "ALPHALIST: " + repr(swAlpha);
 		
 		
 		print "[DFX] -- Extracting additional functional features..."
@@ -758,7 +676,7 @@ class BirthmarkExtractor(object):
 		'''
 		 Returns the data for the birthmark
 		'''
-		print "NUMBER OF CORES: " + repr(multiprocessing.cpu_count());
+		#print "NUMBER OF CORES: " + repr(multiprocessing.cpu_count());
 
 		#f = multiprocessing.Process(target=self.extractFunctional);
 		#s = multiprocessing.Process(target=self.extractStructural);
@@ -766,20 +684,25 @@ class BirthmarkExtractor(object):
 		#f.start();
 		#time.sleep(1);
 		#s.start();
-		start_time = timeit.default_timer();
-		#self.extractFunctional();
-		elapsed = timeit.default_timer() - start_time;
-		print "[FUNC] -- ELAPSED: " +  repr(elapsed) + "\n";
-		
-		start_time = timeit.default_timer();
+		#print "========================================================================"
+		#start_time = timeit.default_timer();
 		self.extractStructural();
-		elapsed = timeit.default_timer() - start_time;
-		print "[STRC] -- ELAPSED: " +  repr(elapsed) + "\n";
+		#elapsed = timeit.default_timer() - start_time;
+		#print "[STRC] -- ELAPSED: " +  repr(elapsed) + "\n";
 
-		start_time = timeit.default_timer();
+
+		#print "========================================================================"
+		#start_time = timeit.default_timer();
+		self.extractFunctional();
+		#elapsed = timeit.default_timer() - start_time;
+		#print "[FUNC] -- ELAPSED: " +  repr(elapsed) + "\n";
+		
+
+		#print "========================================================================"
+		#start_time = timeit.default_timer();
 		self.extractConstant();
-		elapsed = timeit.default_timer() - start_time;
-		print "[CONS] -- ELAPSED: " +  repr(elapsed) + "\n";
+		#elapsed = timeit.default_timer() - start_time;
+		#print "[CONST] -- ELAPSED: " +  repr(elapsed) + "\n";
 
 		#print "[DFX] -- Waiting for functional thread to finish..."
 		#f.join();  #Wait till the first is finished
@@ -790,4 +713,30 @@ class BirthmarkExtractor(object):
 
 
 
+'''
+					for pred in predList:
+						if (pred,node) not in self.edgeAttr:
+							psize = 1;
+						else:
+							label = self.edgeAttr[(pred,node)];
+							label = re.search('<(.*)>', label);
+							psize = int(label.group(1));
 
+						if(psize > size):
+							size = psize;
+
+					for succ in sucList:
+						if (node, succ) not in self.edgeAttr:
+							ssize = 1;
+						else:
+							label = self.edgeAttr[(node, succ)];
+							label = re.search('<(.*)>', label);
+							ssize = int(label.group(1));
+
+						if(ssize > size):
+							size = ssize;
+
+
+
+
+'''

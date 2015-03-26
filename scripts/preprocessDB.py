@@ -21,6 +21,7 @@ import processRef
 
 
 try:
+	start_time = timeit.default_timer();
 	if len(sys.argv) != 3: 
 		raise error.ArgError()
 		
@@ -108,6 +109,8 @@ try:
 		print "   * " + top;
 
 	print "-----------------------------------------------------------------------"
+	elapsed = timeit.default_timer() - start_time;
+	print "[PPDB] -- ELAPSED: " +  repr(elapsed);
 	print "[PPDB] -- COMPLETE!";
 	print 
 	
