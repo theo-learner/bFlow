@@ -39,11 +39,11 @@ class BirthmarkExtractor(object):
 		self.edgeAttr = nx.get_edge_attributes(self.dfg, 'label');
 
 		self.logicStr  = ["$not", "$and", "$or", "$xor", "$xnor", "$reduce", "$logic"]
-		self.regStr    = ["$sr","$dff","$dffe","$adff","$dffsr","$dlatch"]
+		self.regStr    = ["$dff","$dffe","$adff","$sr","$dffsr","$dlatch"]
 		self.wireStr   = ["$pos","$slice","$concat", "neg"]
 		self.eqStr     = ["$eq","$eqx","$ne", "$nex"]
 		self.muxStr    = ["$mux","$pmux"]
-		self.shiftStr  = ["$shr","$shl","$sshl","$sshl","$shift","$shiftx"]
+		self.shiftStr  = ["$shr","$shl","$sshr","$sshl","$shift","$shiftx"]
 		self.arithStr  = ["$fa","$lcu", "$pow"]
 		self.aluStr    = ["$alu"]
 		self.macStr    = ["$macc", "alumacc"]
@@ -566,6 +566,8 @@ class BirthmarkExtractor(object):
 				swAlpha = [];
 
 				length = self.findPath(inNode, out, marked, path, simpPath, pathSequence,  [0,sys.maxint,0, 0], pathList, swAlpha);
+				if(0 in length):
+					continue;
 				
 				#Extract the sequence representation, make sure to ignore representations that is already in maxList
 				#print " -- Extracting Sequence"
@@ -607,22 +609,27 @@ class BirthmarkExtractor(object):
 		#print "MAXLIST: " + repr(self.maxList);
 		maxSeq = 3;
 		swMax = list(self.maxList);
-		swMax.sort(lambda x, y: -1*(cmp(len(x), len(y))));
-		self.maxList = self.getTopSequence(maxSeq, swMax)
-		#print "MAXLIST: " + repr(maxList);
+		swMax.sort(lambda x, y: -1*(cmp(self.Entropy(x), self.Entropy(y))));
+		self.maxList = swMax[0:3];
+		print "MAXLIST: " + repr(self.maxList);
 
 		#print "MINLIST: " + repr(self.minList);
 		swMin = list(self.minList);
-		swMin.sort(lambda x, y: -1*(cmp(len(x), len(y))));
-		self.minList = self.getTopSequence(maxSeq, swMin)
-		#print "MINLIST: " + repr(minList);
+		swMin.sort(lambda x, y: -1*(cmp(self.Entropy(x), self.Entropy(y))));
+		self.minList = swMin[0:3];
+		print "MINLIST: " + repr(self.minList);
 		
 		#print "ALPHALIST: " + repr(self.alphaList);
-		swAlpha = list(self.alphaList);
-		swAlpha.sort(lambda x, y: -1*(cmp(len(x), len(y))));
-		self.alphaList= self.getTopSequence(maxSeq, swAlpha)
+		self.alphaList= list(self.alphaList);
+		self.alphaList.sort(lambda x, y: -1*(cmp(self.Entropy(x), self.Entropy(y))));
+		self.alphaList = self.alphaList[0:3];
+
+		print "ALPHALIST: " + repr(self.alphaList);
 		
-		
+
+
+
+
 		print "[DFX] -- Extracting additional functional features..."
 		if(totalMaxPaths == 0):
 			self.statstrf = "%s,%s," % (self.statstrf, repr(0));

@@ -29,13 +29,17 @@ def create_yosys_script(fileName, scriptName, hier = False):
 	for vfile in fileList:
 		script = script + "read_verilog " + vfile + "\n";
 
+	opt = "opt_muxtree; opt_reduce -full; opt_share; opt_rmdff;;\n"
 	script = script + "\n\n";
 	script = script + "hierarchy -check\n";
-	script = script + "proc; fsm; opt;\n\n";
-	script = script + "memory_collect; opt;\n\n";
+	script = script + "proc; fsm;\n\n";
+	script = script + "memory_collect;\n\n";
+	script = script + opt;
+
 	#script = script + "techmap -map /usr/local/share/yosys/pmux2mux.v;\n\n"
-	script = script + "flatten; opt\n";
-	script = script + "wreduce; opt\n\n";
+	script = script + "flatten\n";
+	script = script + "wreduce\n\n";
+	script = script + opt;
 	script = script + "stat " + top + "\n\n";
 
 
