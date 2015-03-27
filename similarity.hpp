@@ -34,8 +34,6 @@
  *  Includes distance functions, as well as sequence alignment functions (SEQAN)
  */
 namespace SIMILARITY{
-	static bool s_Output = false;
-
 	//Euclidean
 	double euclidean(std::map<unsigned, unsigned>& , std::map<unsigned,unsigned>& );
 	double euclidean(std::vector<unsigned>& , std::vector<unsigned>& );

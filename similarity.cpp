@@ -172,7 +172,8 @@ int SIMILARITY::align(std::list<std::string>& ref, std::list<std::string>& db, b
 			if(output)
 				printf("[SIM] -- %5d   ALIGN: %s - %s\n==================\n", score, iRef->c_str(), iSeq->c_str());
 			//Sum the entire score
-			totalScore += (score * sizeRatio);
+			totalScore += (score*sizeRatio);
+			//totalScore += (score);
 		}
 	}
 
@@ -230,7 +231,6 @@ void SIMILARITY::initAlignment(){
 	//Located in lib/seqan/score/scorematrixwithdata
 	setDefaultScoreMatrix(s_Score, CircuitScoringMatrix());
 	showScoringMatrix(s_Score);
-	s_Output = false;
 
 }
 

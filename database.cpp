@@ -154,23 +154,20 @@ void Database::compareBirthmark(Birthmark* bm1, Birthmark* bm2){
 		//     Final functional score is the sum of all the scores
 		/////////////////////////////////////////////////////////////////////////////
 		printf("########################################################################\n");
-		SIMILARITY::s_Output = true;
 		int maxScore = SIMILARITY::align(max1, max2, true);
 		double fScore = (double(maxScore) / ((double)max1.size() * (double)max2.size())) * 0.75;
-		printf("MAXSCORE: %4d\tAVG: %f\n", maxScore, fScore);;
-		printf("########################################################################\n");
+		printf("########################################################################\n\n\n");
 
 		int minScore = SIMILARITY::align(min1, min2, true);
 		fScore += double(minScore) / ((double)min1.size() * (double)min2.size()) * 2;
-		printf("MINSCORE: %4d\tAVG: %f\n", minScore, double(minScore) / ((double)min1.size() * (double)min2.size()));
-		printf("########################################################################\n");
+		printf("########################################################################\n\n\n");
 
 		int alphaScore = SIMILARITY::align(alpha1, alpha2, true);
 		fScore += (double(alphaScore) / ((double)alpha1.size() * (double)alpha2.size())) * 3;
-		printf("ALPHA SCORE: %4d\tAVG: %f\n", alphaScore, double(alphaScore) / ((double)alpha1.size() * (double)alpha2.size()));
-		SIMILARITY::s_Output = false;
+		printf("########################################################################\n");
+		printf("MAXSCORE: %4d\tAVG: %f\n", maxScore, double(maxScore) / ((double)max1.size() * (double)max2.size()));
 		printf("MINSCORE: %4d\tAVG: %f\n", minScore, double(minScore) / ((double)min1.size() * (double)min2.size()));
-		printf("MAXSCORE: %4d\tAVG: %f\n", maxScore, fScore);;
+		printf("ALPSCORE: %4d\tAVG: %f\n", alphaScore, double(alphaScore) / ((double)alpha1.size() * (double)alpha2.size()));
 		printf("  * FSCORE: %f\n", fScore);
 
 
@@ -213,6 +210,8 @@ void Database::compareBirthmark(Birthmark* bm1, Birthmark* bm2){
 		//printf(" -- Comparing Constant Components....\n");
 		double cScore = SIMILARITY::euclidean(constant1, constant2);
 		printf("  * CSCORE: %f\n", cScore);
+		//bm1->print();
+		//bm2->print();
 }
 
 
@@ -365,8 +364,8 @@ void Database::searchDatabase(Birthmark* reference){
 		printf("###############################################################\n");
 
 		//Weights
-		double fweight = 0.44;
-		double sweight = 0.33;
+		double fweight = 0.39;
+		double sweight = 0.38;
 		double cweight = 0.23;
 		//Need to normalize data
 		std::set<Score, setCompare> normalizedFinalScore;
