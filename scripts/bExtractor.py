@@ -55,14 +55,12 @@ class BirthmarkExtractor(object):
 		self.memStr    = ["$mem"]
 		
 		self.fpDict = {}
-		name = ["add", "mul", "div", "sh", "mux", "eq", "cmp", "reg", "mem", "log", "bb", "ffC", "outC" ];
-		for s in name:
-			self.fpDict[s] = {};
-
 		self.statstr = "";
 		self.statstrf = "";
-		
-			
+		name = ["add", "mul", "div", "sh", "mux", "log", "eq", "cmp", "reg", "mem", "bb"]			
+		for n in name:
+			self.fpDict[n] = 0;
+
 		self.constantList= [];
 		self.outNodeList= [];
 		self.inNodeList= [];
@@ -452,6 +450,7 @@ class BirthmarkExtractor(object):
 
 					#Count the number of components
 #TODO
+					'''
 					if any(s in operation for s in self.muxStr):
 						self.fpDict["mux"][size] = self.fpDict["mux"].get(size, 0) + 1;
 					elif any(s in operation for s in self.regStr):
@@ -483,6 +482,38 @@ class BirthmarkExtractor(object):
 						print "[WARNING] -- There is a lut node: " + operation
 					else:
 						self.fpDict["bb"][size] = self.fpDict["bb"].get(size, 0) + 1;
+						'''
+					if any(s in operation for s in self.muxStr):
+						self.fpDict["mux"] = self.fpDict.get("mux", 0) + 1;
+					elif any(s in operation for s in self.regStr):
+						self.fpDict["reg"] = self.fpDict.get("reg", 0) + 1;
+						ffList.append(node);
+					elif any(s in operation for s in self.addStr):
+						self.fpDict["add"] = self.fpDict.get("add", 0) + 1;
+					elif any(s in operation for s in self.logicStr):
+						self.fpDict["log"] = self.fpDict.get("log", 0) + 1;
+					elif any(s in operation for s in self.eqStr):
+						self.fpDict["eq"] = self.fpDict.get("eq", 0) + 1;
+					elif any(s in operation for s in self.cmpStr):
+						self.fpDict["cmp"] = self.fpDict.get("cmp", 0) + 1;
+					elif any(s in operation for s in self.shiftStr):
+						self.fpDict["sh"] = self.fpDict.get("sh", 0) + 1;
+					elif any(s in operation for s in self.multStr):
+						self.fpDict["mul"] = self.fpDict.get("mul", 0) + 1;
+					elif any(s in operation for s in self.divStr):
+						self.fpDict["div"] = self.fpDict.get("div", 0) + 1;
+					elif any(s in operation for s in self.memStr):
+						self.fpDict["mem"] = self.fpDict.get("mem", 0) + 1;
+					elif any(s in operation for s in self.macStr):
+						print "[WARNING] -- There is a macc type node: " + operation
+					elif any(s in operation for s in self.aluStr):
+						print "[WARNING] -- There is an alu type node: " + operation
+					elif any(s in operation for s in self.arithStr):
+						print "[WARNING] -- There is an arithmetic type node: " + operation
+					elif any(s in operation for s in self.lutStr):
+						print "[WARNING] -- There is a lut node: " + operation
+					else:
+						self.fpDict["bb"] = self.fpDict.get("bb", 0) + 1;
 
 		avgFanin = totalFanin / nodeCount;	
 		avgFanout = totalFanout / nodeCount;	
@@ -491,6 +522,7 @@ class BirthmarkExtractor(object):
 
 		#Need to wait till all the inputs have been found during node processing
 		#start_time = timeit.default_timer();
+		'''
 		inputs = self.inNodeList + self.constantList
 		ffDict = dict();
 		for node in ffList:	
@@ -505,6 +537,7 @@ class BirthmarkExtractor(object):
 
 		#elapsed = timeit.default_timer() - start_time;
 		#print "[FF]    -- ELAPSED: " +  repr(elapsed)
+		'''
 
 
 		#print "[DFX] -- Extracting additional structural features..."
@@ -549,12 +582,18 @@ class BirthmarkExtractor(object):
 		maxNumAlpha = 0;
 		pathHistory = [];
 
-		inAll = self.constantList + self.inNodeList;
+		#inAll = self.constantList + self.inNodeList;
 
 		for out in self.outNodeList:
+			'''
 			count = 0;
+			cmarked = set()
+			self.faninCone(out, cmarked)
+			intoFF = [i for i in self.constantList if i in cmarked]
+			count = len(intoFF)
+			'''
 
-			for inNode in inAll:
+			for inNode in self.inNodeList:
 				marked = set();
 				path= [];
 				simpPath= [];
@@ -597,10 +636,9 @@ class BirthmarkExtractor(object):
 					elif(nAlpha == maxNumAlpha):
 						self.alphaList.add(alphaSequence);
 
-				count = count + 1;
 				
 			#Number of inputs the output depends on;
-			self.fpDict["outC"][count] = self.fpDict["outC"].get(count, 0) + 1;
+			#self.fpDict["outC"][count] = self.fpDict["outC"].get(count, 0) + 1;
 			
 
 	

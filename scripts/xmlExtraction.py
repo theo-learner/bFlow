@@ -37,17 +37,10 @@ def generateXML(dotfile, ID,  cktName, soup):
 	
 	fpDict= result[3];
 
-	i = 0;
 	for n, fp in fpDict.iteritems():		
 		fptag = soup.new_tag("FP");
 		fptag['type'] = n;
-		for k, v in fp.iteritems():
-			attrTag = soup.new_tag("DATA");
-			attrTag['size'] = k;
-			attrTag['count'] = v;
-			fptag.append(attrTag);
-		i = i + 1;
-
+		fptag.string = repr(fp);
 		ckttag.append(fptag);
 		
 	alphaList = result[5];

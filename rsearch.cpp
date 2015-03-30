@@ -57,7 +57,7 @@ int main( int argc, char *argv[] ){
 		std::string xmlline;
 		std::ifstream refStream;
 		refStream.open(xmlREF.c_str());
-		if (!refStream.is_open()) throw Exception("(MAIN:T1) Cannot open file: " + xmlREF);
+		if (!refStream.is_open()) throw cException("(MAIN:T1) Cannot open file: " + xmlREF);
 		while(getline(refStream, xmlline))
 			xmldata+= xmlline + "\n";
 
@@ -83,7 +83,7 @@ int main( int argc, char *argv[] ){
 		elapsedTime += (end_time.tv_usec - start_time.tv_usec) / 1000.0;
 		printf("[REF] -- Elapsed search time: %f\n", elapsedTime/1000.0);
 	}
-	catch(Exception e){
+	catch(cException e){
 		printf("%s", e.what());
 	}
 	catch(ArgException e){

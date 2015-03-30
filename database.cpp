@@ -58,7 +58,7 @@ bool Database::importDatabase(std::string path){
 	std::ifstream xmlfile;
 	xmlfile.open(path.c_str());
 	if (!xmlfile.is_open()) 
-		throw Exception("Database::importDatabase LINE: 54. Cannot open file");
+		throw cException("Database::importDatabase LINE: 54. Cannot open file");
 
 	//Read in contents in the XML File
 	std::string xmlstring = "";
@@ -76,16 +76,16 @@ bool Database::importDatabase(std::string path){
 
 	//Make sure Database doesn't have content TODO: Append database	
 	if(m_Database.size() != 0) 
-		throw Exception("(Database::importDatabase:T1) Attempting to overwrite an existing database");
+		throw cException("(Database::importDatabase:T1) Attempting to overwrite an existing database");
 
 	xml_node<>* rootNode= m_XML.first_node();
 	if(rootNode == NULL)
-		throw Exception("(Database::importDatabase:T2) Root node of XML is NULL");
+		throw cException("(Database::importDatabase:T2) Root node of XML is NULL");
 
 	//Make sure first node is DATABASE
 	std::string rootNodeName = rootNode->name();
 	if(rootNodeName != "DATABASE")
-		throw Exception("(Database::importDatabase:T3) No Database Node found");
+		throw cException("(Database::importDatabase:T3) No Database Node found");
 
 	xml_node<>* cktNode= rootNode->first_node();
 	//Look through the circuits in the Database
@@ -102,15 +102,15 @@ bool Database::importDatabase(std::string path){
 
 	//Integrity check to make sure all components in the database have the same subcomponent types
 	printf("[DB] -- Checking Database Integrity...");
-	std::map<std::string, Feature*> fp;
+	std::map<std::string, unsigned> fp;
 	m_Database[0]->getFingerprint(fp);
 
 	for(unsigned int i = 1; i < m_Database.size(); i++){
-		std::map<std::string, Feature*> fp2;
+		std::map<std::string, unsigned> fp2;
 		m_Database[i]->getFingerprint(fp2);
 
-		std::map<std::string, Feature*>::iterator iFP1;
-		std::map<std::string, Feature*>::iterator iFP2;
+		std::map<std::string, unsigned>::iterator iFP1;
+		std::map<std::string, unsigned>::iterator iFP2;
 		iFP2 = fp2.begin();
 		for(iFP1 = fp.begin(); iFP1 != fp.end(); iFP1++){
 			assert(iFP1->first == iFP2->first);
@@ -138,7 +138,7 @@ void Database::compareBirthmark(Birthmark* bm1, Birthmark* bm2){
 	bm2->getAlphaSequence(alpha2);
 	
 	
-	std::map<std::string, Feature*> feature1, feature2;       //Structural
+	std::map<std::string, unsigned> feature1, feature2;       //Structural
 	bm1->getFingerprint(feature1);
 	bm2->getFingerprint(feature2);
 
@@ -178,25 +178,12 @@ void Database::compareBirthmark(Birthmark* bm1, Birthmark* bm2){
 		//   STRUCTURAL SEQUENCE COMARPISON
 		//     Score is the total euclidean distance of all the features 
 		/////////////////////////////////////////////////////////////////////////////
-		std::map<std::string, Feature*>::iterator iFeat1;
-		std::map<std::string, Feature*>::iterator iFeat2;
 
 		double sScore= 0.0;
-		iFeat1 = feature1.begin();
-		for(iFeat2= feature2.begin(); iFeat2 != feature2.end(); iFeat2++){
-			assert(iFeat1->first == iFeat2->first);  //Make sure the types are the same
-			std::map<unsigned, unsigned> feat1;
-			iFeat1->second->getFeature(feat1);      //Load REF Feature
 
-			std::map<unsigned, unsigned> feat2;
-			iFeat2->second->getFeature(feat2);        //Load DB Feature
 
-			double tsim = SIMILARITY::euclidean(feat1, feat2);
+			double tsim = SIMILARITY::euclidean(feature1, feature2);
 			sScore += tsim;
-			//printf("  TYPE: %s\t SSCORE: %f\n", type.c_str(), tsim);
-
-			iFeat1++;
-		}
 		
 		printf("  * SSCORE: %f\n", sScore);
 
@@ -229,7 +216,7 @@ void Database::searchDatabase(Birthmark* reference){
 	reference->getMinSequence(minRef);
 	reference->getAlphaSequence(alphaRef);
 
-	std::map<std::string, Feature*> featureRef;       //Structural
+	std::map<std::string, unsigned> featureRef;       //Structural
 	reference->getFingerprint(featureRef);
 
 	std::vector<unsigned> constantRef;                //Constant
@@ -292,27 +279,12 @@ void Database::searchDatabase(Birthmark* reference){
 		//     Score is the total euclidean distance of all the features 
 		/////////////////////////////////////////////////////////////////////////////
 		//printf(" -- Comparing Structural Components...\n");
-		std::map<std::string, Feature*> featureDB;
-		std::map<std::string, Feature*>::iterator iFeatRef;
-		std::map<std::string, Feature*>::iterator iFeatDB;
+		std::map<std::string, unsigned> featureDB;
 		m_Database[i]->getFingerprint(featureDB);
 
 		double sScore= 0.0;
-		iFeatRef = featureRef.begin();
-		for(iFeatDB= featureDB.begin(); iFeatDB != featureDB.end(); iFeatDB++){
-			assert(iFeatRef->first == iFeatDB->first);  //Make sure the types are the same
-			std::map<unsigned, unsigned> featRef;
-			iFeatRef->second->getFeature(featRef);      //Load REF Feature
-
-			std::map<unsigned, unsigned> featDB;
-			iFeatDB->second->getFeature(featDB);        //Load DB Feature
-
-			double tsim = SIMILARITY::euclidean(featRef, featDB);
+			double tsim = SIMILARITY::euclidean(featureRef, featureDB);
 			sScore += tsim;
-			//printf("  TYPE: %s\t SSCORE: %f\n", type.c_str(), tsim);
-
-			iFeatRef++;
-		}
 
 		//Note: Don't care are features not accounted for in both since distance is 0
 		//printf("  * SSCORE: %f\n", sScore);
@@ -364,9 +336,9 @@ void Database::searchDatabase(Birthmark* reference){
 		printf("###############################################################\n");
 
 		//Weights
-		double fweight = 0.39;
+		double fweight = 0.49;
 		double sweight = 0.38;
-		double cweight = 0.23;
+		double cweight = 0.13;
 		//Need to normalize data
 		std::set<Score, setCompare> normalizedFinalScore;
 
@@ -396,6 +368,7 @@ void Database::searchDatabase(Birthmark* reference){
 			normalizedFinalScore.insert(sim);
 		}
 
+
 		int count = 1;
 		std::set<Score, setCompare>::iterator iSet;
 		for(iSet = normalizedFinalScore.begin(); iSet != normalizedFinalScore.end(); iSet++){
@@ -404,13 +377,14 @@ void Database::searchDatabase(Birthmark* reference){
 			if(count == 20) break;
 			count++;
 		}
+
+
 		printf("MAXF: %f\n", maxf);
 		printf("MINF: %f\n", minf);
 		printf("MAXS: %f\n", maxs);
 		printf("MINS: %f\n", mins);
 		printf("MAXC: %f\n", maxc);
 		printf("MINC: %f\n", minc);
-
 	}
 }
 
@@ -438,7 +412,7 @@ void Database::autoCorrelate(){
 		m_Database[k]->getMinSequence(minRef);
 		m_Database[k]->getAlphaSequence(alphaRef);
 
-		std::map<std::string, Feature*> featureRef;       //Structural
+		std::map<std::string, unsigned> featureRef;       //Structural
 		m_Database[k]->getFingerprint(featureRef);
 
 		std::vector<unsigned> constantRef;                //Constant
@@ -501,27 +475,15 @@ void Database::autoCorrelate(){
 			//     Score is the total euclidean distance of all the features 
 			/////////////////////////////////////////////////////////////////////////////
 			//printf(" -- Comparing Structural Components...\n");
-			std::map<std::string, Feature*> featureDB;
-			std::map<std::string, Feature*>::iterator iFeatRef;
-			std::map<std::string, Feature*>::iterator iFeatDB;
+			std::map<std::string, unsigned> featureDB;
 			m_Database[i]->getFingerprint(featureDB);
 
 			double sScore= 0.0;
-			iFeatRef = featureRef.begin();
-			for(iFeatDB= featureDB.begin(); iFeatDB != featureDB.end(); iFeatDB++){
-				assert(iFeatRef->first == iFeatDB->first);  //Make sure the types are the same
-				std::map<unsigned, unsigned> featRef;
-				iFeatRef->second->getFeature(featRef);      //Load REF Feature
 
-				std::map<unsigned, unsigned> featDB;
-				iFeatDB->second->getFeature(featDB);        //Load DB Feature
-
-				double tsim = SIMILARITY::euclidean(featRef, featDB);
+				double tsim = SIMILARITY::euclidean(featureRef, featureDB);
 				sScore += tsim;
 				//printf("  TYPE: %s\t SSCORE: %f\n", type.c_str(), tsim);
 
-				iFeatRef++;
-			}
 
 			//Note: Don't care are features not accounted for in both since distance is 0
 			//printf("  * SSCORE: %f\n", sScore);

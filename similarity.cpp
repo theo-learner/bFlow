@@ -13,28 +13,20 @@
  * euclidean
  *  Finds the euclidean distance
  */
-double SIMILARITY::euclidean(std::map<unsigned, unsigned>& data1, std::map<unsigned,unsigned>& data2){
-	std::map<unsigned, unsigned>::iterator iMap;
-	std::map<unsigned, unsigned>::iterator iMap2;
-	std::map<unsigned, unsigned>::iterator iTemp;
-	std::map<unsigned, unsigned>::iterator iMapF;
-	std::set<unsigned> marked1;
-	std::set<unsigned> marked2;
+double SIMILARITY::euclidean(std::map<std::string, unsigned>& data1, std::map<std::string,unsigned>& data2){
+	std::map<std::string, unsigned>::iterator iMap;
+	std::map<std::string, unsigned>::iterator iMap2;
 
 	double sum = 0.0;
+	iMap2 = data2.begin();
 	for(iMap = data1.begin(); iMap != data1.end(); iMap++){
-		iTemp = data2.find(iMap->first);	
-		if(iTemp != data2.end())
-			sum += (double)((iTemp->second - iMap->second)*(iTemp->second - iMap->second));
-		else
-			sum += (double)(iMap->second* iMap->second);
+		if(iMap2->first == iMap2->first){
+			sum += (double)((iMap->second- iMap2->second)*(iMap->second-iMap2->second));
+			iMap2++;
+		}
+		else throw cException("(SIMILARITY::euclidean) FP Type name doesn't match");
 	}
 	
-	for(iMap = data2.begin(); iMap != data2.end(); iMap++){
-		iTemp = data1.find(iMap->first);	
-		if(iTemp == data1.end())
-			sum += (double)(iMap->second* iMap->second);
-	}
 
 	return sqrt(sum);
 }
@@ -147,7 +139,7 @@ int SIMILARITY::align(std::list<std::string>& ref, std::list<std::string>& db, b
 			assignSource(row(s_Align, 1), seq2);
 			
 			//Alignment of the sequence
-			int score = localAlignment(s_Align, s_Score);
+			int score = globalAlignment(s_Align, s_Score);
 			if(output) printAlignment();
 
 			//Calcuate the difference in the size ratios

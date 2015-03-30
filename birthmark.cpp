@@ -29,9 +29,6 @@ Birthmark::Birthmark(xml_node<>* cktNode){
  * Destructor 
  */
 Birthmark::~Birthmark(){
-	std::map<std::string, Feature*>::iterator it;
-	for(it = m_Fingerprint.begin(); it != m_Fingerprint.end(); it++)
-		delete it->second;
 }
 
 
@@ -49,29 +46,29 @@ Birthmark::~Birthmark(){
  */
 bool Birthmark::importXML(xml_node<>* cktNode){
 		if(cktNode== NULL)
-			throw Exception("(Birthmark::importXML:T15) cktNode is NULL") ;
+			throw cException("(Birthmark::importXML:T15) cktNode is NULL") ;
 		std::string cktNodeName = cktNode->name();
-		if(cktNodeName!= "CIRCUIT") throw Exception("(Birthmark::importXML:T1) Tag not found") ;
+		if(cktNodeName!= "CIRCUIT") throw cException("(Birthmark::importXML:T1) Tag not found") ;
 
 		std::string cktName = "===";  
 		int id = -2;
 
 		//Get the name and ID of the circuit (Variable Order) 
 		xml_attribute<>* cktAttr = cktNode->first_attribute();
-		if(cktAttr == NULL) throw Exception("(Birthmark::importXML:T2) No Attributes found") ;
+		if(cktAttr == NULL) throw cException("(Birthmark::importXML:T2) No Attributes found") ;
 		std::string cktAttrName = cktAttr->name();
 		if(cktAttrName == "name") cktName = cktAttr->value(); 
 		else if(cktAttrName == "id") id = s2i::string2int(cktAttr->value()); 
-		else throw Exception("(Birthmark::importXML:T3) Unexpected Attribute Tag Found") ;
+		else throw cException("(Birthmark::importXML:T3) Unexpected Attribute Tag Found") ;
 
 		cktAttr = cktAttr->next_attribute();
-		if(cktAttr == NULL) throw Exception("(Birthmark::importXML:T4) No Attributes found") ;
+		if(cktAttr == NULL) throw cException("(Birthmark::importXML:T4) No Attributes found") ;
 		cktAttrName = cktAttr->name();
 		if(cktAttrName == "name") cktName = cktAttr->value(); 
 		else if(cktAttrName == "id") id = s2i::string2int(cktAttr->value()); 
-		else throw Exception("(Birthmark::importXML:T5) Unexpected Attribute Tag Found") ;
+		else throw cException("(Birthmark::importXML:T5) Unexpected Attribute Tag Found") ;
 
-		if(id < -1 || cktName == "===") throw Exception("(Birthmark::importXML:T6) Attribute Error") ;
+		if(id < -1 || cktName == "===") throw cException("(Birthmark::importXML:T6) Attribute Error") ;
 
 		//Set the ID and Name of the circuit
 		setID(id);
@@ -100,45 +97,18 @@ bool Birthmark::importXML(xml_node<>* cktNode){
 
 				//Get the name and ID of the circuit 
 				xml_attribute<>* fpAttr = featureNode->first_attribute();
-				if(fpAttr == NULL) throw Exception("(Birthmark::importXML:T7) No FP attribute found") ;
+				if(fpAttr == NULL) throw cException("(Birthmark::importXML:T7) No FP attribute found") ;
 				std::string fAttrName= fpAttr->name();
 				std::string featureName;
-				if(fAttrName == "type") featureName = fpAttr->value(); 
-
-				//########################################################
-				xml_node<>* attrNode =  featureNode->first_node();
-				if(attrNode == NULL) addFingerprint(featureName, new Feature());
-
-				//Store the attribute of each fingerprint 
-				while (attrNode!= NULL){
-					int size = -2;
-					int count = -2;
-
-					//Read in size and count (Variable ordering)
-					xml_attribute<>* attrAttr = attrNode->first_attribute();
-					if(attrAttr == NULL) throw Exception("(Birthmark::importXML:T8) No FP Attribute Found") ;
-					std::string attrAttrName = attrAttr->name();
-					if(attrAttrName == "size") size = s2i::string2int(attrAttr->value());
-					else if(attrAttrName == "count") count= s2i::string2int(attrAttr->value());
-					else throw Exception("(Birthmark::importXML:T9) Unexpected FP Attribute") ;
-
-					attrAttr = attrAttr->next_attribute();
-					if(attrAttr == NULL) throw Exception("(Birthmark::importXML:T10) No FP Attribute Found") ;
-					attrAttrName = attrAttr->name();
-					if(attrAttrName == "size") size = s2i::string2int(attrAttr->value());
-					else if(attrAttrName == "count") count = s2i::string2int(attrAttr->value());
-					else throw Exception("(Birthmark::importXML:T11) Unexpected FP Attribute") ;
-
-					if(size == -2 || count == -2) throw Exception("(Birthmark::importXML:T12) Attribute was not set") ;
-
+				if(fAttrName == "type") {
+					featureName = fpAttr->value(); 
 					//Store the attribute into the fingerprint;
-					addFingerprint(featureName, size, count);
-					attrNode = attrNode->next_sibling();
+					addFingerprint(featureName, (unsigned)s2i::string2int(featureNode->value()));
 				}
 				//########################################################
 
 			}
-			else throw Exception("(Birthmark::importXML:T12) Unknown tag found in XML: " + featureNodeName);
+			else throw cException("(Birthmark::importXML:T12) Unknown tag found in XML: " + featureNodeName);
 
 
 			featureNode= featureNode->next_sibling(); 
@@ -192,7 +162,7 @@ void Birthmark::getConstants(std::set<int>& rVal){
  * getFingerprint
  *  Returns fingerprint 
  */
-void Birthmark::getFingerprint(std::map<std::string, Feature*>& rVal){
+void Birthmark::getFingerprint(std::map<std::string, unsigned>& rVal){
 	rVal = m_Fingerprint;
 }
 
@@ -356,7 +326,7 @@ void Birthmark::setConstants(std::set<int>& val){
  * setFingerprint 
  *  Sets the structural fingerprint of the birthmark
  */
-void Birthmark::setFingerprint(std::map<std::string , Feature* >& val){
+void Birthmark::setFingerprint(std::map<std::string , unsigned >& val){
 	m_Fingerprint = val;
 }
 
@@ -429,7 +399,7 @@ void Birthmark::addConstant(int constant){
  * addFingerprint
  *  Adds a feature into the fingerprint 
  */
-void Birthmark::addFingerprint(std::string featureName, Feature* feature){
+void Birthmark::addFingerprint(std::string featureName, unsigned feature){
 	m_Fingerprint[featureName] = feature;
 }
 
@@ -438,14 +408,6 @@ void Birthmark::addFingerprint(std::string featureName, Feature* feature){
  *  Constructs a new feature and adds it into the fingerprint list 
  */
 void Birthmark::addFingerprint(std::string featureName, unsigned size, unsigned count){
-	std::map<std::string, Feature*>::iterator it;
-	it = m_Fingerprint.find(featureName);
-	if(it == m_Fingerprint.end()){
-		Feature* feature = new Feature(size, count);
-		m_Fingerprint[featureName] = feature;	
-	}
-	else
-		it->second->addEntry(size, count);
 }
 
 
@@ -484,11 +446,11 @@ void Birthmark::print(){
 		printf("%d ", *iSet);
 	
 	//Print the structural
-	std::map<std::string, Feature*>::iterator iFP;
+	std::map<std::string, unsigned>::iterator iFP;
 	printf("\nFingerprint:\n");
 	for(iFP = m_Fingerprint.begin(); iFP != m_Fingerprint.end(); iFP++){
-		printf("TYPE: %s\t", iFP->first.c_str());
-		iFP->second->print(); 
+		printf("TYPE: %s\tVAL: %u\n", iFP->first.c_str(), iFP->second);
+
 		printf("\n");
 	}
 	printf("---------------------------------------------------------------\n"); 

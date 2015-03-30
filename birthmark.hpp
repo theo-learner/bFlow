@@ -45,7 +45,7 @@ class Birthmark{
 
 		//STRUCTURAL
 		//Name of feature, map of the size of feature : Num of occurance
-		std::map<std::string, Feature*> m_Fingerprint; //Fingerprint of circuit
+		std::map<std::string, unsigned> m_Fingerprint; //Fingerprint of circuit
 
 	public:
 		Birthmark();
@@ -57,7 +57,7 @@ class Birthmark{
 		void getAlphaSequence(std::list<std::string>&);
 		void getConstants(std::set<int>&);
 		void getBinnedConstants(std::vector<unsigned>&);         //Bins the constants into a histogram
-		void getFingerprint(std::map<std::string, Feature*> &);
+		void getFingerprint(std::map<std::string, unsigned> &);
 		double getAvgSequenceLength();                           //Gets AVG SEQ LEN of all SEQ
 		std::string getName();
 		int getID();
@@ -68,7 +68,7 @@ class Birthmark{
 		void setMinSequence(std::list<std::string>&);
 		void setAlphaSequence(std::list<std::string>&);
 		void setConstants(std::set<int>&);
-		void setFingerprint(std::map<std::string, Feature*> &);
+		void setFingerprint(std::map<std::string, unsigned> &);
 		void setName(std::string);
 		void setID(int);
 		void setStatstr(std::string);
@@ -77,7 +77,7 @@ class Birthmark{
 		void addMinSequence(std::string);
 		void addAlphaSequence(std::string);
 		void addConstant(int);
-		void addFingerprint(std::string, Feature*);
+		void addFingerprint(std::string, unsigned);
 		void addFingerprint(std::string, unsigned , unsigned);
 		
 		bool importXML(rapidxml::xml_node<>*);

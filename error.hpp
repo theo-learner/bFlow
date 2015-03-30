@@ -18,12 +18,12 @@
  * Exception 
  *  Generic exception handler for all exception 
  */
-class Exception: public std::exception{
+class cException: public std::exception{
 	public:
-		Exception(
+		cException(
 				std::string m="Exception!!") : 
 			msg("\n[ERROR] - " + m + "\n\n") {}
-		~Exception() throw() {}
+		~cException() throw() {}
 		const char* what() const throw() { 
 			return msg.c_str(); 
 		}

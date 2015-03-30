@@ -26,6 +26,7 @@
 #include "libs/seqan/basic.h"
 #include "libs/seqan/score.h"
 #include "libs/seqan/stream.h"
+#include "error.hpp"
 
 
 /**
@@ -35,7 +36,7 @@
  */
 namespace SIMILARITY{
 	//Euclidean
-	double euclidean(std::map<unsigned, unsigned>& , std::map<unsigned,unsigned>& );
+	double euclidean(std::map<std::string, unsigned>& , std::map<std::string,unsigned>& );
 	double euclidean(std::vector<unsigned>& , std::vector<unsigned>& );
 
 	//Cosine Similarity
