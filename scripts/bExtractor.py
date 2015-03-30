@@ -549,15 +549,12 @@ class BirthmarkExtractor(object):
 		maxNumAlpha = 0;
 		pathHistory = [];
 
+		inAll = self.constantList + self.inNodeList;
+
 		for out in self.outNodeList:
 			count = 0;
 
-			cmarked = set()
-			self.faninCone(out, cmarked)
-			intoFF = [i for i in self.constantList if i in cmarked ]
-			count = len(intoFF)
-
-			for inNode in self.inNodeList:
+			for inNode in inAll:
 				marked = set();
 				path= [];
 				simpPath= [];
@@ -566,8 +563,9 @@ class BirthmarkExtractor(object):
 				swAlpha = [];
 
 				length = self.findPath(inNode, out, marked, path, simpPath, pathSequence,  [0,sys.maxint,0, 0], pathList, swAlpha);
-				if(0 in length):
+				if(0 in length[0:2]):
 					continue;
+				
 				
 				#Extract the sequence representation, make sure to ignore representations that is already in maxList
 				#print " -- Extracting Sequence"
@@ -603,6 +601,7 @@ class BirthmarkExtractor(object):
 				
 			#Number of inputs the output depends on;
 			self.fpDict["outC"][count] = self.fpDict["outC"].get(count, 0) + 1;
+			
 
 	
 		# Extract the sequence 

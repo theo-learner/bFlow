@@ -931,6 +931,23 @@ namespace seqan {
 		};
 
 	struct CircuitScoringMatrix{};
+			/*
+			return 'N' = WIRE;
+			return 'M' = MUX
+			return 'F' = MUX
+			return 'A' = ADD
+			return 'L' = Logic
+			return 'E' = eq
+			return 'C' = comparator
+			return 'S' = shifter
+			return 'X' = mult
+			return 'D' = div
+			return 'R' = memory/ram
+			return 'W' = macc
+			return 'U' = alu
+			return 'H' = aritmetics
+			return 'T' = LUT
+			return 'B' = blackboxx*/
 
 	char const CircuitGapPenaltyMatrix[256] =
 	{
@@ -939,13 +956,13 @@ namespace seqan {
 		0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, //2 
 		0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, //3 
 		0, -4,-15, -1, -6, -1, -1,  0,-15,  0,  0,  0,  0, -1,  0,  0, //4 
-		//   ,  A,  B,  C,  D,  E,  F,  G,  H,  I,  J,  K,  L,  M,  N,  O,
-		0,  0, -4, -1,-15,-15,  0, -10, -6,  0,  0,  0,  0,  0,  0,  0, //5 
-		//  P,  Q,  R,  S,  T,  U,  V,  W,  X,  Y,  Z,   ,   ,   ,   ,   ,
+    //   ,  A,  B,  C,  D,  E,  F,  G,  H,  I,  J,  K,  L,  M,  N,  O,
+		0,  0, -4, -3,-15,-15,  0, -10, -6,  0,  0,  0,  0,  0,  0,  0, //5 
+	//  P,  Q,  R,  S,  T,  U,  V,  W,  X,  Y,  Z,   ,   ,   ,   ,   ,
 		0, -4,-15, -1, -6, -1, -1,  0,-15,  0,  0,  0,  0, -1,  0,  0, //10 
-		//   ,  a,  b,  c,  d,  e,  f,  g,  h,  i,  j,  k,  l,  m,  n,  o,
+	//   ,  a,  b,  3,  d,  e,  f,  g,  h,  i,  j,  k,  l,  m,  n,  o,
 		0,  0, -4, -1,-15,-15,  0, -10, -6,  0,  0,  0,  0,  0,  0,  0, //7 
-		//  p,  q,  r,  s,  t,  u,  v,  w,  x,  y,  z,   ,   ,   ,   ,   ,
+	//  p,  q,  r,  s,  t,  u,  v,  w,  x,  y,  z,   ,   ,   ,   ,   ,
 		0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, //8 
 		0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, //9 
 		0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, //15

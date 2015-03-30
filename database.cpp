@@ -373,8 +373,11 @@ void Database::searchDatabase(Birthmark* reference){
 		for(unsigned int i = 0; i < fs.size(); i++){
 			//Normalization of the scores to the range of 0-1
 			double newScoref = (double)(fs[i].score - minf) / (double)(maxf-minf);  
-			double newScores = (double)(ss[i].score - mins) / (double)(maxs-mins);
-			double newScorec = (double)(cs[i].score - minc) / (double)(maxc-minc);
+			//double newScores = (double)(ss[i].score - mins) / (double)(maxs-mins);
+			//double newScorec = (double)(cs[i].score - minc) / (double)(maxc-minc);
+			double newScores = (double)(log(ss[i].score+1) - log(mins+1)) / (double)(log(maxs+1)-log(mins+1));
+			double newScorec = (double)(log(cs[i].score+1) - log(minc+1)) / (double)(log(maxc+1)-log(minc+1));
+
 
 			double newScore = newScoref * fweight * 100.0 + 
 				(1 - newScores) * sweight * 100.0 +      //1 is dissimilar. Need to switch
@@ -384,17 +387,29 @@ void Database::searchDatabase(Birthmark* reference){
 			sim.id = fs[i].id;
 			sim.name = fs[i].name;
 			sim.score = newScore;
+			sim.f = fs[i].score;
+			sim.c = cs[i].score;
+			sim.s = ss[i].score;
+			sim.nf = newScoref;
+			sim.nc = newScorec;
+			sim.ns = newScores;
 			normalizedFinalScore.insert(sim);
 		}
 
 		int count = 1;
 		std::set<Score, setCompare>::iterator iSet;
 		for(iSet = normalizedFinalScore.begin(); iSet != normalizedFinalScore.end(); iSet++){
-			printf("RANK: %2d  SCORE: %6.2f   CKT:%s\n", count, iSet->score, iSet->name.c_str());
+			printf("R: %2d  S: %6.2f   F: %6.2f   S: %6.2f C: %6.2f NF:%6.2f NS:%6.2f NC:%6.2f\t\tCKT:%s\n", count, iSet->score,  iSet->f, iSet->s, iSet->c, iSet->nf, 1-iSet->ns, 1-iSet->nc, iSet->name.c_str());
 			//printf(" %2d & %6.2f & %s\n", count, iSet->score, iSet->name.c_str()); //latex table
 			if(count == 20) break;
 			count++;
 		}
+		printf("MAXF: %f\n", maxf);
+		printf("MINF: %f\n", minf);
+		printf("MAXS: %f\n", maxs);
+		printf("MINS: %f\n", mins);
+		printf("MAXC: %f\n", maxc);
+		printf("MINC: %f\n", minc);
 
 	}
 }

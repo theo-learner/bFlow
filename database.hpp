@@ -34,6 +34,12 @@
  */
 struct Score{
 	double score;
+	double f;
+	double s;
+	double c;
+	double nf;
+	double ns;
+	double nc;
 	unsigned id;
 	std::string name;
 };
