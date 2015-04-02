@@ -91,8 +91,11 @@ bool Birthmark::importXML(xml_node<>* cktNode){
 				addAlphaSequence(featureNode->value());
 			else if(featureNodeName == "CONSTANT")
 				addConstant(s2i::string2int(featureNode->value()));
-			else if(featureNodeName == "STAT")
-				setStatstr(featureNode->value());
+			else if(featureNodeName == "STAT"){
+				std::string statstr = featureNode->value();
+				if(m_StatstrV.size() != 0) throw cException("(Birthmark::importXML:T8) Stat vector size is not empty") ;
+				strtk::parse(statstr, ",", m_StatstrV);
+			}
 			else if(featureNodeName == "FP"){
 
 				//Get the name and ID of the circuit 
@@ -198,6 +201,13 @@ std::string Birthmark::getStatstr(){
 	return m_Statstr;
 }
 
+/**
+ * getStat
+ *  Returns the statistics vector 
+ */
+void Birthmark::getStat(std::vector<int>& rVal){
+	rVal = m_StatstrV;
+}
 
 /**
  * getAvgSequenceLength

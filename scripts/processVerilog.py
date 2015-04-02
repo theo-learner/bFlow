@@ -30,7 +30,6 @@ def main():
 
 		
 		vfile = sys.argv[1];
-		fileName = yosys.getFileData(vfile);
 
 		#Preprocess yosys script
 		(scriptName, dotFiles, top) = generateYosysScript(vfile);

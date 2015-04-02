@@ -38,6 +38,7 @@ namespace SIMILARITY{
 	//Euclidean
 	double euclidean(std::map<std::string, unsigned>& , std::map<std::string,unsigned>& );
 	double euclidean(std::vector<unsigned>& , std::vector<unsigned>& );
+	double euclidean(std::vector<int>& , std::vector<int>& );
 
 	//Cosine Similarity
 	double cosine(std::map<unsigned, unsigned>& , std::map<unsigned,unsigned>& );

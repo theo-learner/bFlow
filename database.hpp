@@ -40,6 +40,7 @@ struct Score{
 	double nf;
 	double ns;
 	double nc;
+	double stat;
 	unsigned id;
 	std::string name;
 };

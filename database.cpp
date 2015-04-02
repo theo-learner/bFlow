@@ -222,6 +222,9 @@ void Database::searchDatabase(Birthmark* reference){
 	std::vector<unsigned> constantRef;                //Constant
 	reference->getBinnedConstants(constantRef);
 
+	std::vector<int> statRef;						  //Stat
+	reference->getStat(statRef);
+
 	std::vector<Score> fs;
 	std::vector<Score> ss;
 	std::vector<Score> cs;
@@ -235,6 +238,8 @@ void Database::searchDatabase(Birthmark* reference){
 	double mins = 10000000000.0;
 	double maxc = 0.0;
 	double minc = 10000000000.0;
+	double maxst = 0.0;
+	double minst = 10000000000.0;
 
 	for(unsigned int i = 0; i < m_Database.size(); i++) {
 		//printf("###########################################################################################################\n");
@@ -303,16 +308,25 @@ void Database::searchDatabase(Birthmark* reference){
 		std::vector<unsigned> constantDB;
 		m_Database[i]->getBinnedConstants(constantDB);
 		double cScore = SIMILARITY::euclidean(constantRef, constantDB);
-
 		//printf("  * CSCORE: %f\n", cScore);
 		if(cScore > maxc)    maxc = cScore;
 		if(cScore < minc)    minc = cScore;
+		
+
+		std::vector<int> statDB;						  //Stat
+		m_Database[i]->getStat(statDB);
+		double stScore = SIMILARITY::euclidean(statDB, statRef);
+
+		//printf("  * CSCORE: %f\n", cScore);
+		if(stScore > maxst)    maxst = stScore;
+		if(stScore < minst)    minst = stScore;
 
 
 		Score scoref;
 		scoref.id = m_Database[i]->getID();
 		scoref.name = m_Database[i]->getName();
 		scoref.score = fScore;
+		scoref.stat = stScore;
 
 		Score scores;
 		scores.id = m_Database[i]->getID();
@@ -336,8 +350,9 @@ void Database::searchDatabase(Birthmark* reference){
 		printf("###############################################################\n");
 
 		//Weights
-		double fweight = 0.49;
-		double sweight = 0.38;
+		double fweight = 0.40;
+		double sweight = 0.28;
+		double stweight = 0.19;
 		double cweight = 0.13;
 		//Need to normalize data
 		std::set<Score, setCompare> normalizedFinalScore;
@@ -349,11 +364,14 @@ void Database::searchDatabase(Birthmark* reference){
 			//double newScorec = (double)(cs[i].score - minc) / (double)(maxc-minc);
 			double newScores = (double)(log(ss[i].score+1) - log(mins+1)) / (double)(log(maxs+1)-log(mins+1));
 			double newScorec = (double)(log(cs[i].score+1) - log(minc+1)) / (double)(log(maxc+1)-log(minc+1));
+			
+			double newScorest = (double)(log(fs[i].stat+1)- log(minst+1)) / (double)(log(maxst+1)-log(minst+1));  
 
 
 			double newScore = newScoref * fweight * 100.0 + 
 				(1 - newScores) * sweight * 100.0 +      //1 is dissimilar. Need to switch
-				(1 - newScorec) * cweight * 100.0;
+				(1 - newScorec) * cweight * 100.0 +
+				(1 - newScorest) * stweight * 100.0;
 
 			Score sim;
 			sim.id = fs[i].id;
@@ -365,6 +383,7 @@ void Database::searchDatabase(Birthmark* reference){
 			sim.nf = newScoref;
 			sim.nc = newScorec;
 			sim.ns = newScores;
+			sim.stat = newScorest;
 			normalizedFinalScore.insert(sim);
 		}
 
@@ -372,7 +391,7 @@ void Database::searchDatabase(Birthmark* reference){
 		int count = 1;
 		std::set<Score, setCompare>::iterator iSet;
 		for(iSet = normalizedFinalScore.begin(); iSet != normalizedFinalScore.end(); iSet++){
-			printf("R: %2d  S: %6.2f   F: %6.2f   S: %6.2f C: %6.2f NF:%6.2f NS:%6.2f NC:%6.2f\t\tCKT:%s\n", count, iSet->score,  iSet->f, iSet->s, iSet->c, iSet->nf, 1-iSet->ns, 1-iSet->nc, iSet->name.c_str());
+			printf("R: %2d  S:%6.2f   F:%6.2f   S:%6.2f C:%5.2f  NF:%5.2f  NS:%5.2f  NC:%5.2f  STAT: %6.2f\t\tCKT:%s\n", count, iSet->score,  iSet->f, iSet->s, iSet->c, iSet->nf, 1-iSet->ns, 1-iSet->nc, iSet->stat, iSet->name.c_str());
 			//printf(" %2d & %6.2f & %s\n", count, iSet->score, iSet->name.c_str()); //latex table
 			if(count == 20) break;
 			count++;

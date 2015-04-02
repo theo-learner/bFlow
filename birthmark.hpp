@@ -24,6 +24,7 @@
 
 #include "libs/rapidxml/rapidxml.hpp"
 #include "libs/rapidxml/rapidxml_print.hpp"
+#include "libs/strtk/strtk.hpp"
 
 class Birthmark{
 	private: 
@@ -42,6 +43,7 @@ class Birthmark{
 
 		//STAT
 		std::string m_Statstr;
+		std::vector<int> m_StatstrV;
 
 		//STRUCTURAL
 		//Name of feature, map of the size of feature : Num of occurance
@@ -56,6 +58,7 @@ class Birthmark{
 		void getMinSequence(std::list<std::string>&);
 		void getAlphaSequence(std::list<std::string>&);
 		void getConstants(std::set<int>&);
+		void getStat(std::vector<int>&);
 		void getBinnedConstants(std::vector<unsigned>&);         //Bins the constants into a histogram
 		void getFingerprint(std::map<std::string, unsigned> &);
 		double getAvgSequenceLength();                           //Gets AVG SEQ LEN of all SEQ

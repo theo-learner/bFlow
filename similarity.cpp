@@ -14,6 +14,7 @@
  *  Finds the euclidean distance
  */
 double SIMILARITY::euclidean(std::map<std::string, unsigned>& data1, std::map<std::string,unsigned>& data2){
+	assert(data1.size() == data2.size());
 	std::map<std::string, unsigned>::iterator iMap;
 	std::map<std::string, unsigned>::iterator iMap2;
 
@@ -41,9 +42,35 @@ double SIMILARITY::euclidean(std::vector<unsigned>& data1, std::vector<unsigned>
 	double sum = 0.0;
 	for(unsigned int i =  0; i < data1.size(); i++)
 		sum += (double)((data1[i]- data2[i])*(data1[i]- data2[i]));
+
+	return sqrt(sum);
+}
+
+/**
+ * euclidean
+ *  Finds the euclidean distance
+ */
+double SIMILARITY::euclidean(std::vector<int>& data1, std::vector<int>& data2){
+	unsigned int smallSize;  
+	if(data1.size() < data2.size())
+		smallSize = data1.size();
+	else smallSize = data2.size();
+
+	double sum = 0.0;
+	for(unsigned int i =  0; i < smallSize; i++)
+		sum += (double)((data1[i]- data2[i])*(data1[i]- data2[i]));
+
+	
+	if(data1.size() < data2.size())
+		for(unsigned int i =  smallSize; i < data2.size(); i++)
+			sum += (double)(data2[i] * data2[i]);
+	else
+		for(unsigned int i =  smallSize; i < data1.size(); i++)
+			sum += (double)(data1[i] * data1[i]);
 	
 	return sqrt(sum);
 }
+
 
 
 /**

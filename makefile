@@ -14,7 +14,7 @@ OBJS = \
 
 OBJSERVER = \
 	database.o \
-	birthmark.o \
+	birthmark2.o \
 	feature.o \
 	similarity.o \
 	print.o \
@@ -23,11 +23,15 @@ OBJSERVER = \
 
 OBJREF= \
 	database.o \
-	birthmark.o \
+	birthmark2.o \
 	feature.o \
 	similarity.o \
 	print.o \
 	$
+
+DOTDIR:= dot/
+DATADIR:= dot/
+
 
 all: bench_matlab rsearch bench_db cserver compareAST
 
@@ -39,8 +43,8 @@ bench_matlab: $(OBJREF) bench_matlab.o
 autocor: $(OBJS) autocor.o 
 	$(CXX) $(OBJS) autocor.o -o autocor 
 
-rsearch: $(OBJREF) rsearch.o 
-	$(CXX) $(OBJREF) rsearch.o -o rsearch
+rsearch: $(OBJREF) rsearch.o
+	$(CXX) $(OBJREF)  rsearch.o -o rsearch 
 
 compareAST: $(OBJREF) compareAST.o 
 	$(CXX) $(OBJREF) compareAST.o -o compareAST
@@ -52,16 +56,18 @@ mainopt: $(OBJS) swparam_opt.o
 	$(CXX) $(OBJS) swparam_opt.o -o opt_sswparam 
 
 cserver:  $(OBJSERVER) cserver.o
-	$(CXX) -o cserver $(OBJSERVER) cserver.o 
+	$(CXX)  -o cserver $(OBJSERVER) cserver.o 
 	
 
 %.o: %.cpp 
 	$(CXX) $(CFLAGS) -c -o $@ $< -Ilibs/
 
 
+birthmark2.o: birthmark.cpp 
+	$(CXX) $(CFLAGS) -c -O1 -o birthmark2.o birthmark.cpp -Ilibs/
 
 clean: 
-	rm -v *.o hbflow cserver rsearch bench_db bench_matlab compareAST
+	rm -vf *.o hbflow cserver rsearch bench_db bench_matlab compareAST
 
 cleanall: 
-	rm -v *.o hbflow cserver rsearch bench_db bench_matlab compareAST scripts/*.pyc  data/*.csv data/*.dat data/*.log db/*.xml data/yoscript
+	rm -vf *.o hbflow cserver rsearch bench_db bench_matlab compareAST scripts/*.pyc  data/*.csv data/*.dat data/*.log db/*.xml data/yoscript
