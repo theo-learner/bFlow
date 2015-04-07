@@ -232,7 +232,7 @@ class BirthmarkExtractor(object):
 		'''
 		#print "Checking node: " + node + ". DST: " + dst
 		if node == dst:
-			#print " * Node is dst!"
+			print " * Node is dst!"
 			newLen = len(path) + 1;
 
 			#Max
@@ -596,7 +596,7 @@ class BirthmarkExtractor(object):
 			for inNode in self.inNodeList:
 				marked = set();
 				path= [];
-				simpPath= [];
+				simpPath= [inNode];
 				pathSequence= [];
 				pathList= [[],[],[]];
 				swAlpha = [];
@@ -611,6 +611,9 @@ class BirthmarkExtractor(object):
 				swMax = self.extractSWStringList(pathList[0], self.maxList);
 				swMin = self.extractSWStringList(pathList[1], self.minList);
 				swAlpha = self.extractSWStringList(pathList[2], self.alphaList);
+				print pathList[0];
+				print pathList[1];
+				print pathList[2];
 
 				#print " -- Finding Entropy"
 				#Find the sequences with the highest entropy
