@@ -232,7 +232,7 @@ class BirthmarkExtractor(object):
 		'''
 		#print "Checking node: " + node + ". DST: " + dst
 		if node == dst:
-			print " * Node is dst!"
+			#print " * Node is dst!"
 			newLen = len(path) + 1;
 
 			#Max
@@ -554,7 +554,7 @@ class BirthmarkExtractor(object):
 
 		slist = [repr(freq) for freq in nx.degree_histogram(self.dfg)];
 		s = ",".join(slist)
-		self.statstr = "%s,%s" % (self.statstr, s);
+		self.statstr = "%s,%s," % (self.statstr, s);
 		#print "STAT: " + statstr
 
 
@@ -611,9 +611,6 @@ class BirthmarkExtractor(object):
 				swMax = self.extractSWStringList(pathList[0], self.maxList);
 				swMin = self.extractSWStringList(pathList[1], self.minList);
 				swAlpha = self.extractSWStringList(pathList[2], self.alphaList);
-				print pathList[0];
-				print pathList[1];
-				print pathList[2];
 
 				#print " -- Finding Entropy"
 				#Find the sequences with the highest entropy
@@ -651,20 +648,20 @@ class BirthmarkExtractor(object):
 		swMax = list(self.maxList);
 		swMax.sort(lambda x, y: -1*(cmp(self.Entropy(x), self.Entropy(y))));
 		self.maxList = swMax[0:3];
-		print "MAXLIST: " + repr(self.maxList);
+		#print "MAXLIST: " + repr(self.maxList);
 
 		#print "MINLIST: " + repr(self.minList);
 		swMin = list(self.minList);
 		swMin.sort(lambda x, y: -1*(cmp(self.Entropy(x), self.Entropy(y))));
 		self.minList = swMin[0:3];
-		print "MINLIST: " + repr(self.minList);
+		#print "MINLIST: " + repr(self.minList);
 		
 		#print "ALPHALIST: " + repr(self.alphaList);
 		self.alphaList= list(self.alphaList);
 		self.alphaList.sort(lambda x, y: -1*(cmp(self.Entropy(x), self.Entropy(y))));
 		self.alphaList = self.alphaList[0:3];
 
-		print "ALPHALIST: " + repr(self.alphaList);
+		#print "ALPHALIST: " + repr(self.alphaList);
 		
 
 
@@ -695,6 +692,7 @@ class BirthmarkExtractor(object):
 		print "[DFX] -- Extracting constant features..."
 
 		self.constSet = set();
+		self.constMap = dict();
 		constStr = "";
 		for constant in self.constantList:
 			cnstVal = self.labelAttr[constant];
@@ -702,9 +700,11 @@ class BirthmarkExtractor(object):
 			if(cnstVal == None):
 				cnstVal = self.labelAttr[constant];
 				cnstVal = cnstVal.replace("L","")
+
 				if(len(cnstVal) > 19):
 					cnstVal = "9999999999999999";
 				self.constSet.add(cnstVal);
+				self.constMap[cnstVal] = self.constMap.get(cnstVal,0) + 1;
 
 				if(cnstVal == "0"):
 					cnstVal = "-1"
@@ -712,6 +712,53 @@ class BirthmarkExtractor(object):
 
 			else:
 				cnstVal = cnstVal.group(1);
+
+			#########################################################
+				#Decompose the large constant for a pmux
+				psize = sys.maxint;
+				csize = 0;
+				succList = self.dfg.successors(constant);
+				for succ in succList:                         #Check if successor is PMUX
+					operation = self.labelAttr[succ];
+					if "pmux" in operation:
+						predList = self.dfg.predecessors(succ);
+						for pred in predList:                    #Find the size of the input
+							if pred != constant:
+								bitwidth = 0;
+								if (pred,succ) not in self.edgeAttr:
+									bitwidth= 1;
+								else:
+									label = self.edgeAttr[(pred,succ)];
+									label = re.search('<(.*)>', label);
+									bitwidth= int(label.group(1));
+								if bitwidth <psize:
+									psize = bitwidth;
+
+						if (constant,succ) not in self.edgeAttr:
+							csize = 1;
+						else:
+							label = self.edgeAttr[(constant,succ)];
+							label = re.search('<(.*)>', label);
+							csize = int(label.group(1));
+
+						if(psize == 0 or csize == 0):
+							print "NEED TO RETHINK METHODS!!!! PSIZE OR CSIZE IS ZERO!"
+							raise error.GenError("PMUX ERROR")
+						break;
+							
+				if(csize > psize):
+					if((csize % psize) == 0 and 'x' not in cnstVal):
+						start = 0;
+						while start < csize:
+							cnst = repr(int(cnstVal[start:start+psize], 2));
+							self.constMap[cnst] = self.constMap.get(cnstVal,0) + 1;
+							start = start + psize;
+
+						continue;
+			########################################################
+
+
+
 				if('x' in cnstVal):   #DON'T CARE
 					cnstVal = "-2";
 				elif('z' in cnstVal): #HIGH IMPEDANCE
@@ -721,6 +768,8 @@ class BirthmarkExtractor(object):
 					cnstVal.replace("L", "")
 					if(len(cnstVal) > 19):
 						cnstVal = "9999999999999999";
+				
+				self.constMap[cnstVal] = self.constMap.get(cnstVal,0) + 1;
 
 				self.constSet.add(cnstVal);
 
@@ -768,7 +817,7 @@ class BirthmarkExtractor(object):
 		self.statstr = "%s,%s" % (self.statstr, self.statstrf);
 
 
-		return (self.maxList, self.minList, self.constSet, self.fpDict, self.statstr, self.alphaList);
+		return (self.maxList, self.minList, self.constMap, self.fpDict, self.statstr, self.alphaList);
 
 
 
