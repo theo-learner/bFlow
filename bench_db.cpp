@@ -56,6 +56,9 @@ int main( int argc, char *argv[] ){
 
 
 		//Time how long it takes for each circuit in the database to complete a circuit across the database
+		std::ofstream fastaout;
+		fastaout.open("data/dataflow.fasta");
+
 		gettimeofday(&start_time, NULL);
 		printf("[BENCH_DB] -- Performing single pass through database vs database\n");
 		for(unsigned int i = 0; i < db->getSize(); i++){
@@ -68,6 +71,9 @@ int main( int argc, char *argv[] ){
 			elapsedTime += (end_search.tv_usec - start_search.tv_usec) / 1000.0;
 			ofs<<elapsedTime/1000<<"\n";
 			ofs2<<db->getBirthmark(i)->getAvgSequenceLength()<<"\n";
+
+			//Create a fasta format of the alpha sequences
+		  fastaout<<">"<<db->getBirthmark(i)->getName()<<"\n"<<db->getBirthmark(i)->getAlpha<<"\n";
 
 			printf("[BENCH_DB] --  * Elapsed search time: %f\n\n", elapsedTime/1000.0);
 		}
@@ -90,7 +96,7 @@ int main( int argc, char *argv[] ){
 
 		printf(" -- COMPLETE!\n");
 	}
-	catch(Exception e){
+	catch(cException e){
 		printf("%s", e.what());
 	}
 	catch(ArgException e){

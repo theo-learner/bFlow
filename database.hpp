@@ -37,6 +37,10 @@ struct Score{
 	double f;
 	double s;
 	double c;
+	double ksc;
+	double ksr;
+	double klc;
+	double klr;
 	double nf;
 	double ns;
 	double nc;
@@ -58,12 +62,37 @@ struct setCompare{
 
 
 
+/*
+struct sGram{
+	int count;
+
+	//std::map<std::string, sFileInfo> fileinfo;
+
+	std::vector<std::string> next_letter;
+	std::vector<int> letter_count;
+
+
+	//File name,  list of line numbers
+	std::map<std::string, std::vector<int> > filelinemap;
+
+};
+*/
+
+
+
+
 
 class Database{
 	private:
 		rapidxml::xml_document<> m_XML;
 		std::vector<Birthmark*> m_Database;
 		bool m_SuppressOutput;
+		std::string m_KVal;
+
+
+		//k-1 string....map of the count, and the last letter (last letter is the suggestion)
+		std::map<std::string, sGram> m_KGramList;
+		//std::map<std::string, int> m_KGramSet;
 
 	public:
 		Database();
@@ -71,12 +100,16 @@ class Database{
 		~Database();
 
 		bool importDatabase(std::string);   //PARAM: File Name
-	  void searchDatabase(Birthmark*);
+	  void searchDatabase(Birthmark*, std::string, bool printall = false);
 		void compareBirthmark(Birthmark*, Birthmark*);
+		bool isBirthmarkEqual(Birthmark*, Birthmark*);
 	  void autoCorrelate();
+
+		void processKGramDatabase();
 
 		Birthmark* getBirthmark(unsigned);
 		unsigned getSize();
+		std::string getKVal();
 		void suppressOutput();
 
 		void printXML();

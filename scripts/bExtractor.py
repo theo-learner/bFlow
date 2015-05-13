@@ -14,9 +14,11 @@ import error;
 import timeit
 import time;
 from collections import Counter
+from frozendict import FrozenDict 
 import collections
 import yosys;
 import math
+from sortedcontainers import SortedSet
 
 class BirthmarkExtractor(object):
 
@@ -64,10 +66,227 @@ class BirthmarkExtractor(object):
 		self.constantList= [];
 		self.outNodeList= [];
 		self.inNodeList= [];
+		self.cnodes = []
+		self.linenumber= dict()
 
 	
 	
+	def KGram2(self, k):
+		start_time = timeit.default_timer();
+		print " -- Extracting KGRAM k length from nodes"
+		self.kgramset= Counter();
+		self.kgramcounter= Counter();
+		self.kgramlist= Counter();
+		self.kgram= set();
+		self.kgramline = dict(); #tuple...list of list of line numbers associated with the tuple 
+
+		#self.kgramcountertuple= Counter();
+		self.k = k;
+
+		inputs = self.inNodeList + self.constantList
+
+		for c in self.cnodes:
+			print "\n\nChecking node: " + c
+			path = [];
+			self.markflag = 0;
+			marked = set();
+			self.findKGramPath(c ,  marked,  path );
+			#print
+			
+		#print self.kgram
+		for s in self.kgram:
+			slist = [self.extractSequenceLetter(n) for n in s]
+			#self.kgramline[tuple(slist)] = [][self.linenumber.get(n, -1) for n in s]]
+
+			self.kgramline.setdefault(tuple(slist), set()).add(tuple(self.linenumber.get(n,"-1") for n in s));
+
+			self.kgramlist[tuple(slist)] += 1;
+			self.kgramset[frozenset(slist)] += 1;
+			self.kgramcounter[FrozenDict(Counter(slist))] += 1;
+
+		elapsed = timeit.default_timer() - start_time;
+		return elapsed;
+		
+
+	def findKGramPath(self, node, marked,  path): 
+		print "Checking node: " + node +  "\t" + repr(path)
+
+		marked.add(node)
+
+		#Record nodes that aren't wires, splices, constants, or ports
+		if not any(s in node for s in ['n', 'x', 'v']):
+			path.append(node);
+			print " NEW PATH: " + repr(path);
+
+			#Record the current gram if len is greater than k
+			pathlen = len(path)
+			if(pathlen <= self.k and pathlen > 1):
+				#slist = [self.extractSequenceLetter(n) for n in path[len(path)-self.k:]]
+				self.kgram.add(tuple(path));
+			
+				print "  GRAM ADDED" 
+
+				if pathlen == self.k:
+					print " POP"
+					del path[-1];
+					return
+
+				
+		succList = self.dfg.successors(node);
+		for succ in succList:
+			if succ not in marked:
+				self.findKGramPath(succ, marked , path);
+			else:
+				print succ + " is marked..."
+
+
+
+		#Pop only if node was inserted into path
+		if not any(s in node for s in ['n', 'x', 'v']):
+			del path[-1];
+			print " POP"
 	
+
+	def findKATree(self, node, marked,  path): 
+		#print "Checking node: " + node +  "\t" + repr(path)
+
+		marked.add(node)
+
+		#Record nodes that aren't wires, splices, constants, or ports
+		if not any(s in node for s in ['n', 'x', 'v']):
+			path.append(node);
+
+			#Record the current gram if len is greater than k
+			pathlen = len(path)
+			if(pathlen <= self.k and pathlen > 1):
+				#slist = [self.extractSequenceLetter(n) for n in path[len(path)-self.k:]]
+				self.kgram.add(tuple(path));
+
+				if pathlen == self.k:
+					del path[-1];
+					return
+
+				
+		succList = self.dfg.successors(node);
+		for succ in succList:
+			if succ not in marked:
+				self.findKGramPath(succ, marked , path);
+
+
+		#Pop only if node was inserted into path
+		if not any(s in node for s in ['n', 'x', 'v']):
+			del path[-1];
+
+
+
+
+	def KGram(self, k):
+		start_time = timeit.default_timer();
+		print " -- Extracting KGRAM"
+		self.kgramset= Counter();
+		self.kgramcounter= Counter();
+		self.kgramlist= Counter();
+		self.kgram= set();
+		#self.kgramcountertuple= Counter();
+		self.k = k;
+
+		inputs = self.inNodeList + self.constantList
+
+		marked = set();
+		for inNode in inputs:
+			path = [];
+			self.markflag = 0;
+			m_marked = set();
+			self.findKGram(inNode, self.outNodeList, marked, m_marked, path );
+			#print
+			
+		#print self.kgram
+		for s in self.kgram:
+			slist = [self.extractSequenceLetter(n) for n in s]
+
+			self.kgramlist[tuple(slist)] += 1;
+			self.kgramset[frozenset(slist)] += 1;
+			self.kgramcounter[FrozenDict(Counter(slist))] += 1;
+		elapsed = timeit.default_timer() - start_time;
+		return elapsed;
+
+
+		
+	def findKGram(self, node, dst, marked, m_marked, path): 
+		succList = self.dfg.successors(node);
+		#m_marked: A marked list when marked flag is set. Prevents infinite recursion
+		#print "Checking node: " + node + ". DST: " + repr(dst) + "\t" + repr(path) + "   FLAG: " + repr(self.markflag);
+
+		#Check if output has been reached
+		if len(succList) == 0:
+			#If a previous path has not been recorded, record the path from in to out
+			pathlen = len(path)
+			if pathlen <= self.k  and pathlen > 0:
+				#slist = [self.labelAttr[n] for n in path[len(path)-self.k:]]
+				#slist = [self.extractSequenceLetter(n) for n in path[len(path)-self.k:]]
+				startindex = len(path)-self.k;
+				if(startindex < 0):
+					startindex = 0;
+
+				self.kgram.add(tuple(path[startindex:]));
+				#print repr(path[startindex:]) + "  :  "  + repr(slist) + "   FLAG:" + repr(self.markflag) ;
+			
+			#print "DST REACHED"
+			#print "BACKTRACK CUR NODE: " + node
+
+			return 
+
+		
+		#Prevent infinite loop if a marked node has been touched
+		marked.add(node);	
+		if(self.markflag > 0):
+			m_marked.add(node);
+
+		#Record nodes that aren't wires, splices, constants, or ports
+		if not any(s in node for s in ['n', 'x', 'v']):
+			path.append(node);
+			if self.markflag > 0:
+				self.markflag = self.markflag + 1;
+
+			#Record the current gram if len is greater than k
+			pathlen = len(path)
+			if(pathlen > self.k and pathlen > 0):
+				#slist = [self.extractSequenceLetter(n) for n in path[len(path)-self.k:]]
+				startindex = len(path)-self.k;
+				if(startindex < 0):
+					startindex = 0;
+				self.kgram.add(tuple(path[startindex:]));
+
+				#print repr(path[startindex:]) + "  :  "  + repr(slist) + "   FLAG:" + repr(self.markflag) ;
+
+				#Check and see if marked count is up to k. Past k, the paths should have been recorded already
+				if self.markflag == self.k:
+					#print " MARK LIMIT HIT...FLAG: " +repr(self.markflag) 
+					#print "BACKTRACK CUR NODE: " + node	+ "   FLAG: " + repr(self.markflag);
+					self.markflag = self.markflag - 1;
+					del path[-1];
+					return;
+
+				
+		for succ in succList:
+			if self.markflag <= 0:
+				if succ in marked:
+					#print " NODE: " + succ + " is  MARKED!"
+					self.markflag = 1;
+
+			#Don't traverse node again during marked
+			if succ not in m_marked:	
+				self.findKGram(succ, dst, marked, m_marked, path);
+				if(self.markflag < 1):
+					m_marked.clear();
+
+
+		#Pop only if node was inserted into path
+		if not any(s in node for s in ['n', 'x', 'v']):
+			self.markflag = self.markflag - 1;
+			del path[-1];
+		#print "BACKTRACK CUR NODE: " + node  + "   FLAG: " + repr(self.markflag);
+
 
 
 	def Entropy(self, text):
@@ -143,10 +362,6 @@ class BirthmarkExtractor(object):
 		'''
 		if any(s in node for s in ['n', 'v', 'x']): # Check to see if node is splice, const, port
 			return ""
-		elif self.shapeAttr[node] == "diamond":          # Check to see if it is a wire node
-			return ""
-		elif self.shapeAttr[node] == "point":            # Check to see if it is a point node
-			return ""
 
 		operation = self.labelAttr[node];
 
@@ -206,16 +421,6 @@ class BirthmarkExtractor(object):
 
 		return swList;
 
-
-
-	def numAlpha(self, seqList):
-		'''
-			Gets the number of unique letters in the list
-			 @PARAM: seqList- List of letters of the datapath
-			 @RETURN number of unique letters in the sequence
-		'''
-		setList = set(seqList);
-		return len(setList);
 
 
 		
@@ -368,7 +573,7 @@ class BirthmarkExtractor(object):
 				self.faninCone(pred,  marked);
 
 
-	def extractStructural(self):
+	def extractkStructural(self):
 		'''
 		 Extracts the structural component of the circuit	
 		 		Note that all three extractions (Structural, Functional, Constant)
@@ -376,7 +581,40 @@ class BirthmarkExtractor(object):
 				Handled in the functional extraction (OUT)
 		'''
 
-		print "[DFX] -- Extracting structural features..."# from : " + fileName;
+		print " -- Extracting structural features..."# from : " + fileName;
+
+		#start_time = timeit.default_timer();
+		for node in self.nodeList:
+			if 'n' in node:  # Check to see if it is a port node
+				predList = self.dfg.predecessors(node);
+				if len(predList) == 0:
+					self.inNodeList.append(node);
+				else:
+					self.outNodeList.append(node);
+				continue;  #TODO: CHECK
+
+			if 'c' in node:   
+				label = self.labelAttr[node];
+				label = re.search('\+(.*)\+', label);
+		
+				if label != None:
+					operation = label.group(1);
+					#print operation
+					self.labelAttr[node] = operation;
+
+
+
+
+	def extractStructural(self):
+		'''
+		 Extracts the structural component of the circuit	
+		 		Note that all three extractions (Structural, Functional, Constant)
+				Needs to be called. Part of the structural fingerprint is 
+				Handled in the functional extraction (OUT)
+		'''
+		start_time = timeit.default_timer();
+
+		print " -- Extracting structural features..."# from : " + fileName;
 		# Preprocess nodes
 		
 		ffList = [];
@@ -412,12 +650,20 @@ class BirthmarkExtractor(object):
 				maxFanout = len(sucList)
 
 			#If it is a operational block
-			if self.shapeAttr[node] != "point" and self.shapeAttr[node] != "diamond":   
+			if 'c' in node:   
 				label = self.labelAttr[node];
-				label = re.search('\\\\n(.*)\|', label);
+				linenum =  re.search('!(.*)!', label);
+				label = re.search('\+(.*)\+', label);
 		
 				if label != None:
 					operation = label.group(1);
+					#print operation
+					self.labelAttr[node] = operation;
+					self.cnodes.append(node);
+					
+					#Is there an associated line number?
+					if linenum != None:
+						self.linenumber[node] = linenum.group(1);
 
 					size = 0;
 					for pred in predList:
@@ -557,6 +803,8 @@ class BirthmarkExtractor(object):
 		self.statstr = "%s,%s," % (self.statstr, s);
 		#print "STAT: " + statstr
 
+		return timeit.default_timer() - start_time;
+
 
 
 
@@ -568,7 +816,8 @@ class BirthmarkExtractor(object):
 		 		Note that all three extractions (Structural, Functional, Constant)
 				Needs to be called. 
 		'''
-		print "[DFX] -- Extracting functional features..."# from : " + fileName;
+		start_time = timeit.default_timer();
+		print " -- Extracting functional features..."# from : " + fileName;
 		self.pathList = set();
 		self.maxList = set();
 		self.minList = set();
@@ -667,7 +916,7 @@ class BirthmarkExtractor(object):
 
 
 
-		print "[DFX] -- Extracting additional functional features..."
+		print " -- Extracting additional functional features..."
 		if(totalMaxPaths == 0):
 			self.statstrf = "%s,%s," % (self.statstrf, repr(0));
 		else:
@@ -677,6 +926,8 @@ class BirthmarkExtractor(object):
 			self.statstrf = "%s,%s," % (self.statstrf, repr(0));
 		else:
 			self.statstrf = "%s,%s" % (self.statstrf, repr(float(minPathCount)/float(totalMinPaths)));
+		
+		return timeit.default_timer() - start_time;
 
 
 
@@ -689,7 +940,8 @@ class BirthmarkExtractor(object):
 		 		Note that all three extractions (Structural, Functional, Constant)
 				Needs to be called. 
 		'''
-		print "[DFX] -- Extracting constant features..."
+		start_time = timeit.default_timer();
+		print " -- Extracting constant features..."
 
 		self.constSet = set();
 		self.constMap = dict();
@@ -778,12 +1030,15 @@ class BirthmarkExtractor(object):
 
 				constStr = constStr + cnstVal + ",";
 
+		return timeit.default_timer() - start_time;
 
-	def getBirthmark(self):
+
+	def getBirthmark(self, kVal):
 		'''
 		 Returns the data for the birthmark
 		'''
 		#print "NUMBER OF CORES: " + repr(multiprocessing.cpu_count());
+		print "[DFX] -- Extracting birthmarks"
 
 		#f = multiprocessing.Process(target=self.extractFunctional);
 		#s = multiprocessing.Process(target=self.extractStructural);
@@ -793,21 +1048,21 @@ class BirthmarkExtractor(object):
 		#s.start();
 		#print "========================================================================"
 		#start_time = timeit.default_timer();
-		self.extractStructural();
+		selapsed = self.extractStructural();
 		#elapsed = timeit.default_timer() - start_time;
 		#print "[STRC] -- ELAPSED: " +  repr(elapsed) + "\n";
 
 
 		#print "========================================================================"
 		#start_time = timeit.default_timer();
-		self.extractFunctional();
+		felapsed = self.extractFunctional();
 		#elapsed = timeit.default_timer() - start_time;
 		#print "[FUNC] -- ELAPSED: " +  repr(elapsed) + "\n";
 		
 
 		#print "========================================================================"
 		#start_time = timeit.default_timer();
-		self.extractConstant();
+		celapsed = self.extractConstant();
 		#elapsed = timeit.default_timer() - start_time;
 		#print "[CONST] -- ELAPSED: " +  repr(elapsed) + "\n";
 
@@ -817,7 +1072,15 @@ class BirthmarkExtractor(object):
 		self.statstr = "%s,%s" % (self.statstr, self.statstrf);
 
 
-		return (self.maxList, self.minList, self.constMap, self.fpDict, self.statstr, self.alphaList);
+		kelapsed = self.KGram2(kVal);
+		kgram = (self.kgramset, self.kgramcounter, self.kgramlist, self.kgramline);
+		
+		print "[KGRAM] -- ELAPSED: " +  repr(kelapsed) 
+		print "[FUNCT] -- ELAPSED: " +  repr(felapsed) 
+		print "[STRUC] -- ELAPSED: " +  repr(selapsed) 
+		print "[CONST] -- ELAPSED: " +  repr(celapsed) 
+
+		return (self.maxList, self.minList, self.constMap, self.fpDict, self.statstr, self.alphaList, kgram);
 
 
 

@@ -16,30 +16,51 @@ import dataflow as dfx
 import traceback
 import timeit
 
-if len(sys.argv) != 2: 
-	print "[ERROR] -- Not enough argument. Provide a verilog file to get AST";
-	print "        -- ARG1: verilog file";
-	exit();
 
+def main():
+	'''
+    MAIN 
+		 Main function: Converts Verilog file into AST representation 
+	'''
 
-try:
-	vfile= sys.argv[1];
+	try:
+		if len(sys.argv) != 2: 
+			raise error.ArgError();
+
+		vfile= sys.argv[1];
+			
+		print "--------------------------------------------------------------------------------"
+		print "[v2ast] -- Extracting AST from verilog file: " + vfile;
+		print "--------------------------------------------------------------------------------"
+
+		scriptName = "data/yoscript"
+		val  = yosys.create_yosys_script(vfile, scriptName)
+		top = val[1];
+
+		rVal = yosys.execute(scriptName);
+		if(rVal != ""):
+			raise error.YosysError(rVal);
 		
-	print "--------------------------------------------------------------------------------"
-	print "[v2ast] -- Extracting feature from verilog file: " + vfile;
-	print "--------------------------------------------------------------------------------"
-
-	scriptName = "data/yoscript"
-	val  = yosys.create_yosys_script(vfile, scriptName)
-	top = val[1];
-
-	rVal = yosys.execute(scriptName);
-	if(rVal != ""):
-		raise error.YosysError(rVal);
-	
-	print "[v2ast] -- AST File located in " + val[0] ;
+		print "[v2ast] -- AST File located in dot/" + val[0][0] + ".dot" ;
 
 
-except error.YosysError as e:
-	print "[ERROR] -- Yosys Error...";
-	print "        -- " +  e.msg;
+	except error.ArgError as e:
+		if len(sys.argv) == 1 :
+			print("\n  v2ast");
+			print("  ================================================================================");
+			print("    This program reads a verilog file and extracts the ast from it")
+			print("    AST is saved as a dot file in the dot folder");
+			print("\n  Usage: python v2ast.py [Verilog FILE]\n");
+		else:
+			print "[ERROR] -- Not enough argument. Provide Verilog File to process";
+			print "           Usage: python v2ast.py [Verilog FILE]\n";
+
+	except error.YosysError as e:
+		print "[ERROR] -- Yosys Error...";
+		print "        -- " +  e.msg;
+
+
+
+if __name__ == '__main__':
+	main();
+

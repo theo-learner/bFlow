@@ -22,15 +22,16 @@ import xmlExtraction
 
 try:
 	start_all = timeit.default_timer();
-	if len(sys.argv) < 3 or len(sys.argv) > 4: 
+	if len(sys.argv) < 4 or len(sys.argv) > 5: 
 		raise error.ArgError()
 		
-	cfiles= sys.argv[1];
-	dbFile= sys.argv[2];
+	cfiles = sys.argv[1];
+	dbFile = sys.argv[2];
+	kVal = sys.argv[3];
 
 	arg = ""
-	if len(sys.argv) == 4 :
-		arg = sys.argv[3];
+	if len(sys.argv) == 5 :
+		arg = sys.argv[4];
 
 	print
 	print "########################################################################";
@@ -41,6 +42,7 @@ try:
 	#Initialize the XML creator
 	soup = BeautifulSoup();
 	dbtag = soup.new_tag("DATABASE");
+	dbtag["K"] = kVal
 	soup.append(dbtag)
 
 	ID = 0;
@@ -91,16 +93,16 @@ try:
 
 				processedTop.add(dotfile);
 				dotfilename = "./dot/"+dotfile+".dot";
-				ckttag = xmlExtraction.generateXML(dotfilename, ID, dotfile, soup)
+				ckttag = xmlExtraction.generateXML(dotfilename, ID, dotfile, soup, kVal)
 				dbtag.append(ckttag)
 				ID = ID + 1;
 		elif arg == "":
 			dotfilename = "./dot/"+dotFiles[0]+".dot";
-			ckttag = xmlExtraction.generateXML(dotfilename, ID, dotFiles[0], soup)
+			ckttag = xmlExtraction.generateXML(dotfilename, ID, dotFiles[0], soup, kVal)
 			dbtag.append(ckttag)
 			ID = ID + 1;
 		else:
-			raise error.GenError("Unknown Argument. Use [h] for hierarchy preprocessing");
+			raise error.GenError("Unknown Argument. Use [-h] for hierarchy preprocessing");
 
 		elapsed = timeit.default_timer() - start_time;
 		print "ELASPED TIME: " + repr(elapsed);
@@ -118,6 +120,8 @@ try:
 	fileStream.write(soup.prettify());
 	fileStream.close();
 	
+	print " -- K Gram Value: " + kVal;
+	print " -- Hierarchy: " + repr(arg == '-h');
 	print " -- XML File saved  : " + dbFile;
 	print " -- Files processed : " + repr(ID);
 	print " -- Multiple modules found:"
@@ -139,14 +143,20 @@ except error.ArgError as e:
 		print("    The preprocessing extracts and stores the birthmark representation");
 		print("    Results are stored in an XML file");
 		print("    Option to process each module individual as a design [h] option");
-		print("\n  Usage: python preprocessDB.py [List of Verilog]  [Output XML]  [h]");
+		print("\n  Usage: python preprocessDB.py [Verilog] [Output XML] [k] [OPTION: h]");
+		print("       DB - File containing list of verilog files")
+		print("       O  - Output XML File")
+		print("       k  - K value for the kgram analysis")
 		print("    OPTION:");
-		print("       h - process each module as a design\n");
+		print("       h  - process each module as a design\n");
 	else:
 		print "[ERROR] -- Not enough argument. Provide list of circuits and a XML file ";
-		print("           Usage: python preprocessDB.py [List of Verilog]  [Output XML]  ");
-		print("             OPTION:");
-		print("               h - process each module as a design");
+		print("\n  Usage: python preprocessDB.py [Verilog] [Output XML] [k] [OPTION: h]");
+		print("       DB - File containing list of verilog files")
+		print("       O  - Output XML File")
+		print("       k  - K value for the kgram analysis")
+		print("    OPTION:");
+		print("       h  - process each module as a design\n");
 
 except error.YosysError as e:
 	print "[ERROR] -- Yosys has encountered an error...";

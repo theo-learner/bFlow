@@ -2,6 +2,8 @@ CXX = g++
 
 CFLAGS = \
 		-Wall \
+		-Wunused-result \
+		-O1 \
 		-g \
 		$
 
@@ -15,7 +17,6 @@ OBJS = \
 OBJSERVER = \
 	database.o \
 	birthmark2.o \
-	feature.o \
 	similarity.o \
 	print.o \
 	server.o \
@@ -24,7 +25,6 @@ OBJSERVER = \
 OBJREF= \
 	database.o \
 	birthmark2.o \
-	feature.o \
 	similarity.o \
 	print.o \
 	$

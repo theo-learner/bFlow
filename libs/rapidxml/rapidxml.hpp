@@ -2607,7 +2607,7 @@ namespace s2i{
     long  l;
     l = strtol(string, &end, 10);
     if (*string == '\0' || *end != '\0') 
-        return -2;
+        return -999;
 
    	return (int) l;
 	};

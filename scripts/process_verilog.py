@@ -11,12 +11,13 @@ import xmlExtraction;
 import yosys;
 from bs4 import BeautifulSoup
 import error;
+import os;
 
 
 
-def generateYosysScript(verilogFile):
+def generateYosysScript(verilogFile, optVal):
 	scriptName = "data/yoscript"
-	scriptResult = yosys.create_yosys_script(verilogFile, scriptName)
+	scriptResult = yosys.create_yosys_script(verilogFile, scriptName, opt=optVal)
 	dotFiles = scriptResult[0];
 	top = scriptResult[1];
 	return (scriptName, dotFiles, top);
@@ -25,23 +26,44 @@ def generateYosysScript(verilogFile):
 
 def main():
 	try:
-		if len(sys.argv) != 2: 
+		if len(sys.argv) < 3 or len(sys.argv) > 5: 
 			raise error.ArgError();
+
+		#Remove the reference XML file if it exists
+		referenceFile = "data/reference.xml";
+		if(os.path.exists(referenceFile)):
+			os.remove(referenceFile);
 
 		
 		vfile = sys.argv[1];
+		kVal = sys.argv[2];
+		opt = False
+		verboseValue = False
+		if(len(sys.argv) == 4):
+			if(sys.argv[3] == "-O"):
+				opt = True
+			if(sys.argv[3] == "-v" ):
+				print "VERBOSE IS SET"
+				verboseValue = True;
+		elif(len(sys.argv) == 5):
+			if(sys.argv[4] == "-O"):
+				opt = True
+			if(sys.argv[4] == "-v"):
+				print "VERBOSE IS SET"
+				verboseValue = True;
+
 
 		#Preprocess yosys script
-		(scriptName, dotFiles, top) = generateYosysScript(vfile);
+		(scriptName, dotFiles, top) = generateYosysScript(vfile, opt);
 		rVal = yosys.execute(scriptName);
 		soup = BeautifulSoup();
 
-		ckttag = xmlExtraction.generateXML("./dot/" + top+".dot", -1, top, soup)
+		ckttag = xmlExtraction.generateXML("./dot/" + top+".dot", -1, top, soup, kVal, verboseValue)
 		soup.append(ckttag);
 
 		
 		
-		fileStream = open("data/reference.xml", 'w');
+		fileStream = open(referenceFile, 'w');
 		fileStream.write(repr(soup));
 		fileStream.close();
 
@@ -52,10 +74,10 @@ def main():
 			print("    This program reads the files in a verilog file and extracts AST with yosys");
 			print("    Birthmark is then extracted and stored in an XML file ");
 			print("    OUTPUT: data/reference.xml");
-			print("\n  Usage: python processVerilog.py [Verilog]\n");
+			print("\n  Usage: python process_verilog.py [Verilog] [k: KGram Val] [Option: -O optimization]\n");
 		else:
 			print "[ERROR] -- Not enough argument. Provide Verilog File to process";
-			print("           Usage: python processVerilog.py [Verilog]\n");
+			print("           Usage: python process_verilog.py [Verilog] [k: KGram Val] [Option: -O optimization]\n");
 
 
 	except error.YosysError as e:

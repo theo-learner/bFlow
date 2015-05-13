@@ -14,7 +14,7 @@ from subprocess import call
 import error;
 import constructHierarchy as hierarchy;
 
-def create_yosys_script(fileName, scriptName, hier = False):
+def create_yosys_script(fileName, scriptName, hier = False, opt = False):
 	script = "";	
 	script = script + "echo on\n";
 
@@ -25,14 +25,31 @@ def create_yosys_script(fileName, scriptName, hier = False):
 
 	topModules = hierarchy.findModuleChildren(moduleList);
 	top = topModules[0];
+	if opt:                  #simplify only the database circuits
+		print "[YOSYS] -- Optimizations on"
+	else:
+		print "[YOSYS] -- Optimizations off"
 
 	for vfile in fileList:
 		script = script + "read_verilog " + vfile + "\n";
 
-	opt = "opt_muxtree; opt_reduce -full; opt_share; opt_rmdff;;\n"
+	opt = "opt_muxtree; opt_reduce -full; opt_share; opt_rmdff;\n"
+
+	if opt == True:                  #simplify only the database circuits
+		opt = opt + "opt_clean;\n"     #Many unused net and cells will be removed
+
+	if opt == False:
+		fsm = "fsm_detect; fsm_extract; fsm_opt; fsm_expand; fsm_recode; fsm_map;\n"
+	else:
+		fsm = "fsm;\n"
+
+	
+	fsm = fsm + "fsm_recode; fsm_map;\n"
+
 	script = script + "\n\n";
 	script = script + "hierarchy -check\n";
-	script = script + "proc; fsm;\n\n";
+	script = script + "proc;\n\n";
+	script = script + fsm;
 	script = script + "memory_collect;\n\n";
 	script = script + opt;
 

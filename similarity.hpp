@@ -92,6 +92,10 @@ namespace SIMILARITY{
 	double calculateSimilarity(std::map<unsigned, unsigned>&,
 		std::map<unsigned, unsigned>&);
 
+
+	double resemblance(std::map<std::string,int>& , std::map<std::string, int>&) ;
+	double containment(std::map<std::string,int>& , std::map<std::string, int>&) ;
+
 }
 
 

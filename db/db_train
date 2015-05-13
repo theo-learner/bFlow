@@ -8,7 +8,6 @@ v/mux_using_assign.v
 v/mux_using_case.v
 v/mux_using_if.v
 v/life.v
-v/life_2.v
 v/life_3.v
 v/life_4.v
 v/life_5.v

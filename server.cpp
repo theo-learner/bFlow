@@ -39,7 +39,7 @@ bool Server::waitForClient(){
 	printf("[SERVER] -- Opening Socket...");
 	m_ServerSktID = socket(AF_INET, SOCK_STREAM, 0);
 	if(m_ServerSktID< 0)
-		throw Exception("(Server::waitForClient:T1) Server socket cannot be opened");
+		throw cException("(Server::waitForClient:T1) Server socket cannot be opened");
 
 	printf("ID: %d\n", m_ServerSktID);
 
@@ -53,7 +53,7 @@ bool Server::waitForClient(){
 
 	if (bind(m_ServerSktID, (struct sockaddr *) &server_addr, 
 				sizeof(server_addr)) < 0)
-		throw Exception("(Server::waitForClient:T2) Binding error");
+		throw cException("(Server::waitForClient:T2) Binding error");
 
 	print();
 
@@ -62,7 +62,7 @@ bool Server::waitForClient(){
 
 	clientLength = sizeof(client_addr);
 	m_ClientSktID= accept(m_ServerSktID, (struct sockaddr*) &client_addr, &clientLength);
-	if(m_ClientSktID< 0) throw Exception("(Server::waitForClient:T3) Error accepting client");
+	if(m_ClientSktID< 0) throw cException("(Server::waitForClient:T3) Error accepting client");
 
 	printf(" * Client found!\n");
 
@@ -76,7 +76,7 @@ bool Server::waitForClient(){
  */
 std::string Server::receiveAllData(){
 	if(m_ClientSktID < 0) 
-		throw Exception("(Server::recvAllData:T1) ClientID is not set");
+		throw cException("(Server::recvAllData:T1) ClientID is not set");
 
 	int size_recv , total_size= 0;
 	struct timeval begin , now;
@@ -90,7 +90,7 @@ std::string Server::receiveAllData(){
 	printf("[SERVER] -- Waiting for data from client...\n");
 	bzero(buffer, m_bufferLength);
 	if((size_recv = recv(m_ClientSktID, buffer, m_bufferLength-1, 0) ) <= 0)
-		throw Exception("(Server::recvAllData:T2) Failed to recv msg. Client might have disconnected");
+		throw cException("(Server::recvAllData:T2) Failed to recv msg. Client might have disconnected");
 
 	buffer[m_bufferLength] = '\0';
 	data += buffer ;
@@ -147,13 +147,13 @@ std::string Server::receiveAllData(){
  */
 bool Server::sendData(std::string data){
 	if(m_ClientSktID < 0){
-		throw Exception("(Server::sendData:T1) ClientID is not set");
+		throw cException("(Server::sendData:T1) ClientID is not set");
 	}
 
 	int result = write(m_ClientSktID, data.c_str(), data.length());	
 
 	if(result < 0)
-		throw Exception("(Server::sendData:T2) Failed to send message");
+		throw cException("(Server::sendData:T2) Failed to send message");
 
 	return true;
 }

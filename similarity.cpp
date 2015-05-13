@@ -137,8 +137,51 @@ double SIMILARITY::cosine(std::vector<unsigned>& data1, std::vector<unsigned>& d
 
 
 
+/**
+ * Resemblance 
+ *   Resemblance formula for two sets of KGRAM
+ */
+
+double SIMILARITY::resemblance(std::map<std::string,int>& data1, std::map<std::string, int>& data2){
+	double intersection = 0.0;
+	double numunion= 0.0;
+
+	std::map<std::string, int>::iterator iMap;
+	for(iMap = data1.begin(); iMap != data1.end(); iMap++){
+		//Intersection is the number of grams that are shared between the two
+		if(data2.find(iMap->first) != data2.end())
+			intersection += 1.0;
+	}
+
+	//Union is the number of shared + the number of items not shared in 1 and 2
+	numunion = intersection + data1.size() -intersection + data2.size() - intersection;
+
+	return intersection / numunion;
+	
+}
 
 
+
+/**
+ * Containment 
+ *   Containment formula for two sets of KGRAM
+ *   Data2 is the smaller or query circuit
+ */
+
+double SIMILARITY::containment(std::map<std::string,int>& data1, std::map<std::string, int>& data2){
+	double intersection = 0.0;
+
+	std::map<std::string, int>::iterator iMap;
+	for(iMap = data1.begin(); iMap != data1.end(); iMap++){
+		//Intersection is the number of grams that are shared between the two
+		if(data2.find(iMap->first) != data2.end())
+			intersection += 1.0;
+	}
+
+	//printf("NUM: %f\tDEN: %d\n", intersection, data2.size());
+	return intersection / (double)data2.size();
+	
+}
 
 
 
@@ -166,7 +209,7 @@ int SIMILARITY::align(std::list<std::string>& ref, std::list<std::string>& db, b
 			assignSource(row(s_Align, 1), seq2);
 			
 			//Alignment of the sequence
-			int score = globalAlignment(s_Align, s_Score);
+			int score = localAlignment(s_Align, s_Score);
 			if(output) printAlignment();
 
 			//Calcuate the difference in the size ratios
@@ -191,8 +234,8 @@ int SIMILARITY::align(std::list<std::string>& ref, std::list<std::string>& db, b
 			if(output)
 				printf("[SIM] -- %5d   ALIGN: %s - %s\n==================\n", score, iRef->c_str(), iSeq->c_str());
 			//Sum the entire score
-			totalScore += (score*sizeRatio);
-			//totalScore += (score);
+			//totalScore += (score*sizeRatio);
+			totalScore += (score);
 		}
 	}
 

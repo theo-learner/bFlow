@@ -19,16 +19,23 @@
 #include <map>
 #include <set>
 
-#include "feature.hpp"
 #include "error.hpp"
 
 #include "libs/rapidxml/rapidxml.hpp"
 #include "libs/rapidxml/rapidxml_print.hpp"
 #include "libs/strtk/strtk.hpp"
 
+struct sGram{
+	std::string next;
+	std::vector<std::vector<int> > linenum;
+};
+
+
 class Birthmark{
 	private: 
 		static const unsigned m_NumBin = 94;
+		
+		std::map<std::string, sGram> m_ktable;
 
 		int m_ID;                                 //ID of the circuit
 		std::string m_Name;                       //Name of the circuit
@@ -40,6 +47,7 @@ class Birthmark{
 
 		//CONSTANT
 		std::set<int> m_Constants;                //Constants in the circuit
+		std::vector<unsigned> m_BinnedConstants;
 
 		//STAT
 		std::string m_Statstr;
@@ -48,6 +56,17 @@ class Birthmark{
 		//STRUCTURAL
 		//Name of feature, map of the size of feature : Num of occurance
 		std::map<std::string, unsigned> m_Fingerprint; //Fingerprint of circuit
+
+		//KGRAM
+		//std::vector<std::set<std::string> >m_kgramset;
+		//std::vector<int> m_kgramsetc;
+		std::map<std::string, int> m_kgramset;
+		std::map<std::string, int> m_kgramlist;
+		std::map<std::string, std::vector<std::vector<int> > >m_kgramline;
+
+		std::vector<std::map<std::string, int> > m_kgramcount;
+
+
 
 	public:
 		Birthmark();
@@ -58,8 +77,12 @@ class Birthmark{
 		void getMinSequence(std::list<std::string>&);
 		void getAlphaSequence(std::list<std::string>&);
 		void getConstants(std::set<int>&);
+		void getKGramSet(std::map<std::string, int>&);
+		void getKGramList(std::map<std::string, int>&);
+		void getKGramCounter(std::vector<std::map<std::string, int> > &);
 		void getStat(std::vector<int>&);
 		void getBinnedConstants(std::vector<unsigned>&);         //Bins the constants into a histogram
+		void getBinnedConstants2(std::vector<unsigned>&);         //Bins the constants into a histogram
 		void getFingerprint(std::map<std::string, unsigned> &);
 		double getAvgSequenceLength();                           //Gets AVG SEQ LEN of all SEQ
 		std::string getName();
@@ -80,8 +103,10 @@ class Birthmark{
 		void addMinSequence(std::string);
 		void addAlphaSequence(std::string);
 		void addConstant(int);
+		void addConstant(int, int);
 		void addFingerprint(std::string, unsigned);
 		void addFingerprint(std::string, unsigned , unsigned);
+		void addKTable(std::string, std::vector<std::vector<int> >& );
 		
 		bool importXML(rapidxml::xml_node<>*);
 		

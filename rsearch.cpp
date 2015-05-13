@@ -30,26 +30,78 @@
 
 #include "libs/rapidxml/rapidxml.hpp"
 #include "libs/rapidxml/rapidxml_print.hpp"
+#include "libs/tclap/CmdLine.h"
+
 using namespace rapidxml;
+using namespace TCLAP;
 
 
 int main( int argc, char *argv[] ){
 	Database* db = NULL;
 
 	try{
-		//Check arguments : Verilog File, XML Database File
-		if(argc != 3) throw ArgException();
 
+		TCLAP::CmdLine cmdline("This program reads in a verilog file as well as a XMLdatabase files. It preprocesses the verilog file and extracts the birthmark. Compares the reference birthmark to the birthmarks in the database. Outputs a ranked list showing the circuits that are similar to the reference", ' ', "0.0");
+
+		//Reference
+		TCLAP::ValueArg<std::string> referenceArg("r", "reference", "Reference design file", true, "", "Verilog");
+		cmdline.add(referenceArg);
+		
+		//Database XML
+		TCLAP::ValueArg<std::string> databaseArg("d", "database", "Database XML file", true, "", "XML");
+		cmdline.add(databaseArg);
+		
+		//Database XML
+		TCLAP::ValueArg<std::string> kArg("k", "kflag", "KLC, KLR, KSC, KSR", false, "KLR", "FLAG");
+		cmdline.add(kArg);
+		
+		//Print all ranking switch
+		TCLAP::SwitchArg printAllArg("v", "verbose", "Print detailed results", cmdline, false);
+
+
+		cmdline.parse(argc, argv);
+
+		std::string xmlDB= databaseArg.getValue();
+		std::string referenceFile = referenceArg.getValue();
+		bool printall = printAllArg.getValue();
+		std::string kFlag = kArg.getValue();
+		
+		/*
+		//Check arguments : Verilog File, XML Database File
+		int args = 3;
+		int optional_args = 1;
+		if(argc < args  || argc > (args + optional_args)) throw ArgException();
+
+		//std::string kVal= argv[3];
 		std::string xmlDB= argv[2];
-		std::string vREF= argv[1];
+		std::string referenceFile = argv[1];
+		
+		bool printall = false;
+		if(argc == args+optional_args)
+			printall = true;
+			*/
 
 		//Read Database
 		printf("[REF] -- Reading Database\n");
 		db = new Database(xmlDB);
 
-		//Extract the birthmark from the verilog
-		printf("[REF] -- Reading Reference Design\n");
-		std::string cmd = "python scripts/processVerilog.py " + vREF; 
+		//Get extension
+		int lastDotIndex= referenceFile.find_last_of(".");
+		std::string ext = referenceFile.substr(lastDotIndex+1, referenceFile.length()-lastDotIndex);
+
+		std::string cmd = "";
+
+		if(ext == "v"){
+			//Extract the birthmark from the verilog
+			printf("[REF] -- Reading Reference Verilog Design\n");
+			cmd = "python scripts/process_verilog.py " + referenceFile + " " + db->getKVal(); 
+		}
+		else if(ext == "dot"){
+			printf("[REF] -- Reading Reference AST\n");
+			cmd = "python scripts/process_ast.py " + referenceFile + " " + db->getKVal(); 
+		}
+		else throw cException("(MAIN:T2) Unknown Extension: " + ext);
+			
 		system(cmd.c_str());
 
 		std::string xmlREF = "data/reference.xml";
@@ -75,7 +127,7 @@ int main( int argc, char *argv[] ){
 		timeval start_time, end_time;
 
 		gettimeofday(&start_time, NULL); //----------------------------------
-		db->searchDatabase(refBirthmark);
+		db->searchDatabase(refBirthmark, kFlag, printall);
 		delete refBirthmark;
 		gettimeofday(&end_time, NULL); //----------------------------------
 
@@ -86,6 +138,10 @@ int main( int argc, char *argv[] ){
 	catch(cException e){
 		printf("%s", e.what());
 	}
+	catch(TCLAP::ArgException &e){
+		std::cerr<< "Argument Error: " << e.error() <<" for arg " << e.argId() <<std::endl;
+	}
+	/*
 	catch(ArgException e){
 		if(argc == 1){
 			printf("\n  rsearch\n");
@@ -96,13 +152,14 @@ int main( int argc, char *argv[] ){
 			printf("    Compares the reference birthmark to the birthmarks in the database\n");
 			printf("    Outputs a ranked list showing the circuits that are similar to the reference\n");
 
-			printf("\n  Usage: ./rsearch  [Verilog file]  [XML Database]\n\n");
+			printf("\n  Usage: ./rsearch  [Verilog file]  [XML Database] [OPTIONAL: a (prints all results)]\n\n");
 		}
 		else{
 			printf("%s", e.what());
-			printf("\n  Usage: ./rsearch  [Verilog file]  [XML Database]\n\n");
+			printf("\n  Usage: ./rsearch  [Verilog file]  [XML Database] [OPTIONAL: a (prints all results)]\n\n");
 		}
 	}
+	*/
 
 	if(db != NULL) delete db;
 	return 0;

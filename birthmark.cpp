@@ -15,6 +15,7 @@ using namespace rapidxml;
  *  Default Constructor
  */
 Birthmark::Birthmark(){
+	m_BinnedConstants.resize(m_NumBin+2, 0); //Add 2 for z,x constants
 }
 		
 /**
@@ -22,6 +23,7 @@ Birthmark::Birthmark(){
  *  Loads birthmark from XML 
  */
 Birthmark::Birthmark(xml_node<>* cktNode){
+	m_BinnedConstants.resize(m_NumBin+2, 0); //Add 2 for z,x constants
 	importXML(cktNode);
 }
 
@@ -73,6 +75,7 @@ bool Birthmark::importXML(xml_node<>* cktNode){
 		//Set the ID and Name of the circuit
 		setID(id);
 		setName(cktName);
+		//printf("[BM] -- Importing Circuit: %s\n", cktName.c_str());
 
 		std::map<unsigned, unsigned> fingerprint;
 		std::list<std::string> maxseq;
@@ -89,10 +92,17 @@ bool Birthmark::importXML(xml_node<>* cktNode){
 				addMinSequence(featureNode->value());
 			else if(featureNodeName == "ALPHASEQ")
 				addAlphaSequence(featureNode->value());
-			else if(featureNodeName == "CONSTANT")
-				addConstant(s2i::string2int(featureNode->value()));
+			else if(featureNodeName == "CONSTANT"){
+				std::string constStr = featureNode->value();
+				int separator = constStr.find_first_of(":");
+				std::string constant = constStr.substr(0, separator);
+				std::string count = constStr.substr(separator+1, constStr.length()-separator);
+				addConstant(s2i::string2int(constant.c_str()), 
+				            s2i::string2int(count.c_str()));
+			}
 			else if(featureNodeName == "STAT"){
 				std::string statstr = featureNode->value();
+				setStatstr(statstr);
 				if(m_StatstrV.size() != 0) throw cException("(Birthmark::importXML:T8) Stat vector size is not empty") ;
 				strtk::parse(statstr, ",", m_StatstrV);
 			}
@@ -110,6 +120,76 @@ bool Birthmark::importXML(xml_node<>* cktNode){
 				}
 				//########################################################
 
+			}
+			else if(featureNodeName == "KLIST"){
+				
+				//CNT Attribute
+				xml_attribute<>* kAttr = featureNode->first_attribute();
+				if(kAttr == NULL) throw cException("(Birthmark::importXML:T10) No CNT attribute found") ;
+				std::string kAttrName= kAttr->name();
+
+				if(kAttrName != "CNT") throw cException("(Birthmark::importXML:T10) Unknown attr found for kgram: " + kAttrName) ;
+				int count = s2i::string2int(kAttr->value()); 
+				
+				xml_node<>* lNode = featureNode->first_node();
+				std::string kstr = "";
+				std::vector<std::vector<int> > lineVector;
+				while(lNode != NULL){
+					std::string lNodeName = lNode->name();
+					if(lNodeName == "DP")
+						kstr = lNode->value();
+					else if(lNodeName == "LN"){
+						std::string linenumstring= lNode->value();
+						std::vector<int> linenum;
+						strtk::parse(linenumstring, ",", linenum);
+						lineVector.push_back(linenum);
+					}
+					else throw cException("(Birthmark::importXML:T12) Unknown LNode: " + lNodeName);
+					
+					lNode= lNode->next_sibling(); 
+				}
+
+				m_kgramlist[kstr] = count;
+				m_kgramline[kstr] = lineVector;
+				addKTable(kstr, lineVector);
+			}
+			else if(featureNodeName == "KSET"){
+				std::string kstr = featureNode->value();
+				
+				xml_attribute<>* kAttr = featureNode->first_attribute();
+				if(kAttr == NULL) throw cException("(Birthmark::importXML:T10) No CNT attribute found") ;
+				std::string kAttrName= kAttr->name();
+
+				if(kAttrName != "CNT") throw cException("(Birthmark::importXML:T10) Unknown attr found for kgram: " + kAttrName) ;
+				int count = s2i::string2int(kAttr->value()); 
+
+				m_kgramset[kstr] = count;
+			}
+			else if(featureNodeName == "KCOUNT"){
+				xml_attribute<>* kAttr = featureNode->first_attribute();
+				if(kAttr == NULL) throw cException("(Birthmark::importXML:T11) No CNT attribute found") ;
+				std::string kAttrName= kAttr->name();
+
+				if(kAttrName != "CNT") throw cException("(Birthmark::importXML:T11) Unknown attr found for kgram: " + kAttrName) ;
+				//int count = s2i::string2int(kAttr->value()); 
+				
+				xml_node<>* fncNode = featureNode->first_node();
+				std::map<std::string, int> kgramc;
+
+				while (fncNode != NULL){
+					xml_attribute<>* kfAttr = fncNode->first_attribute();
+					if(kfAttr == NULL) throw cException("(Birthmark::importXML:T12) No CNT attribute found") ;
+					std::string kfAttrName= kfAttr->name();
+
+					if(kfAttrName != "CNT") throw cException("(Birthmark::importXML:T12) Unknown attr found for kgram: " + kfAttrName) ;
+					int fnccount = s2i::string2int(kfAttr->value()); 
+					kgramc[fncNode->value()] = fnccount;
+
+					fncNode= fncNode->next_sibling(); 
+				}
+
+				m_kgramcount.push_back(kgramc);
+				//m_kgramcountc.push_back(count);
 			}
 			else throw cException("(Birthmark::importXML:T12) Unknown tag found in XML: " + featureNodeName);
 
@@ -167,6 +247,30 @@ void Birthmark::getConstants(std::set<int>& rVal){
  */
 void Birthmark::getFingerprint(std::map<std::string, unsigned>& rVal){
 	rVal = m_Fingerprint;
+}
+
+/**
+ * getKGramList
+ *  Returns Kgram set version 
+ */
+void Birthmark::getKGramList(std::map<std::string, int >& rVal){
+	rVal = m_kgramlist;
+}
+
+/**
+ * getKGramSet
+ *  Returns Kgram set version 
+ */
+void Birthmark::getKGramSet(std::map<std::string, int >& rVal){
+	rVal = m_kgramset;
+}
+
+/**
+ * getKGramCounter
+ *  Returns Kgram counter version 
+ */
+void Birthmark::getKGramCounter(std::vector<std::map<std::string, int> >& rVal){
+	rVal = m_kgramcount;
 }
 
 /**
@@ -229,13 +333,22 @@ double Birthmark::getAvgSequenceLength(){
 	return (double) totalLength / (double) numSequence;
 
 }
-		
+
 /**
  * getBinnedConstants
  *  Returns a vector of bins counting the number of constants
  *  0, 1, 2, 3....64, 65-127, 128, 129-255, 256....2^20, >2^20, x, z
  */
 void Birthmark::getBinnedConstants(std::vector<unsigned>& rval){
+	rval = m_BinnedConstants;
+}
+		
+/**
+ * getBinnedConstants
+ *  Returns a vector of bins counting the number of constants
+ *  0, 1, 2, 3....64, 65-127, 128, 129-255, 256....2^20, >2^20, x, z
+ */
+void Birthmark::getBinnedConstants2(std::vector<unsigned>& rval){
 	rval.clear();
 	rval.resize(m_NumBin+2, 0); //Add 2 for z,x constants
 
@@ -371,6 +484,30 @@ void Birthmark::setStatstr(std::string stat){
 
 
 
+/**
+ * addKTable
+ *  Adds an entry into the kgram table for lookup 
+ */
+void Birthmark::addKTable(std::string kstr, std::vector<std::vector<int> >& line){
+	std::string km1 = kstr.substr(0, kstr.length()-1);
+	std::string kmlast = "" + kstr[kstr.length()-1];
+
+	std::map<std::string, sGram>::iterator iGram;
+	iGram = m_ktable.find(km1);
+
+	if(iGram == m_ktable.end()){
+		sGram sgram;
+		sgram.next = kmlast;
+		sgram.linenum.insert(sgram.linenum.end(), line.begin(), line.end());
+		m_ktable[km1] = sgram;
+	}
+	else{
+		iGram->second.next = kmlast;
+		iGram->second.linenum.insert(iGram->second.linenum.end(), 
+                                 line.begin(), line.end());
+	}
+}
+
 
 
 /**
@@ -401,15 +538,71 @@ void Birthmark::addAlphaSequence(std::string seq){
  * addConstant
  *  Adds a constant to the constant list 
  */
+void Birthmark::addConstant(int constant, int count){
+		count += 1000;
+		//If -2, constant is a don't care 
+		if(constant == -2)        m_BinnedConstants[m_NumBin] += count;
+
+		//If -3, constant is high impedance
+		else if(constant == -3)   m_BinnedConstants[m_NumBin+1] += count;
+
+		//If number is higher than the highest bin, place in highest bin
+		else if(constant < 0)     m_BinnedConstants[m_NumBin-1] += count;
+
+		//If number is less than 64 place in their respective bin
+		else if(constant <= 64)   m_BinnedConstants[constant]+= count;
+
+		//If numbers are higher than 64
+		else{
+			//printf("SEARING...\n");
+			unsigned binIndex = 65;
+			unsigned base = 128;
+			bool binned = false;
+
+			//TODO: Could calculate index of bin...
+			for(;binIndex < (m_NumBin-1); binIndex++){
+				//Odd bins hold the rangles between 2^k and 2^(k+1) -1
+				if(binIndex % 2 == 1){
+					if((unsigned) constant< base ){
+						m_BinnedConstants[binIndex] += count;
+						binned = true;
+						break;
+					}
+				}
+				else{
+					if((unsigned)constant == base ){
+						binned = true;
+						m_BinnedConstants[binIndex] += count;
+						break;
+					}
+					base = base<<1;
+				}
+			}
+
+			if(!binned)  m_BinnedConstants[m_NumBin-1]+=count;
+		}
+
+			//If not within the planned range, constant is too large
+}
+
+/**
+ * addConstant
+ *  Adds a constant to the constant list 
+ */
 void Birthmark::addConstant(int constant){
 	m_Constants.insert(constant);
 }
+
 
 /**
  * addFingerprint
  *  Adds a feature into the fingerprint 
  */
 void Birthmark::addFingerprint(std::string featureName, unsigned feature){
+	//This emphasizes the distance between zero and 1. 
+	//We want a 4-3 match to be closer than a 0-1 match
+	if(feature != 0)
+		feature += 1000;
 	m_Fingerprint[featureName] = feature;
 }
 
@@ -450,19 +643,38 @@ void Birthmark::print(){
 		printf("Alpha Sequence: %s\n", it->c_str());
 	
 	//Print the constant
-	std::set<int>::iterator iSet;
 	printf("Constants: ");	
+	/*std::set<int>::iterator iSet;
 	for(iSet = m_Constants.begin(); iSet != m_Constants.end(); iSet++)
-		printf("%d ", *iSet);
+		printf("%d ", *iSet);*/
+
+	for(unsigned int i = 0; i < m_BinnedConstants.size(); i++)
+		printf("%d ", m_BinnedConstants[i]);
+	
+	printf("Statistics: ");	
+	for(unsigned int i = 0; i < m_StatstrV.size(); i++)
+		printf("%d ", m_StatstrV[i]);
+	
 	
 	//Print the structural
 	std::map<std::string, unsigned>::iterator iFP;
 	printf("\nFingerprint:\n");
-	for(iFP = m_Fingerprint.begin(); iFP != m_Fingerprint.end(); iFP++){
+	for(iFP = m_Fingerprint.begin(); iFP != m_Fingerprint.end(); iFP++)
 		printf("TYPE: %s\tVAL: %u\n", iFP->first.c_str(), iFP->second);
 
+
+	printf("\nK-GRAM Set:\n");
+	std::map<std::string, int>::iterator iMap;
+	for(iMap = m_kgramset.begin(); iMap != m_kgramset.end(); iMap++)
+		printf("%10s  %d\n", iMap->first.c_str(), iMap->second);
+	
+	printf("\nK-GRAM Counter:\n");
+	for(unsigned i = 0; i < m_kgramcount.size(); i++){
+		for(iMap = m_kgramcount[i].begin(); iMap != m_kgramcount[i].end(); iMap++)
+			printf("%s:%d ", iMap->first.c_str(), iMap->second);
 		printf("\n");
 	}
+
 	printf("---------------------------------------------------------------\n"); 
 }
 

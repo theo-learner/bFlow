@@ -48,14 +48,14 @@ int main( int argc, char *argv[] ){
 		//Process first ast
 		//########################################################################
 		printf("[REF] -- Reading AST 1\n");
-		std::string cmd = "python scripts/processAST.py " + dotfile1; 
+		std::string cmd = "python scripts/process_ast.py " + dotfile1; 
 		system(cmd.c_str());
 		std::string xmlREF = "data/reference.xml";
 		std::string xmldata= "";
 		std::string xmlline;
 		std::ifstream refStream;
 		refStream.open(xmlREF.c_str());
-		if (!refStream.is_open()) throw Exception("(MAIN:T1) Cannot open file: " + xmlREF);
+		if (!refStream.is_open()) throw cException("(MAIN:T1) Cannot open file: " + xmlREF);
 		while(getline(refStream, xmlline))
 			xmldata+= xmlline + "\n";
 		refStream.close();
@@ -79,7 +79,7 @@ int main( int argc, char *argv[] ){
 		system(cmd.c_str());
 		xmldata= "";
 		refStream.open(xmlREF.c_str());
-		if (!refStream.is_open()) throw Exception("(MAIN:T0) Cannot open file: " + xmlREF);
+		if (!refStream.is_open()) throw cException("(MAIN:T0) Cannot open file: " + xmlREF);
 		while(getline(refStream, xmlline))
 			xmldata+= xmlline + "\n";
 		refStream.close();
@@ -111,7 +111,7 @@ int main( int argc, char *argv[] ){
 		elapsedTime += (end_time.tv_usec - start_time.tv_usec) / 1000.0;
 		printf("[REF] -- Elapsed search time: %f\n", elapsedTime/1000.0);
 	}
-	catch(Exception e){
+	catch(cException e){
 		printf("%s", e.what());
 	}
 	catch(ArgException e){

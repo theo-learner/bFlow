@@ -69,7 +69,7 @@ def extractModuleNames_single(moduleList, vfile):
 
 				#Remove any unwanted characters such as (
 				moduleName = re.split('#|\(',splitted[1])[0]
-				print "MODULE NAME: " + moduleName
+				print " -- MODULE NAME: " + moduleName
 
 				if(hasEnd):             #Make sure there is an endmodule with every module
 					hasEnd = False
@@ -130,7 +130,7 @@ def findModuleChildren(moduleList):
 
 		#Get the location of the module definitions
 		moduleLines = v.snippet;
-		print "CHECKING SUBMODULES IN : " + k
+		#print "CHECKING SUBMODULES IN : " + k
 		
 		for line in moduleLines:
 			splitted = line.split();
@@ -139,7 +139,7 @@ def findModuleChildren(moduleList):
 				#Get the module that was found in the line
 				matching = [s for s in moduleList.keys() if s == splitted[0]]
 				if len(matching) > 0:
-					print " * SUBMODULE FOUND: " + matching[0]
+					#print " * SUBMODULE FOUND: " + matching[0]
 					v.children.append(matching[0]);
 					moduleHasParent.add(matching[0]);    #Used to find top module
 
@@ -207,6 +207,7 @@ def processHierarchy(vfile):
 	H = nx.DiGraph();	
 	growHierarchy(H, topModules[0],  moduleList)	
 	nx.write_dot(H, "test.dot")
+
 
 	return (fileList, topModules, H);
 

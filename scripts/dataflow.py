@@ -19,12 +19,7 @@ from collections import Counter
 
 
 	
-
-
-
-
-
-def extractDataflow(fileName):
+def extractDataflow(fileName, kVal):
 	'''
    extractDataflow	
 	   Extracts the birthmark features from the dotfile representation of circuit
@@ -36,10 +31,10 @@ def extractDataflow(fileName):
 
 	if(".dot" not in fileName):
 		print "[ERROR] -- Input file does not seem to be a dot file"
-		exit()	
+		raise error.GenError("");
 	
 	bExtractor = BirthmarkExtractor(fileName);
-	result = bExtractor.getBirthmark();
+	result = bExtractor.getBirthmark(kVal);
 
 	elapsed = timeit.default_timer() - start_time;
 	print "[DFX] -- ELAPSED: " +  repr(elapsed);

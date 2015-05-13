@@ -46,7 +46,7 @@ int main(int argc, char** argv){
 			std::ifstream ifs;
 			std::string labelFile = argv[2];
 			ifs.open(labelFile.c_str());
-			if(!ifs.is_open()) throw Exception("(MAIN) Cannot open label file");
+			if(!ifs.is_open()) throw cException("(MAIN) Cannot open label file");
 
 			int labelCount;
 			ifs>>labelCount;    //Get number of labels
@@ -68,14 +68,14 @@ int main(int argc, char** argv){
 			if((int)db->getSize() != totalLabels){
 				printf("[WARNING] -- Number of labels and number of circuits do not match\n");
 				printf("          -- Number of CKT: %4d\tNumber of Labels: %4d\n", (int)db->getSize(), totalLabels);
-
+				throw cException("(MAIN) Labels don't match");
 			}
 			else{
-			std::ofstream ofs;
-			ofs.open("data/labels.csv");
-			ofs<<ls.str().substr(0, ls.str().size()-1);  //Remove the last comma
-			ofs.close();
-			printf(" -- Outputting label table to labels.csv\n");
+				std::ofstream ofs;
+				ofs.open("data/labels.csv");
+				ofs<<ls.str().substr(0, ls.str().size()-1);  //Remove the last comma
+				ofs.close();
+				printf(" -- Outputting label table to labels.csv\n");
 
 			}
 		}
@@ -85,42 +85,24 @@ int main(int argc, char** argv){
 
 		//SET UP THE VECTOR TABLE for fingerprint //Vec of each circuit, vec of each fingerprint, vec of the count
 		//number of circuits,      13 types:add..       index = size, val = count 
-		std::vector<std::vector<std::vector<int> > >ftable;
+		std::vector<std::vector<int> >ftable;
 		ftable.reserve(db->getSize());
 		int numSubcomponents = db->getBirthmark(0)->getNumFPSubcomponents();
 		for(unsigned int i = 0; i < db->getSize(); i++){
-			std::vector<std::vector<int> > fVector;
+			std::vector<int> fVector;
 			fVector.reserve(numSubcomponents);
-			for(int k = 0; k < numSubcomponents; k++){
-				std::vector<int> feature;
-				fVector.push_back(feature);
-			}
 			ftable.push_back(fVector);
 		}
 
 		for(unsigned int cIndex = 0; cIndex < db->getSize(); cIndex++){
-			std::map<std::string, Feature*> fpDatabase;
-			std::map<std::string, Feature*>::iterator iFP;
+			std::map<std::string, unsigned> fpDatabase;
+			std::map<std::string, unsigned>::iterator iFP;
 			db->getBirthmark(cIndex)->getFingerprint(fpDatabase);
 
 			//printf(" CKT: %d* Number of features: %d\n",cIndex+1, (int)iFP->second.size());
-			int fIndex = 0;
 			for(iFP = fpDatabase.begin(); iFP != fpDatabase.end(); iFP++){
 				//printf(" * *  INDEXES: %d %d\n", cIndex, q);
-				std::map<unsigned, unsigned> feature;
-				std::map<unsigned, unsigned>::iterator iVal;
-				iFP->second->getFeature(feature);
-
-				for(iVal = feature.begin(); iVal != feature.end(); iVal++){
-
-					//If the size of the fingerprint is smaller than the table, resize table
-					if(iVal->first > ftable[cIndex][fIndex].size()){
-						for(unsigned int w = 0; w < ftable.size(); w++)
-							ftable[w][fIndex].resize(iVal->first);
-					}
-
-					ftable[cIndex][fIndex][iVal->first-1] = iVal->second;	
-				}
+					ftable[cIndex].push_back(iFP->second);	
 			}
 		}
 
@@ -136,7 +118,7 @@ int main(int argc, char** argv){
 			db->getBirthmark(cIndex)->getBinnedConstants(binnedConstVector);
 			ctable.push_back(binnedConstVector);
 		}
-		
+
 
 		std::stringstream statstream;
 		for(unsigned int cIndex = 0; cIndex < db->getSize(); cIndex++){
@@ -158,8 +140,7 @@ int main(int argc, char** argv){
 			//STRUCTURAL
 			std::stringstream ss;
 			for(unsigned int w = 0; w < ftable[q].size(); w++)
-				for(unsigned int e = 0; e < ftable[q][w].size(); e++)
-					ss<<ftable[q][w][e]<<",";
+					ss<<ftable[q][w]<<",";
 
 			//CONSTANT
 			std::stringstream cs;
@@ -180,7 +161,7 @@ int main(int argc, char** argv){
 		}
 
 
-		
+
 
 
 		std::ofstream ofs;
@@ -198,7 +179,7 @@ int main(int argc, char** argv){
 		ofs.open("data/scTable.csv");
 		ofs<< scstream.str();
 		ofs.close();
-		
+
 		printf(" -- Outputing additional structural statistics to stat.csv\n");
 		ofs.open("data/stat.csv");
 		ofs<< statstream.str();
@@ -208,7 +189,7 @@ int main(int argc, char** argv){
 		printf("------------------------------------------------------------\n");
 		printf(" -- COMPLETE!\n");
 	}
-	catch(Exception e){
+	catch(cException e){
 		printf("%s", e.what());
 	}
 	catch(ArgException e){

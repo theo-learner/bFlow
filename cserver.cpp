@@ -49,7 +49,7 @@ int main( int argc, char *argv[] ){
 		//INITIAL HANDSHAKE
 		printf(" -- Performing initial handshake\n" );
 		std::string ready = server->receiveAllData();
-		if(ready != "CLIENT_READY") throw Exception("(main:T1) Client ready signal not returned\n");
+		if(ready != "CLIENT_READY") throw cException("(main:T1) Client ready signal not returned\n");
 		server->sendData("SERVER_READY");
 		printf(" -- Server is ready and running!\n\n");
 
@@ -76,7 +76,7 @@ int main( int argc, char *argv[] ){
 		
 		server->closeSocket();
 	}
-	catch(Exception e){
+	catch(cException e){
 		printf("%s", e.what());
 	}
 	catch(ArgException e){
