@@ -28,7 +28,6 @@ v/altera_safe_state_machine.v
 v/altera_fsm.v
 v/arbiter.v
 v/ring_arb.v
-v/ncsu_arbiter.v
 v/round_robin_arbiter.v
 v/round_robin_arbiter2.v
 v/round_robin_arbiter3.v
@@ -50,6 +49,8 @@ v/generic_fifo_sc_b.v
 v/sasc_fifo4.v
 v/fifo4.v
 v/aFifo.v
+v/asfifo
+v/synchronous_fifo.v
 v/ncsu_regfile.v
 v/reg_8_pack.v
 v/reg_4_pack_clrset.v
@@ -64,6 +65,19 @@ v/altera_ram_dual.v
 v/altera_ram_infer.v
 v/ram_sp_ar_sw.v
 v/ram_sp_sr_sw.v
+v/ethmac10g_rx
+v/ethmac10g_tx
+v/ethmac10g_mgmt
+v/xge_mac
+v/minimac
+v/usb
+v/usb1_funct
+v/usb_phy
+v/softusb
+v/i2c
+v/i2cslave
+v/i2cMSCore
+v/i2cgpio.v
 v/spigpio2.v
 v/spiifc.v
 v/tiny_spi.v
@@ -149,3 +163,10 @@ v/spiraldft_4_4_stream_date.v
 v/spiraldft_4_4_stream_jacm.v
 v/spiraldft_4_4_iter_date.v
 v/spiraldft_4_4_iter_jacm.v
+v/netfpga/small_async_fifo.v
+v/netfpga/small_fifo.v
+v/netfpga/small_fifo_v2.v
+v/netfpga/small_fifo_v3.v
+v/aes128la
+v/aes192la
+v/basic_hashfunc.v

@@ -22,10 +22,10 @@
 #include <sys/time.h>
 #include <sys/stat.h>
 
-#include "libs/seqan/align.h"
-#include "libs/seqan/basic.h"
-#include "libs/seqan/score.h"
-#include "libs/seqan/stream.h"
+#include "seqan/align.h"
+#include "seqan/basic.h"
+#include "seqan/score.h"
+#include "seqan/stream.h"
 #include "error.hpp"
 
 
@@ -95,6 +95,8 @@ namespace SIMILARITY{
 
 	double resemblance(std::map<std::string,int>& , std::map<std::string, int>&) ;
 	double containment(std::map<std::string,int>& , std::map<std::string, int>&) ;
+	double resemblance(std::map<std::map<std::string,int>,int>& , std::map<std::map<std::string,int>, int>&) ;
+	double containment(std::map<std::map<std::string,int>,int>& , std::map<std::map<std::string,int>, int>&) ;
 
 }
 

@@ -23,9 +23,13 @@ def create_yosys_script(fileName, scriptName, hier = False, opt = False):
 	if(len(fileList) == 0):
 		raise error.GenError("File list is empty")
 
-	topModules = hierarchy.findModuleChildren(moduleList);
+	topModules = hierarchy.getTopModule(moduleList);
 	top = topModules[0];
-	if opt:                  #simplify only the database circuits
+	topfile = topModules[1];
+
+
+
+	if opt == True:                  #simplify only the database circuits
 		print "[YOSYS] -- Optimizations on"
 	else:
 		print "[YOSYS] -- Optimizations off"
@@ -33,30 +37,34 @@ def create_yosys_script(fileName, scriptName, hier = False, opt = False):
 	for vfile in fileList:
 		script = script + "read_verilog " + vfile + "\n";
 
-	opt = "opt_muxtree; opt_reduce -full; opt_share; opt_rmdff;\n"
+	optcmd = "opt_muxtree; opt_reduce -full; opt_share; opt_rmdff;\n"
 
 	if opt == True:                  #simplify only the database circuits
-		opt = opt + "opt_clean;\n"     #Many unused net and cells will be removed
+		optcmd = optcmd + "opt_clean;\n"     #Many unused net and cells will be removed
 
-	if opt == False:
-		fsm = "fsm_detect; fsm_extract; fsm_opt; fsm_expand; fsm_recode; fsm_map;\n"
+	#if opt != True:
+	if opt != True:
+		fsmcmd = "fsm_detect; fsm_extract; fsm_opt; fsm_expand; fsm_opt; fsm_recode; fsm_map;\n"
+		#fsmcmd = fsmcmd + "fsm_recode; fsm_map;\n"
 	else:
-		fsm = "fsm;\n"
+		fsmcmd = "fsm;\n"
 
 	
-	fsm = fsm + "fsm_recode; fsm_map;\n"
 
 	script = script + "\n\n";
 	script = script + "hierarchy -check\n";
 	script = script + "proc;\n\n";
-	script = script + fsm;
+	script = script + fsmcmd;
 	script = script + "memory_collect;\n\n";
-	script = script + opt;
 
 	#script = script + "techmap -map /usr/local/share/yosys/pmux2mux.v;\n\n"
 	script = script + "flatten\n";
-	script = script + "wreduce\n\n";
-	script = script + opt;
+	
+	if opt == True:                  #simplify only the database circuits
+		script = script + "wreduce\n";
+
+	script = script + optcmd;
+	#script = script + "splice;\n";
 	script = script + "stat " + top + "\n\n";
 
 
@@ -74,12 +82,11 @@ def create_yosys_script(fileName, scriptName, hier = False, opt = False):
 		script = script + "show -width -format dot -prefix ./dot/"+ top +" " + top + "\n";
 		dotFile.append(top);
 
-
 	fileStream = open(scriptName, 'w');
 	fileStream.write(script);
 	fileStream.close();
 
-	return (dotFile, top);
+	return (dotFile, top, topfile);
 
 
 

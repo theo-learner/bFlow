@@ -28,8 +28,8 @@
 #include "database.hpp"
 #include "error.hpp"
 
-#include "libs/rapidxml/rapidxml.hpp"
-#include "libs/rapidxml/rapidxml_print.hpp"
+#include "rapidxml/rapidxml.hpp"
+#include "rapidxml/rapidxml_print.hpp"
 using namespace rapidxml;
 
 
@@ -49,7 +49,7 @@ int main( int argc, char *argv[] ){
 		//########################################################################
 		printf("[REF] -- Reading AST 1\n");
 		std::string cmd = "python scripts/process_ast.py " + dotfile1; 
-		system(cmd.c_str());
+		int status = system(cmd.c_str());
 		std::string xmlREF = "data/reference.xml";
 		std::string xmldata= "";
 		std::string xmlline;
@@ -76,7 +76,7 @@ int main( int argc, char *argv[] ){
 		//Process second ast
 		//########################################################################
 		cmd = "python scripts/processAST.py " + dotfile2; 
-		system(cmd.c_str());
+		status = system(cmd.c_str());
 		xmldata= "";
 		refStream.open(xmlREF.c_str());
 		if (!refStream.is_open()) throw cException("(MAIN:T0) Cannot open file: " + xmlREF);

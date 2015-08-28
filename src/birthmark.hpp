@@ -21,9 +21,9 @@
 
 #include "error.hpp"
 
-#include "libs/rapidxml/rapidxml.hpp"
-#include "libs/rapidxml/rapidxml_print.hpp"
-#include "libs/strtk/strtk.hpp"
+#include "rapidxml/rapidxml.hpp"
+#include "rapidxml/rapidxml_print.hpp"
+#include "strtk/strtk.hpp"
 
 struct sGram{
 	std::string next;
@@ -35,10 +35,12 @@ class Birthmark{
 	private: 
 		static const unsigned m_NumBin = 94;
 		
-		std::map<std::string, sGram> m_ktable;
+		std::map<std::string, sGram> m_ktable;    //Used primarily for db
+		std::list<std::string> m_EndGrams;          //End grams (Used primarily for ref)
 
 		int m_ID;                                 //ID of the circuit
 		std::string m_Name;                       //Name of the circuit
+		std::string m_TopFile;                       //Name of the circuit
 
 		//FUNCTIONAL
 		std::list<std::string> m_MaxSequence;     //Maximun datapath sequences
@@ -65,6 +67,8 @@ class Birthmark{
 		std::map<std::string, std::vector<std::vector<int> > >m_kgramline;
 
 		std::vector<std::map<std::string, int> > m_kgramcount;
+		std::map<std::map<std::string, int>, int > m_kgramfreq;
+		//std::set<std::map<std::string, int> > m_kgramfreq;
 
 
 
@@ -80,16 +84,25 @@ class Birthmark{
 		void getKGramSet(std::map<std::string, int>&);
 		void getKGramList(std::map<std::string, int>&);
 		void getKGramCounter(std::vector<std::map<std::string, int> > &);
+		void getKGramFreq(std::map<std::map<std::string, int>, int > &);
+		int getKGramFreq();
+		int getKGramSetSize();
+		int getKGramListSize();
+		int getKGramCounterSize();
 		void getStat(std::vector<int>&);
 		void getBinnedConstants(std::vector<unsigned>&);         //Bins the constants into a histogram
 		void getBinnedConstants2(std::vector<unsigned>&);         //Bins the constants into a histogram
 		void getFingerprint(std::map<std::string, unsigned> &);
 		double getAvgSequenceLength();                           //Gets AVG SEQ LEN of all SEQ
 		std::string getName();
+		std::string getFileName();
 		int getID();
 		unsigned getNumFPSubcomponents();
 		std::string getStatstr();
-		
+		void getEndGrams(std::list<std::string> &);
+		void getEndGrams(std::list<std::string> &, int); //Given a line number
+		std::string getFuture(std::string, std::set<int>&);
+
 		void setMaxSequence(std::list<std::string>&);
 		void setMinSequence(std::list<std::string>&);
 		void setAlphaSequence(std::list<std::string>&);

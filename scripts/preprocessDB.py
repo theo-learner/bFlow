@@ -63,10 +63,11 @@ try:
 		# Processes the verilog files 
 		start_yosys = timeit.default_timer();
 		if arg == 'h':
-			val  = yosys.create_yosys_script(line, scriptName, hier=True)
+			val  = yosys.create_yosys_script(line, scriptName, hier=True, opt=True)
 		else:
-			val  = yosys.create_yosys_script(line, scriptName)
+			val  = yosys.create_yosys_script(line, scriptName, opt=True)
 
+		vfile = val[2];
 		top = val[1];
 		dotFiles = val[0];
 
@@ -93,12 +94,19 @@ try:
 
 				processedTop.add(dotfile);
 				dotfilename = "./dot/"+dotfile+".dot";
-				ckttag = xmlExtraction.generateXML(dotfilename, ID, dotfile, soup, kVal)
+				ckttag = xmlExtraction.generateXML(dotfilename, soup, kVal)
+				ckttag['name'] = dotfile;
+				ckttag['file'] = vfile;
+				ckttag['id'] = ID 
+
 				dbtag.append(ckttag)
 				ID = ID + 1;
 		elif arg == "":
 			dotfilename = "./dot/"+dotFiles[0]+".dot";
-			ckttag = xmlExtraction.generateXML(dotfilename, ID, dotFiles[0], soup, kVal)
+			ckttag = xmlExtraction.generateXML(dotfilename, soup, kVal)
+			ckttag['name'] = dotFiles[0];
+			ckttag['file'] = vfile;
+			ckttag['id'] = ID 
 			dbtag.append(ckttag)
 			ID = ID + 1;
 		else:
@@ -124,9 +132,10 @@ try:
 	print " -- Hierarchy: " + repr(arg == '-h');
 	print " -- XML File saved  : " + dbFile;
 	print " -- Files processed : " + repr(ID);
-	print " -- Multiple modules found:"
-	for top in multipleTop:
-		print "   * " + top;
+	if(len(multipleTop) > 0):
+		print " -- Multiple modules found:"
+		for top in multipleTop:
+			print "   * " + top;
 
 	print "-----------------------------------------------------------------------"
 	elapsed = timeit.default_timer() - start_all;

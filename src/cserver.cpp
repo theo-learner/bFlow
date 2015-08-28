@@ -26,8 +26,8 @@
 #include "database.hpp"
 #include "error.hpp"
 
-#include "libs/rapidxml/rapidxml.hpp"
-#include "libs/rapidxml/rapidxml_print.hpp"
+#include "rapidxml/rapidxml.hpp"
+#include "rapidxml/rapidxml_print.hpp"
 using namespace rapidxml;
 
 int main( int argc, char *argv[] ){
@@ -67,7 +67,7 @@ int main( int argc, char *argv[] ){
 			Birthmark* refBirthmark = new Birthmark();
 			refBirthmark->importXML(cktNode);
 
-			db->searchDatabase(refBirthmark);
+			db->searchDatabase(refBirthmark, "KFC" );
 
 
 			delete refBirthmark;

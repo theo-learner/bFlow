@@ -54,11 +54,12 @@ def main():
 		 Main function: Shows the birthmark that was extracted
 	'''
 	try:
-		if len(sys.argv) != 2: 
+		if len(sys.argv) != 3: 
 			raise error.ArgError();
 		
 		dotfile = sys.argv[1];
-		result = extractDataflow(dotfile);
+		kVal = sys.argv[2];
+		result = extractDataflow(dotfile, kVal);
 		#print result;
 		#f = open("tmpoptimizednew", 'w');
 		#f.write(repr(result))
@@ -70,10 +71,10 @@ def main():
 			print("    This program reads the files in a directory (dot files of circuits from YOSYS)");
 			print("    It converts the graphical representation to a format that can be passed");
 			print("    into gSpan such that frequent subgraphs between the set of circuits");
-			print("\n  Usage: python dataflow.py [DOT FILE]\n");
+			print("\n  Usage: python dataflow.py [DOT FILE] [k]\n");
 		else:
 			print "[ERROR] -- Not enough argument. Provide DOT File to process";
-			print("           Usage: python dataflow.py [DOT FILE]\n");
+			print("           Usage: python dataflow.py [DOT FILE] [k]\n");
 
 
 

@@ -113,11 +113,8 @@ always @(posedge sys_clk) begin
 				end else if(tx_bitcount == 4'd9) begin
 					uart_tx <= 1'b1;
 					tx_busy <= 1'b0;
-					tx_done <= 1'b1;
-				end else begin
-					uart_tx <= tx_reg[0];
-					tx_reg <= {1'b0, tx_reg[7:1]};
-				end
+					tx_done <= 1'b1; //here
+				end 
 			end
 		end
 	end

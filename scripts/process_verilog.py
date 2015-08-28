@@ -20,7 +20,8 @@ def generateYosysScript(verilogFile, optVal):
 	scriptResult = yosys.create_yosys_script(verilogFile, scriptName, opt=optVal)
 	dotFiles = scriptResult[0];
 	top = scriptResult[1];
-	return (scriptName, dotFiles, top);
+	vfile= scriptResult[2];
+	return (scriptName, dotFiles, top, vfile);
 
 
 
@@ -54,11 +55,15 @@ def main():
 
 
 		#Preprocess yosys script
-		(scriptName, dotFiles, top) = generateYosysScript(vfile, opt);
+		(scriptName, dotFiles, top, vfile) = generateYosysScript(vfile, opt);
 		rVal = yosys.execute(scriptName);
 		soup = BeautifulSoup();
 
-		ckttag = xmlExtraction.generateXML("./dot/" + top+".dot", -1, top, soup, kVal, verboseValue)
+		ckttag = xmlExtraction.generateXML("./dot/" + top+".dot", soup, kVal, verbose=verboseValue, findEndGram=True)
+		ckttag['name'] = top;
+		ckttag['file'] = vfile;
+		ckttag['id'] = -1
+
 		soup.append(ckttag);
 
 		

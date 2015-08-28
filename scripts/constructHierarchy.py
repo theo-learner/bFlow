@@ -21,6 +21,7 @@ class Module:
 
 	def __init__(self):
 		self.name = ""
+		self.fileName = ""
 		self.snippet = [];
 		self.children = [] ;
 
@@ -78,6 +79,7 @@ def extractModuleNames_single(moduleList, vfile):
 
 				m = Module();
 				m.name = moduleName;
+				m.fileName = vfile
 				startIndex = index+1;
 				moduleList[moduleName] = m;
 
@@ -122,7 +124,7 @@ def extractModuleNames(moduleList, name):
 	return fileList;
 
 
-def findModuleChildren(moduleList):
+def getTopModule(moduleList):
 	#Search for module declarations
 	moduleHasParent = set();
 	index = 0;
@@ -172,7 +174,7 @@ def findModuleChildren(moduleList):
 		else:
 			print "[HIER] -- Issue resolved. TOP: " + topModules[0]
 	
-	return topModules
+	return (topModules[0], moduleList[topModules[0]].fileName)
 
 
 
@@ -202,7 +204,7 @@ def growHierarchy(H, moduleName, moduleList):
 def processHierarchy(vfile):
 	moduleList = dict()
 	fileList = extractModuleNames(moduleList, vfile)
-	topModules = findModuleChildren(moduleList);
+	topModules = getTopModule(moduleList);
 
 	H = nx.DiGraph();	
 	growHierarchy(H, topModules[0],  moduleList)	

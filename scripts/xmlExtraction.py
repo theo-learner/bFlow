@@ -5,13 +5,29 @@
 		Extracts the birthmark from the AST and stores it in XML
 '''
 
-import dataflow as dfx
+#import dataflow as dfx
 from bs4 import BeautifulSoup
 from sortedcontainers import SortedSet
+from bExtractor import BirthmarkExtractor
+import timeit
 
-def generateXML(dotfile, ID,  cktName, soup, kVal, verbose=False):
+def generateXML(dotfile, soup, kVal, verbose=False, findEndGram=False):
+
+	start_time = timeit.default_timer();
 	print "VERBOSE: " + repr(verbose)
-	result = dfx.extractDataflow(dotfile, kVal);
+	#result = dfx.extractDataflow(dotfile, kVal);
+
+	if(".dot" not in dotfile):
+		print "[ERROR] -- Input file does not seem to be a dot file"
+		raise error.GenError("");
+	
+	bExtractor = BirthmarkExtractor(dotfile);
+	result = bExtractor.getBirthmark(kVal, isFindEndGram= findEndGram);
+
+	elapsed = timeit.default_timer() - start_time;
+	print "[DFX] -- ELAPSED: " +  repr(elapsed);
+	print
+
 	if verbose == True:
 		print "MAXSEQ" 
 		print result[0]
@@ -38,13 +54,15 @@ def generateXML(dotfile, ID,  cktName, soup, kVal, verbose=False):
 		print result[6][1]
 		print
 		print "KLIST" 
-		print result[6][2]
+		for gram, cnt in result[6][2].iteritems():
+			print repr(cnt) + "\t" + repr(gram);
 		print
+		print "ENDGRAM"
+		for gram in result[6][4]:
+			print repr(gram) + "   " + repr(result[6][5][gram]);
 
 #######################################################
 	ckttag = soup.new_tag("CIRCUIT");
-	ckttag['name'] = cktName;
-	ckttag['id'] = ID 
 
 	#Store the max seq
 	maxList = result[0];
@@ -133,6 +151,30 @@ def generateXML(dotfile, ID,  cktName, soup, kVal, verbose=False):
 		
 		kgramlist_tag['CNT'] = cnt
 		ckttag.append(kgramlist_tag);
+	
+
+	if(findEndGram != False):
+		endGramList = result[6][4];
+		endGramLine = result[6][5];
+
+		for s in endGramList:
+			kgramlist_tag = soup.new_tag("ENDKLIST");
+
+			kstring = "".join(item for item in s);
+			kgramdp_tag = soup.new_tag("DP");
+			kgramdp_tag.string = kstring;
+			kgramlist_tag.append(kgramdp_tag);
+
+
+			for lineset in endGramLine[s]:
+				klinenum = ",".join(item for item in lineset)
+
+				kgramline_tag = soup.new_tag("LN");
+				kgramline_tag.string = klinenum;
+				kgramlist_tag.append(kgramline_tag);
+			
+			
+			ckttag.append(kgramlist_tag);
 
 	return ckttag
 

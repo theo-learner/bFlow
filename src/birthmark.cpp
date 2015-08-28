@@ -53,28 +53,27 @@ bool Birthmark::importXML(xml_node<>* cktNode){
 		if(cktNodeName!= "CIRCUIT") throw cException("(Birthmark::importXML:T1) Tag not found") ;
 
 		std::string cktName = "===";  
+		std::string fileName= "===";  
 		int id = -2;
+
 
 		//Get the name and ID of the circuit (Variable Order) 
 		xml_attribute<>* cktAttr = cktNode->first_attribute();
-		if(cktAttr == NULL) throw cException("(Birthmark::importXML:T2) No Attributes found") ;
-		std::string cktAttrName = cktAttr->name();
-		if(cktAttrName == "name") cktName = cktAttr->value(); 
-		else if(cktAttrName == "id") id = s2i::string2int(cktAttr->value()); 
-		else throw cException("(Birthmark::importXML:T3) Unexpected Attribute Tag Found") ;
+		while(cktAttr != NULL){
+			std::string cktAttrName = cktAttr->name();
+			if(cktAttrName == "name") cktName = cktAttr->value(); 
+			else if(cktAttrName == "id") id = s2i::string2int(cktAttr->value()); 
+			else if(cktAttrName == "file") fileName = cktAttr->value(); 
+			else throw cException("(Birthmark::importXML:T3) Unexpected Attribute Tag Found: "+ cktAttrName + "\n");
+			cktAttr = cktAttr->next_attribute();
+		}
 
-		cktAttr = cktAttr->next_attribute();
-		if(cktAttr == NULL) throw cException("(Birthmark::importXML:T4) No Attributes found") ;
-		cktAttrName = cktAttr->name();
-		if(cktAttrName == "name") cktName = cktAttr->value(); 
-		else if(cktAttrName == "id") id = s2i::string2int(cktAttr->value()); 
-		else throw cException("(Birthmark::importXML:T5) Unexpected Attribute Tag Found") ;
-
-		if(id < -1 || cktName == "===") throw cException("(Birthmark::importXML:T6) Attribute Error") ;
+		//if(id < -1 || cktName == "===") throw cException("(Birthmark::importXML:T6) Attribute Error") ;
 
 		//Set the ID and Name of the circuit
 		setID(id);
 		setName(cktName);
+		m_TopFile = fileName;
 		//printf("[BM] -- Importing Circuit: %s\n", cktName.c_str());
 
 		std::map<unsigned, unsigned> fingerprint;
@@ -122,7 +121,6 @@ bool Birthmark::importXML(xml_node<>* cktNode){
 
 			}
 			else if(featureNodeName == "KLIST"){
-				
 				//CNT Attribute
 				xml_attribute<>* kAttr = featureNode->first_attribute();
 				if(kAttr == NULL) throw cException("(Birthmark::importXML:T10) No CNT attribute found") ;
@@ -171,7 +169,7 @@ bool Birthmark::importXML(xml_node<>* cktNode){
 				std::string kAttrName= kAttr->name();
 
 				if(kAttrName != "CNT") throw cException("(Birthmark::importXML:T11) Unknown attr found for kgram: " + kAttrName) ;
-				//int count = s2i::string2int(kAttr->value()); 
+				int count = s2i::string2int(kAttr->value()); 
 				
 				xml_node<>* fncNode = featureNode->first_node();
 				std::map<std::string, int> kgramc;
@@ -189,7 +187,34 @@ bool Birthmark::importXML(xml_node<>* cktNode){
 				}
 
 				m_kgramcount.push_back(kgramc);
+				//m_kgramfreq.insert(kgramc);
+				m_kgramfreq[kgramc] = count;
 				//m_kgramcountc.push_back(count);
+			}
+			else if(featureNodeName == "ENDKLIST"){
+				xml_node<>* lNode = featureNode->first_node();
+				std::string kstr = "";
+
+				std::vector<std::vector<int> > lineVector;
+				while(lNode != NULL){
+					std::string lNodeName = lNode->name();
+					//TODO: If don't need line numbe associated with the reference, remove
+					if(lNodeName == "LN"){
+						/*
+						std::string linenumstring= lNode->value();
+						std::vector<int> linenum;
+						strtk::parse(linenumstring, ",", linenum);
+						lineVector.push_back(linenum);
+						*/
+					}
+					else if(lNodeName == "DP")
+						kstr = lNode->value();
+					else throw cException("(Birthmark::importXML:T12) Unknown LNode: " + lNodeName);
+					
+					lNode= lNode->next_sibling(); 
+				}
+
+				m_EndGrams.push_back(kstr);
 			}
 			else throw cException("(Birthmark::importXML:T12) Unknown tag found in XML: " + featureNodeName);
 
@@ -202,6 +227,18 @@ bool Birthmark::importXML(xml_node<>* cktNode){
 
 
 
+		int Birthmark::getKGramSetSize(){
+			return m_kgramset.size(); 
+		}
+		int Birthmark::getKGramListSize(){
+			return m_kgramlist.size(); 
+		}
+		int Birthmark::getKGramCounterSize(){
+			return m_kgramcount.size(); 
+		}
+		int Birthmark::getKGramFreq(){
+			return m_kgramfreq.size(); 
+		}
 
 
 
@@ -269,8 +306,124 @@ void Birthmark::getKGramSet(std::map<std::string, int >& rVal){
  * getKGramCounter
  *  Returns Kgram counter version 
  */
+void Birthmark::getKGramFreq(std::map<std::map<std::string, int>, int >& rVal){
+//void Birthmark::getKGramFreq(std::set<std::map<std::string, int> >& rVal){
+	rVal = m_kgramfreq;
+}
+
+
+/**
+ * getKGramCounter
+ *  Returns Kgram counter version 
+ */
 void Birthmark::getKGramCounter(std::vector<std::map<std::string, int> >& rVal){
 	rVal = m_kgramcount;
+}
+
+/**
+ * getEndGrams
+ *  Returns EndGrams 
+ */
+void Birthmark::getEndGrams(std::list<std::string>& rVal){
+	rVal = m_EndGrams;
+}
+
+/**
+ * getEndGrams
+ *  Returns EndGrams of a given line number
+ */
+void  Birthmark::getEndGrams(std::list<std::string>& endGrams, int line){
+	std::map<std::string, std::vector<std::vector<int> > >::iterator iMap;
+	std::set<std::string> currentEndGram;
+	std::set<std::string> currentEndGram2; //The grams with line numbers not at the end
+	int maxLineIndex = 0;
+	int maxGramLength= 0;
+	for(iMap = m_kgramline.begin(); iMap != m_kgramline.end(); iMap++){
+		for(unsigned int i = 0; i < iMap->second.size(); i++){
+			int lineIndex = iMap->second[i].size()-1;
+			int endLine = iMap->second[i][lineIndex] ;
+			if(endLine == line){
+				if(maxGramLength <= (int)iMap->first.length()){
+					printf("ENDGRAM FOUND: %s\n", iMap->first.c_str());
+					if(maxGramLength < (int)iMap->first.length()){
+						currentEndGram.clear();
+						maxGramLength = iMap->first.length();
+					}
+					currentEndGram.insert(iMap->first);
+
+				}
+
+				continue;
+			}
+			
+			while(endLine == -1 && lineIndex >= 0){
+				lineIndex--;	
+				endLine = iMap->second[i][lineIndex];
+				if(endLine == line && lineIndex >= maxLineIndex){
+					//Reset the list if there is an index higher
+					if(lineIndex > maxLineIndex){
+						currentEndGram2.clear();
+						maxLineIndex = lineIndex;
+					}
+					
+					currentEndGram2.insert(iMap->first);
+				}
+			}
+
+		}
+	}
+
+
+	
+	std::set<std::string>::iterator iSet;
+	if(currentEndGram.size() > 0){
+		if(currentEndGram.size() > 1)
+			printf("[WARNING] -- Multiple possible Q-Gram for current reference position found\n");
+
+		for(iSet = currentEndGram.begin(); iSet != currentEndGram.end(); iSet++)
+			endGrams.push_back(*iSet);
+	}
+	else if(currentEndGram2.size() >0){
+		if(currentEndGram2.size() > 1)
+			printf("[WARNING] -- Multiple possible Q-Gram for current reference position found\n");
+		for(iSet = currentEndGram2.begin(); iSet != currentEndGram2.end(); iSet++)
+			endGrams.push_back(*iSet);
+	}
+
+}
+
+/**
+ * getFuture
+ *  Searches for possible future lines in the code 
+ */
+std::string Birthmark::getFuture(std::string gram, std::set<int>& linenums){
+	std::map<std::string, sGram>::iterator iMap;
+	iMap = m_ktable.find(gram);
+	if(iMap == m_ktable.end()){
+		//printf("NO ENDGRAM: %s\n", gram.c_str());
+		return "NONE";
+	}
+
+	for(unsigned int i = 0; i < iMap->second.linenum.size(); i++){
+		int size = iMap->second.linenum[i].size()-1;
+		int linenum = iMap->second.linenum[i][size];
+		while(linenum == -1 && size >= 0){
+			size--;
+			linenum = iMap->second.linenum[i][size];
+		}
+
+
+		//ss<<linenum<<",";
+		linenums.insert(linenum);
+		if(size > 0){
+			linenum = iMap->second.linenum[i][size-1];
+			linenums.insert(linenum);
+		}
+	}
+	
+
+
+	return iMap->second.next;
 }
 
 /**
@@ -279,6 +432,14 @@ void Birthmark::getKGramCounter(std::vector<std::map<std::string, int> >& rVal){
  */
 std::string Birthmark::getName(){
 	return m_Name;
+}
+
+/**
+ * getFileName
+ *  Returns circuit name 
+ */
+std::string Birthmark::getFileName(){
+	return m_TopFile;
 }
 
 /**
@@ -490,7 +651,7 @@ void Birthmark::setStatstr(std::string stat){
  */
 void Birthmark::addKTable(std::string kstr, std::vector<std::vector<int> >& line){
 	std::string km1 = kstr.substr(0, kstr.length()-1);
-	std::string kmlast = "" + kstr[kstr.length()-1];
+	std::string kmlast = kstr.substr(kstr.length()-1, kstr.length());
 
 	std::map<std::string, sGram>::iterator iGram;
 	iGram = m_ktable.find(km1);

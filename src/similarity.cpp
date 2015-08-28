@@ -155,6 +155,9 @@ double SIMILARITY::resemblance(std::map<std::string,int>& data1, std::map<std::s
 
 	//Union is the number of shared + the number of items not shared in 1 and 2
 	numunion = intersection + data1.size() -intersection + data2.size() - intersection;
+	if(numunion == 0.0)
+		return 0.0;
+
 
 	return intersection / numunion;
 	
@@ -170,6 +173,8 @@ double SIMILARITY::resemblance(std::map<std::string,int>& data1, std::map<std::s
 
 double SIMILARITY::containment(std::map<std::string,int>& data1, std::map<std::string, int>& data2){
 	double intersection = 0.0;
+	if(data2.size() == 0)
+		return 0.0;
 
 	std::map<std::string, int>::iterator iMap;
 	for(iMap = data1.begin(); iMap != data1.end(); iMap++){
@@ -180,6 +185,56 @@ double SIMILARITY::containment(std::map<std::string,int>& data1, std::map<std::s
 
 	//printf("NUM: %f\tDEN: %d\n", intersection, data2.size());
 	return intersection / (double)data2.size();
+	
+}
+
+
+/**
+ * Resemblance 
+ *   Resemblance formula for two sets of KGRAM
+ */
+
+double SIMILARITY::resemblance(std::map<std::map<std::string,int>, int>& data1, std::map<std::map<std::string, int>, int>& data2){
+	double intersection = 0.0;
+	double numunion= 0.0;
+
+	std::map<std::map<std::string, int>, int>::iterator iMap;
+	for(iMap = data1.begin(); iMap != data1.end(); iMap++){
+		//Intersection is the number of grams that are shared between the two
+		if(data2.find(iMap->first) != data2.end())
+			intersection += 1.0;
+	}
+
+	//Union is the number of shared + the number of items not shared in 1 and 2
+	numunion = intersection + data1.size() -intersection + data2.size() - intersection;
+	if(numunion == 0.0) return 0.0;
+
+	return intersection / numunion;
+	
+}
+
+
+
+/**
+ * Containment 
+ *   Containment formula for two sets of KGRAM
+ *   Data2 is the smaller or query circuit
+ */
+
+double SIMILARITY::containment(std::map<std::map<std::string,int>, int>& data1, std::map<std::map<std::string,int>, int>& data2){
+	if(data2.size()== 0) return 0.0;
+	double intersection = 0.0;
+
+	std::map<std::map<std::string, int>, int>::iterator iMap;
+	for(iMap = data1.begin(); iMap != data1.end(); iMap++){
+		//Intersection is the number of grams that are shared between the two
+		if(data2.find(iMap->first) != data2.end())
+			intersection += 1.0;
+	}
+
+	//printf("NUM: %f\tDEN: %d\n", intersection, data2.size());
+	return intersection / (double)data2.size();
+	
 	
 }
 

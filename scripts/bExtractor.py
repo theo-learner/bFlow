@@ -1,9 +1,13 @@
 #!/usr/bin/python2.7
 
 '''
-	dataflow module
-		Contains functions to extract a dataflow from a dot file
-		Given after yosys synthesis of a verilog file
+	Birthmark Extractor module
+		Object that contains methods to extract birthmarks from the dataflow
+		Features it looks for currently:
+		  Functional Datapaths MAX, MIN, Most unique operation path
+			Structural component enumeration and statistics
+			Constant enumeration
+			Path-based n-gram search
 '''
 
 import networkx as nx;
@@ -78,57 +82,53 @@ class BirthmarkExtractor(object):
 		self.kgramcounter= Counter();
 		self.kgramlist= Counter();
 		self.kgram= set();
-		self.kgramline = dict(); #tuple...list of list of line numbers associated with the tuple 
+		self.kgramline = dict(); #tuple(Sequence letters)...list of list of line numbers associated with the tuple 
 
 		#self.kgramcountertuple= Counter();
 		self.k = k;
 
-		inputs = self.inNodeList + self.constantList
-
 		for c in self.cnodes:
-			print "\n\nChecking node: " + c
+			#print "\n\nChecking node: " + c
 			path = [];
 			self.markflag = 0;
 			marked = set();
 			self.findKGramPath(c ,  marked,  path );
 			#print
 			
-		#print self.kgram
-		for s in self.kgram:
-			slist = [self.extractSequenceLetter(n) for n in s]
-			#self.kgramline[tuple(slist)] = [][self.linenumber.get(n, -1) for n in s]]
-
-			self.kgramline.setdefault(tuple(slist), set()).add(tuple(self.linenumber.get(n,"-1") for n in s));
-
-			self.kgramlist[tuple(slist)] += 1;
-			self.kgramset[frozenset(slist)] += 1;
-			self.kgramcounter[FrozenDict(Counter(slist))] += 1;
-
 		elapsed = timeit.default_timer() - start_time;
 		return elapsed;
 		
 
 	def findKGramPath(self, node, marked,  path): 
-		print "Checking node: " + node +  "\t" + repr(path)
+		#print "Checking node: " + node +  "\t" + repr(path)
 
 		marked.add(node)
 
 		#Record nodes that aren't wires, splices, constants, or ports
+		appended = False
 		if not any(s in node for s in ['n', 'x', 'v']):
+			appended = True;
 			path.append(node);
-			print " NEW PATH: " + repr(path);
+			#print " NEW PATH: " + repr(path);
 
 			#Record the current gram if len is greater than k
 			pathlen = len(path)
 			if(pathlen <= self.k and pathlen > 1):
+			#if(pathlen == self.k):
 				#slist = [self.extractSequenceLetter(n) for n in path[len(path)-self.k:]]
-				self.kgram.add(tuple(path));
+
+				slist = tuple(self.extractSequenceLetter(n) for n in path)
+				self.kgramline.setdefault(slist, set()).add(tuple(self.linenumber.get(n,"-1") for n in path));
+				self.kgramlist[slist] += 1;
+				self.kgramset[frozenset(slist)] += 1;
+				self.kgramcounter[FrozenDict(Counter(slist))] += 1;
 			
-				print "  GRAM ADDED" 
+				#print "  GRAM ADDED" 
 
 				if pathlen == self.k:
-					print " POP"
+					#print " POP"
 					del path[-1];
+					marked.remove(node)
 					return
 
 				
@@ -136,15 +136,64 @@ class BirthmarkExtractor(object):
 		for succ in succList:
 			if succ not in marked:
 				self.findKGramPath(succ, marked , path);
-			else:
-				print succ + " is marked..."
+			#else:
+			#	print succ + " is marked..."
+
+
+
+		#Pop only if node was inserted into path
+		#if not any(s in node for s in ['n', 'x', 'v']):
+
+		if appended == True:
+			del path[-1];
+			#print " POP"
+			
+		marked.remove(node)
+	
+	
+	
+	def findKGramPath_Backwards(self, node, marked,  path): 
+		#print "Checking node: " + node +  "\t" + repr(path)
+
+		marked.add(node)
+
+		#Record nodes that aren't wires, splices, constants, or ports
+		if not any(s in node for s in ['n', 'x', 'v']):
+			path.append(node);
+
+			#Record the current gram if len is greater than k
+			pathlen = len(path)
+			if(pathlen <= self.k and pathlen > 1):
+				#slist = [self.extractSequenceLetter(n) for n in path[len(path)-self.k:]]
+
+				#Reverse the path since traversal is backwards
+				reversePath = list(reversed(path));
+				slist = tuple(self.extractSequenceLetter(n) for n in reversePath)
+				self.endGramLine.setdefault(slist, set()).add(tuple(self.linenumber.get(n,"-1") for n in reversePath));
+				self.endGramList.add(slist);
+			
+				#print " NEW PATH: " + repr(path) + "  " + repr(slist);
+
+				if pathlen == self.k:
+					#print " POP"
+					del path[-1];
+					return
+
+				
+		predList= self.dfg.predecessors(node);
+		for pred in predList:
+			if pred not in marked:
+				self.findKGramPath_Backwards(pred, marked , path);
+			#else:
+			#	print succ + " is marked..."
 
 
 
 		#Pop only if node was inserted into path
 		if not any(s in node for s in ['n', 'x', 'v']):
 			del path[-1];
-			print " POP"
+			#print " POP"
+		marked.remove(node)
 	
 
 	def findKATree(self, node, marked,  path): 
@@ -435,6 +484,8 @@ class BirthmarkExtractor(object):
 			 @PARAM: maxPathList    - The nodes currently found with the minLen
 			 @RETURN List of the datapaths from node to dst who's path is minimum
 		'''
+		marked.add(node);	
+
 		#print "Checking node: " + node + ". DST: " + dst
 		if node == dst:
 			#print " * Node is dst!"
@@ -481,10 +532,10 @@ class BirthmarkExtractor(object):
 			simpPath.append(node)
 
 		path.append(node);
-		marked.add(node);	
 		succList = self.dfg.successors(node);
 
 		for succ in succList:
+			#print succ
 			if succ not in marked:
 				length = self.findPath(succ, dst,  marked, path, simpPath, pathSequence, length, pathList, sequenceList);
 			else:
@@ -649,9 +700,14 @@ class BirthmarkExtractor(object):
 			if(len(sucList) > maxFanout):
 				maxFanout = len(sucList)
 
+
+			if(len(sucList) == 0):
+				self.endSet.add(node);
+
 			#If it is a operational block
 			if 'c' in node:   
 				label = self.labelAttr[node];
+				
 				linenum =  re.search('!(.*)!', label);
 				label = re.search('\+(.*)\+', label);
 		
@@ -816,6 +872,7 @@ class BirthmarkExtractor(object):
 		 		Note that all three extractions (Structural, Functional, Constant)
 				Needs to be called. 
 		'''
+		sys.setrecursionlimit(1500)
 		start_time = timeit.default_timer();
 		print " -- Extracting functional features..."# from : " + fileName;
 		self.pathList = set();
@@ -1033,7 +1090,7 @@ class BirthmarkExtractor(object):
 		return timeit.default_timer() - start_time;
 
 
-	def getBirthmark(self, kVal):
+	def getBirthmark(self, kVal, isFindEndGram=False):
 		'''
 		 Returns the data for the birthmark
 		'''
@@ -1046,11 +1103,17 @@ class BirthmarkExtractor(object):
 		#f.start();
 		#time.sleep(1);
 		#s.start();
-		#print "========================================================================"
+		print "========================================================================"
 		#start_time = timeit.default_timer();
+		self.endSet = set()
+		self.endGramList = set();
+		self.endGramLine = dict();
 		selapsed = self.extractStructural();
+
+
 		#elapsed = timeit.default_timer() - start_time;
 		#print "[STRC] -- ELAPSED: " +  repr(elapsed) + "\n";
+		print self.endSet
 
 
 		#print "========================================================================"
@@ -1071,11 +1134,31 @@ class BirthmarkExtractor(object):
 		#self.statstr = self.statstr + self.statstrf   #Append the stats from the functional
 		self.statstr = "%s,%s" % (self.statstr, self.statstrf);
 
+		kelapsed = self.KGram2(int(kVal));
 
-		kelapsed = self.KGram2(kVal);
-		kgram = (self.kgramset, self.kgramcounter, self.kgramlist, self.kgramline);
+
+		#Find the ngram backwards starting from the end node
+		if isFindEndGram != False:
+			print "BACKTRAVERSAL"
+			for node in self.endSet:
+				marked = set();
+				path = []
+				self.findKGramPath_Backwards(node, marked, path)
+				#print
+	
+		print 
+		for gram in self.endGramList:
+			print repr(gram) + "   " + repr(self.endGramLine[gram]);
+		
+
+		kgram = (self.kgramset, self.kgramcounter, self.kgramlist, self.kgramline, self.endGramList, self.endGramLine);
 		
 		print "[KGRAM] -- ELAPSED: " +  repr(kelapsed) 
+		fileStream = open("data/kgramExtractionTime.csv", 'a');
+		fileStream.write(repr(kelapsed) + ",");
+		fileStream.close();
+
+
 		print "[FUNCT] -- ELAPSED: " +  repr(felapsed) 
 		print "[STRUC] -- ELAPSED: " +  repr(selapsed) 
 		print "[CONST] -- ELAPSED: " +  repr(celapsed) 

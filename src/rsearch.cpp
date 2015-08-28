@@ -28,9 +28,9 @@
 #include "database.hpp"
 #include "error.hpp"
 
-#include "libs/rapidxml/rapidxml.hpp"
-#include "libs/rapidxml/rapidxml_print.hpp"
-#include "libs/tclap/CmdLine.h"
+#include "rapidxml/rapidxml.hpp"
+#include "rapidxml/rapidxml_print.hpp"
+#include "tclap/CmdLine.h"
 
 using namespace rapidxml;
 using namespace TCLAP;
@@ -52,8 +52,12 @@ int main( int argc, char *argv[] ){
 		cmdline.add(databaseArg);
 		
 		//Database XML
-		TCLAP::ValueArg<std::string> kArg("k", "kflag", "KLC, KLR, KSC, KSR", false, "KLR", "FLAG");
+		TCLAP::ValueArg<std::string> kArg("k", "kflag", "KLC, KLR, KSC, KSR, KFC, KFR", false, "BIRTHMARK", "FLAG");
 		cmdline.add(kArg);
+		
+		//Line number
+		TCLAP::ValueArg<int> lineArg("l", "line", "Current line number of design", false, -1, "Line Number");
+		cmdline.add(lineArg);
 		
 		//Print all ranking switch
 		TCLAP::SwitchArg printAllArg("v", "verbose", "Print detailed results", cmdline, false);
@@ -65,6 +69,7 @@ int main( int argc, char *argv[] ){
 		std::string referenceFile = referenceArg.getValue();
 		bool printall = printAllArg.getValue();
 		std::string kFlag = kArg.getValue();
+		int lineNumber= lineArg.getValue();
 		
 		/*
 		//Check arguments : Verilog File, XML Database File
@@ -102,7 +107,7 @@ int main( int argc, char *argv[] ){
 		}
 		else throw cException("(MAIN:T2) Unknown Extension: " + ext);
 			
-		system(cmd.c_str());
+		int status = system(cmd.c_str());
 
 		std::string xmlREF = "data/reference.xml";
 		std::string xmldata= "";
@@ -127,7 +132,14 @@ int main( int argc, char *argv[] ){
 		timeval start_time, end_time;
 
 		gettimeofday(&start_time, NULL); //----------------------------------
+		db->t_CurLine = lineNumber;
 		db->searchDatabase(refBirthmark, kFlag, printall);
+
+		if(lineNumber != -1){
+			printf("[RSEARCH] -- Current line number given. Searching for future op\n");
+			db->processKGramDatabase();
+			db->getFutureOp(refBirthmark);
+		}
 		delete refBirthmark;
 		gettimeofday(&end_time, NULL); //----------------------------------
 
