@@ -96,10 +96,16 @@ int main( int argc, char *argv[] ){
 
 		std::string cmd = "";
 
+		struct stat statbuf;
+
 		if(ext == "v"){
 			//Extract the birthmark from the verilog
 			printf("[REF] -- Reading Reference Verilog Design\n");
 			cmd = "python scripts/process_verilog.py " + referenceFile + " " + db->getKVal(); 
+		}
+		else if(stat(referenceFile.c_str(), &statbuf) != -1){
+			if(S_ISDIR(statbuf.st_mode))
+				cmd = "python scripts/process_verilog.py " + referenceFile + " " + db->getKVal(); 
 		}
 		else if(ext == "dot"){
 			printf("[REF] -- Reading Reference AST\n");
