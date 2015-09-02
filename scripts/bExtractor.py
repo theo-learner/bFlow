@@ -889,6 +889,11 @@ class BirthmarkExtractor(object):
 		pathHistory = [];
 
 		#inAll = self.constantList + self.inNodeList;
+		outsize = len(self.outNodeList)
+		insize = len(self.inNodeList)
+		curin = 0;
+		curout = 0;
+		plim = 0.1;
 
 		for out in self.outNodeList:
 			'''
@@ -908,6 +913,7 @@ class BirthmarkExtractor(object):
 				swAlpha = [];
 
 				length = self.findPath(inNode, out, marked, path, simpPath, pathSequence,  [0,sys.maxint,0, 0], pathList, swAlpha);
+
 				if(0 in length[0:2]):
 					continue;
 				
@@ -941,6 +947,9 @@ class BirthmarkExtractor(object):
 						self.alphaList.add(alphaSequence);
 					elif(nAlpha == maxNumAlpha):
 						self.alphaList.add(alphaSequence);
+
+				
+
 
 				
 			#Number of inputs the output depends on;
@@ -1113,7 +1122,7 @@ class BirthmarkExtractor(object):
 
 		#elapsed = timeit.default_timer() - start_time;
 		#print "[STRC] -- ELAPSED: " +  repr(elapsed) + "\n";
-		print self.endSet
+		#print self.endSet
 
 
 		#print "========================================================================"
@@ -1139,16 +1148,17 @@ class BirthmarkExtractor(object):
 
 		#Find the ngram backwards starting from the end node
 		if isFindEndGram != False:
-			print "BACKTRAVERSAL"
+			#print "BACKTRAVERSAL"
 			for node in self.endSet:
 				marked = set();
 				path = []
 				self.findKGramPath_Backwards(node, marked, path)
 				#print
 	
-		print 
-		for gram in self.endGramList:
-			print repr(gram) + "   " + repr(self.endGramLine[gram]);
+	
+		#print 
+		#for gram in self.endGramList:
+		#	print repr(gram) + "   " + repr(self.endGramLine[gram]);
 		
 
 		kgram = (self.kgramset, self.kgramcounter, self.kgramlist, self.kgramline, self.endGramList, self.endGramLine);

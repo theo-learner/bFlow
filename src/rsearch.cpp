@@ -97,15 +97,18 @@ int main( int argc, char *argv[] ){
 		std::string cmd = "";
 
 		struct stat statbuf;
+		std::string opt = "";
+		if(lineNumber == -1)
+			opt = " -O";
 
 		if(ext == "v"){
 			//Extract the birthmark from the verilog
 			printf("[REF] -- Reading Reference Verilog Design\n");
-			cmd = "python scripts/process_verilog.py " + referenceFile + " " + db->getKVal(); 
+			cmd = "python scripts/process_verilog.py " + referenceFile + " " + db->getKVal() + opt; 
 		}
 		else if(stat(referenceFile.c_str(), &statbuf) != -1){
 			if(S_ISDIR(statbuf.st_mode))
-				cmd = "python scripts/process_verilog.py " + referenceFile + " " + db->getKVal(); 
+				cmd = "python scripts/process_verilog.py " + referenceFile + " " + db->getKVal() + opt; 
 		}
 		else if(ext == "dot"){
 			printf("[REF] -- Reading Reference AST\n");
@@ -139,13 +142,15 @@ int main( int argc, char *argv[] ){
 
 		gettimeofday(&start_time, NULL); //----------------------------------
 		db->t_CurLine = lineNumber;
+
 		db->searchDatabase(refBirthmark, kFlag, printall);
 
 		if(lineNumber != -1){
-			printf("[RSEARCH] -- Current line number given. Searching for future op\n");
+			printf("\n[RSEARCH] -- Current line number given. Searching for future op\n");
 			db->processKGramDatabase();
 			db->getFutureOp(refBirthmark);
 		}
+
 		delete refBirthmark;
 		gettimeofday(&end_time, NULL); //----------------------------------
 

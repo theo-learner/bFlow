@@ -330,12 +330,13 @@ void Birthmark::getEndGrams(std::list<std::string>& rVal){
 
 /**
  * getEndGrams
- *  Returns EndGrams of a given line number
+ *  Returns the longest endGrams of a given line number
  */
 void  Birthmark::getEndGrams(std::list<std::string>& endGrams, int line){
 	std::map<std::string, std::vector<std::vector<int> > >::iterator iMap;
 	std::set<std::string> currentEndGram;
 	std::set<std::string> currentEndGram2; //The grams with line numbers not at the end
+
 	int maxLineIndex = 0;
 	int maxGramLength= 0;
 	for(iMap = m_kgramline.begin(); iMap != m_kgramline.end(); iMap++){
@@ -344,7 +345,7 @@ void  Birthmark::getEndGrams(std::list<std::string>& endGrams, int line){
 			int endLine = iMap->second[i][lineIndex] ;
 			if(endLine == line){
 				if(maxGramLength <= (int)iMap->first.length()){
-					printf("ENDGRAM FOUND: %s\n", iMap->first.c_str());
+					//printf("ENDGRAM FOUND: %s\n", iMap->first.c_str());
 					if(maxGramLength < (int)iMap->first.length()){
 						currentEndGram.clear();
 						maxGramLength = iMap->first.length();

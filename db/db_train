@@ -1,3 +1,9 @@
+v/trojan_bench/PIC16F84-T100/src/TjFree
+v/trojan_bench/PIC16F84-T100/src/TjIn
+v/trojan_bench/PIC16F84-T200/src/TjFree
+v/trojan_bench/PIC16F84-T200/src/TjIn
+v/trojan_bench/AES-T100/src/TjIn/TSC
+v/trojan_bench/AES-T1000/src/TjIn/TSC
 v/encoder_using_case.v
 v/encoder_using_if.v
 v/pri_encoder_using_if.v
@@ -16,15 +22,19 @@ v/life8_2.v
 v/parallel_crc.v
 v/mac_crc32.v
 v/serial_crc.v
+v/ethmac10g_rxCRC
 v/counter_arb.v
 v/up_counter_load.v
 v/up_counter.v
 v/up_down_counter.v
 v/altera_counter.v
 v/altera_behav_counter.v
+v/asfifo/asfifo_graycounter.v
+v/ethmac10g_rx/counter.v
 v/altera_mealy_mac.v
 v/altera_moore_mac.v
 v/altera_safe_state_machine.v
+v/ethmac10g_rx/rxStateMachine.v
 v/altera_fsm.v
 v/arbiter.v
 v/ring_arb.v
@@ -54,6 +64,8 @@ v/synchronous_fifo.v
 v/ncsu_regfile.v
 v/reg_8_pack.v
 v/reg_4_pack_clrset.v
+v/xge_mac/generic_mem_medium.v
+v/xge_mac/generic_mem_small.v
 v/behave1p_mem.v
 v/behave2p_mem.v
 v/cam.v
@@ -70,6 +82,8 @@ v/ethmac10g_tx
 v/ethmac10g_mgmt
 v/xge_mac
 v/minimac
+v/cheap_ethernet_rx
+v/cheap_ethernet_tx
 v/usb
 v/usb1_funct
 v/usb_phy
@@ -121,6 +135,7 @@ v/altera_signed_mult.v
 v/altera_unsigned_mult.v
 v/altera_unsig_altmult_accum.v
 v/altera_sig_altmult_add.v
+v/edgedetect
 v/sobel.v
 v/sobel2.v
 v/sobel3.v
@@ -168,5 +183,7 @@ v/netfpga/small_fifo.v
 v/netfpga/small_fifo_v2.v
 v/netfpga/small_fifo_v3.v
 v/aes128la
+v/aes128la/sbox.v
 v/aes192la
+v/aes192la/sbox.v
 v/basic_hashfunc.v

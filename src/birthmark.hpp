@@ -35,17 +35,17 @@ class Birthmark{
 	private: 
 		static const unsigned m_NumBin = 94;
 		
-		std::map<std::string, sGram> m_ktable;    //Used primarily for db
-		std::list<std::string> m_EndGrams;          //End grams (Used primarily for ref)
+		std::map<std::string, sGram> m_ktable;   //Used primarily for db
+		std::list<std::string> m_EndGrams;       //End grams (Used primarily for ref)
 
-		int m_ID;                                 //ID of the circuit
-		std::string m_Name;                       //Name of the circuit
-		std::string m_TopFile;                       //Name of the circuit
+		int m_ID;                              //ID of the circuit
+		std::string m_Name;                    //Name of the circuit
+		std::string m_TopFile;                 //Name of file with top design
 
 		//FUNCTIONAL
-		std::list<std::string> m_MaxSequence;     //Maximun datapath sequences
-		std::list<std::string> m_MinSequence;     //Minimum datapath sequences
-		std::list<std::string> m_AlphaSequence;   //Sequences with most unique ops
+		std::list<std::string> m_MaxSequence;   //Maximun datapath sequences
+		std::list<std::string> m_MinSequence;   //Minimum datapath sequences
+		std::list<std::string> m_AlphaSequence; //Sequences with most unique ops
 
 		//CONSTANT
 		std::set<int> m_Constants;                //Constants in the circuit
@@ -60,15 +60,15 @@ class Birthmark{
 		std::map<std::string, unsigned> m_Fingerprint; //Fingerprint of circuit
 
 		//KGRAM
-		//std::vector<std::set<std::string> >m_kgramset;
-		//std::vector<int> m_kgramsetc;
+		//Gram, count
 		std::map<std::string, int> m_kgramset;
 		std::map<std::string, int> m_kgramlist;
+
+		//kgram, list of lines
 		std::map<std::string, std::vector<std::vector<int> > >m_kgramline;
 
 		std::vector<std::map<std::string, int> > m_kgramcount;
 		std::map<std::map<std::string, int>, int > m_kgramfreq;
-		//std::set<std::map<std::string, int> > m_kgramfreq;
 
 
 
