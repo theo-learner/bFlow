@@ -344,7 +344,7 @@ void Database::searchDatabase(Birthmark* reference, std::string operation, bool 
 		m_Database[i]->getStat(statDB);
 		double stScore = SIMILARITY::euclidean(statDB, statRef);
 
-		printf("  * stCORE: %f\n", stScore);
+		//printf("  * stCORE: %f\n", stScore);
 		if(stScore > maxst)    maxst = stScore;
 		if(stScore < minst)    minst = stScore;
 
@@ -468,12 +468,14 @@ void Database::searchDatabase(Birthmark* reference, std::string operation, bool 
 			printf("NF:%5.2f  ", iSet->nf);
 			printf("NS:%5.2f  ", 1.0-iSet->ns);
 			printf("NC:%5.2f  ", 1.0-iSet->nc);
-			printf("ST:%6.2f  ", 1.0-iSet->stat);
-			printf("KSC: %5.2f  ", iSet->ksc);
-			printf("KLC: %5.2f  ", iSet->klc);
-			printf("KSR: %7.4f  ", iSet->ksr);
-			printf("KLR: %7.4f  ", iSet->klr);
-			printf("\t\tCKT:%s\n", iSet->name.c_str());
+			printf("ST:%5.2f  ", 1.0-iSet->stat);
+			printf("SC:%5.2f  ", iSet->ksc);
+			printf("SR:%5.2f  ", iSet->ksr);
+			printf("LC:%5.2f  ", iSet->klc);
+			printf("LR:%5.2f  ", iSet->klr);
+			printf("FC:%5.2f  ", iSet->kfc);
+			printf("FR:%5.2f  ", iSet->kfr);
+			printf("\tC:%s\n", iSet->name.c_str());
 
 			//printf(" %2d & %6.2f & %s\n", count, iSet->score, iSet->name.c_str()); //latex table
 			if(!printall && count == 20)

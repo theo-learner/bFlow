@@ -97,20 +97,27 @@ def execute(scriptFile):
 	rc = call(cmd, shell=True);
 
 	msg = ""
+	fscline = ""
+	fswline = ""
 	hasError = False;
+
 	with open("data/.pyosys.log") as f:
-		fsc = open("data/statcell.dat", "a");
-		fsw = open("data/statwire.dat", "a");
 		for line in f:
 			if("ERROR:" in line or hasError):
 				hasError = True;
 				msg = msg + line;
 			elif("Number of cells:" in line):
-				fsc.write(line);
+				fscline = fscline + "\n" + line;
 			elif("Number of wire bits:" in line):
-				fsw.write(line);
-		fsc.close()
-		fsw.close()
+				fswline = fscline + "\n" + line;
+
+
+	fsc = open("data/statcell.dat", "a");
+	fsc.write(fscline);
+	fsc.close()
+	fsw = open("data/statwire.dat", "a");
+	fsw.write(fswline);
+	fsw.close()
 
 
 	if hasError:

@@ -39,6 +39,12 @@ try:
 	print "########################################################################";
 	print
 
+	print "Cleaning old files..."
+	os.remove("data/statcell.dat")
+	os.remove("data/statwire.dat")
+	os.remove("data/yosystime.dat")
+	os.remove("data/elapsedtime.dat")
+
 	#Initialize the XML creator
 	soup = BeautifulSoup();
 	dbtag = soup.new_tag("DATABASE");
@@ -67,13 +73,29 @@ try:
 		else:
 			val  = yosys.create_yosys_script(line, scriptName, opt=True)
 
+
+		rVal = yosys.execute(scriptName);
+
+		if(rVal != ""):                       #Make sure no Error occurred during synthesis
+			if(("show") in  rVal):
+				print "[WARNING] -- Show error encountered..."
+				print "          -- Performing Yosys Synthesis without optimizations..."
+				start_yosys = timeit.default_timer();
+				if arg == 'h':
+					val  = yosys.create_yosys_script(line, scriptName, hier=True)
+				else:
+					val  = yosys.create_yosys_script(line, scriptName)
+
+				rVal = yosys.execute(scriptName);
+
+				if(rVal != ""):                       #Make sure no Error occurred during synthesis
+					raise error.YosysError(rVal);
+			else:
+				raise error.YosysError(rVal);
+		
 		vfile = val[2];
 		top = val[1];
 		dotFiles = val[0];
-
-		rVal = yosys.execute(scriptName);
-		if(rVal != ""):                       #Make sure no Error occurred during synthesis
-			raise error.YosysError(rVal);
 
 		elapsed = timeit.default_timer() - start_yosys;
 		print "[PPDB] -- ELAPSED: " +  repr(elapsed);
