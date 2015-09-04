@@ -36,7 +36,7 @@ def main():
 			os.remove(referenceFile);
 
 		
-		vfile = sys.argv[1];
+		source = sys.argv[1];
 		kVal = sys.argv[2];
 		opt = False
 		verboseValue = False
@@ -55,8 +55,22 @@ def main():
 
 
 		#Preprocess yosys script
-		(scriptName, dotFiles, top, vfile) = generateYosysScript(vfile, opt);
+		(scriptName, dotFiles, top, vfile) = generateYosysScript(source, opt);
 		rVal = yosys.execute(scriptName);
+		if(rVal != ""):                       #Make sure no Error occurred during synthesis
+			if(("show") in  rVal):
+				print "[WARNING] -- Show error encountered..."
+				print "          -- Performing Yosys Synthesis without optimizations..."
+				(scriptName, dotFiles, top, vfile) = generateYosysScript(source, False);
+
+				rVal = yosys.execute(scriptName);
+
+				if(rVal != ""):                       #Make sure no Error occurred during synthesis
+					raise error.YosysError(rVal);
+			else:
+				raise error.YosysError(rVal);
+
+
 		soup = BeautifulSoup();
 
 		ckttag = xmlExtraction.generateXML("./dot/" + top+".dot", soup, kVal, verbose=verboseValue, findEndGram=True)
