@@ -194,7 +194,7 @@ double SIMILARITY::containment(std::map<std::string,int>& data1, std::map<std::s
  *   Resemblance formula for two sets of KGRAM
  */
 
-double SIMILARITY::resemblance(std::map<std::map<std::string,int>, int>& data1, std::map<std::map<std::string, int>, int>& data2){
+double SIMILARITY::resemblance(std::map<std::map<std::string,int>, int>& data1, std::map<std::map<std::string, int>, int>& data2, int k){
 	double intersection = 0.0;
 	double numunion= 0.0;
 
@@ -202,11 +202,11 @@ double SIMILARITY::resemblance(std::map<std::map<std::string,int>, int>& data1, 
 	for(iMap = data1.begin(); iMap != data1.end(); iMap++){
 		//Intersection is the number of grams that are shared between the two
 		if(data2.find(iMap->first) != data2.end())
-			intersection += 1.0;
+			intersection +=(double) iMap->first.size();
 	}
 
 	//Union is the number of shared + the number of items not shared in 1 and 2
-	numunion = intersection + data1.size() -intersection + data2.size() - intersection;
+	numunion = intersection + data1.size()*k -intersection + data2.size()*k - intersection;
 	if(numunion == 0.0) return 0.0;
 
 	return intersection / numunion;
