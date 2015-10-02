@@ -61,6 +61,8 @@ int main( int argc, char *argv[] ){
 		
 		//Print all ranking switch
 		TCLAP::SwitchArg printAllArg("v", "verbose", "Print detailed results", cmdline, false);
+		
+		TCLAP::SwitchArg optimizeArg("O", "optimize", "Optimize the reference circuit", cmdline, false);
 
 
 		cmdline.parse(argc, argv);
@@ -70,6 +72,11 @@ int main( int argc, char *argv[] ){
 		bool printall = printAllArg.getValue();
 		std::string kFlag = kArg.getValue();
 		int lineNumber= lineArg.getValue();
+		Optmode optMode;
+		if(optimizeArg.getValue())
+			optMode = eOpt;
+		else
+			optMode = eNoOpt_Clean;
 		
 		/*
 		//Check arguments : Verilog File, XML Database File
@@ -90,64 +97,21 @@ int main( int argc, char *argv[] ){
 		printf("[REF] -- Reading Database\n");
 		db = new Database(xmlDB);
 
-		//Get extension
-		int lastDotIndex= referenceFile.find_last_of(".");
-		std::string ext = referenceFile.substr(lastDotIndex+1, referenceFile.length()-lastDotIndex);
+		//Extract birthmark of reference circuit
+		Birthmark* refBirthmark = extractBirthmark(referenceFile, db->getKVal(), lineNumber!=-1,  optMode);
 
-		std::string cmd = "";
-
-		struct stat statbuf;
-		std::string opt = "";
-		if(lineNumber == -1)
-			opt = " -O";
-
-		if(ext == "v"){
-			//Extract the birthmark from the verilog
-			printf("[REF] -- Reading Reference Verilog Design\n");
-			cmd = "python scripts/process_verilog.py " + referenceFile + " " + db->getKVal() + opt; 
-		}
-		else if(stat(referenceFile.c_str(), &statbuf) != -1){
-			if(S_ISDIR(statbuf.st_mode))
-				cmd = "python scripts/process_verilog.py " + referenceFile + " " + db->getKVal() + opt; 
-		}
-		else if(ext == "dot"){
-			printf("[REF] -- Reading Reference AST\n");
-			cmd = "python scripts/process_ast.py " + referenceFile + " " + db->getKVal(); 
-		}
-		else throw cException("(MAIN:T2) Unknown Extension: " + ext);
-			
-		int status = system(cmd.c_str());
-
-		std::string xmlREF = "data/reference.xml";
-		std::string xmldata= "";
-		std::string xmlline;
-		std::ifstream refStream;
-		refStream.open(xmlREF.c_str());
-		if (!refStream.is_open()) throw cException("(MAIN:T1) Cannot open file: " + xmlREF);
-		while(getline(refStream, xmlline))
-			xmldata+= xmlline + "\n";
-
-		xml_document<> xmldoc;
-		char* cstr = new char[xmldata.size() + 1];
-		strcpy(cstr, xmldata.c_str());
-
-		//Parse the XML Data
-		printf("[REF] -- Generating Reference Birthmark\n");
-		xmldoc.parse<0>(cstr);
-		xml_node<>* cktNode= xmldoc.first_node();
-		Birthmark* refBirthmark = new Birthmark();
-		refBirthmark->importXML(cktNode);
 
 		timeval start_time, end_time;
-
 		gettimeofday(&start_time, NULL); //----------------------------------
 		db->t_CurLine = lineNumber;
 
 		db->searchDatabase(refBirthmark, kFlag, printall);
 
 		if(lineNumber != -1){
-			printf("\n[RSEARCH] -- Current line number given. Searching for future op\n");
+			printf("\n[RSEARCH] -- Current line number given. Searching for future operation\n");
+			printf("\n[RSEARCH] -- Preprocessing kGram database\n");
 			db->processKGramDatabase();
+			printf("\n[RSEARCH] -- Retrieving future operation\n");
 			db->getFutureOp(refBirthmark);
 		}
 

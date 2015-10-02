@@ -139,52 +139,62 @@ double SIMILARITY::cosine(std::vector<unsigned>& data1, std::vector<unsigned>& d
 
 /**
  * Resemblance 
- *   Resemblance formula for two sets of KGRAM
+ *   Resemblance formula for two sets of KGRAM SET AND LIST BASE
  */
 
 double SIMILARITY::resemblance(std::map<std::string,int>& data1, std::map<std::string, int>& data2){
 	double intersection = 0.0;
 	double numunion= 0.0;
+	double total1 = 0.0;
 
+	//Goes through and finds the grams that are the same
 	std::map<std::string, int>::iterator iMap;
 	for(iMap = data1.begin(); iMap != data1.end(); iMap++){
+		total1+= (double) iMap->first.size();
+
 		//Intersection is the number of grams that are shared between the two
 		if(data2.find(iMap->first) != data2.end())
-			intersection += 1.0;
+			intersection +=  (double) iMap->first.size(); //larger q-grams have a higher weight
 	}
+	
+	double total2 = 0.0;
+	for(iMap = data2.begin(); iMap != data2.end(); iMap++)
+		total2+= (double) iMap->first.size();
 
 	//Union is the number of shared + the number of items not shared in 1 and 2
-	numunion = intersection + data1.size() -intersection + data2.size() - intersection;
+	numunion = intersection + total1 -intersection + total2 - intersection;
 	if(numunion == 0.0)
 		return 0.0;
 
 
 	return intersection / numunion;
-	
 }
 
 
 
 /**
  * Containment 
- *   Containment formula for two sets of KGRAM
+ *   Containment formula for two sets of KGRAM SET AND LIST BASE
  *   Data2 is the smaller or query circuit
  */
 
 double SIMILARITY::containment(std::map<std::string,int>& data1, std::map<std::string, int>& data2){
 	double intersection = 0.0;
+	double total = 0.0;
 	if(data2.size() == 0)
 		return 0.0;
 
 	std::map<std::string, int>::iterator iMap;
 	for(iMap = data1.begin(); iMap != data1.end(); iMap++){
 		//Intersection is the number of grams that are shared between the two
+		total += (double) iMap->first.size();
+
 		if(data2.find(iMap->first) != data2.end())
-			intersection += 1.0;
+			intersection += (double)iMap->first.size();
 	}
 
 	//printf("NUM: %f\tDEN: %d\n", intersection, data2.size());
-	return intersection / (double)data2.size();
+	return intersection / total;
 	
 }
 
@@ -194,19 +204,25 @@ double SIMILARITY::containment(std::map<std::string,int>& data1, std::map<std::s
  *   Resemblance formula for two sets of KGRAM
  */
 
-double SIMILARITY::resemblance(std::map<std::map<std::string,int>, int>& data1, std::map<std::map<std::string, int>, int>& data2, int k){
+double SIMILARITY::resemblance(std::map<std::map<char,int>, int>& data1, std::map<std::map<char, int>, int>& data2){
 	double intersection = 0.0;
 	double numunion= 0.0;
+	double total1 = 0.0;
+	double total2 = 0.0;
 
-	std::map<std::map<std::string, int>, int>::iterator iMap;
+	std::map<std::map<char, int>, int>::iterator iMap;
 	for(iMap = data1.begin(); iMap != data1.end(); iMap++){
+		total1+= (double) iMap->first.size();
 		//Intersection is the number of grams that are shared between the two
 		if(data2.find(iMap->first) != data2.end())
 			intersection +=(double) iMap->first.size();
 	}
+	
+	for(iMap = data2.begin(); iMap != data2.end(); iMap++)
+		total2+= (double) iMap->first.size();
 
 	//Union is the number of shared + the number of items not shared in 1 and 2
-	numunion = intersection + data1.size()*k -intersection + data2.size()*k - intersection;
+	numunion = intersection + total1 -intersection + total2 - intersection;
 	if(numunion == 0.0) return 0.0;
 
 	return intersection / numunion;
@@ -221,21 +237,21 @@ double SIMILARITY::resemblance(std::map<std::map<std::string,int>, int>& data1, 
  *   Data2 is the smaller or query circuit
  */
 
-double SIMILARITY::containment(std::map<std::map<std::string,int>, int>& data1, std::map<std::map<std::string,int>, int>& data2){
+double SIMILARITY::containment(std::map<std::map<char,int>, int>& data1, std::map<std::map<char,int>, int>& data2){
 	if(data2.size()== 0) return 0.0;
 	double intersection = 0.0;
+	double total = 0.0;
 
-	std::map<std::map<std::string, int>, int>::iterator iMap;
+	std::map<std::map<char, int>, int>::iterator iMap;
 	for(iMap = data1.begin(); iMap != data1.end(); iMap++){
+		total += (double)iMap->first.size();
 		//Intersection is the number of grams that are shared between the two
 		if(data2.find(iMap->first) != data2.end())
-			intersection += 1.0;
+			intersection += (double)iMap->first.size();
 	}
 
 	//printf("NUM: %f\tDEN: %d\n", intersection, data2.size());
-	return intersection / (double)data2.size();
-	
-	
+	return intersection / total;
 }
 
 
@@ -268,11 +284,13 @@ int SIMILARITY::align(std::list<std::string>& ref, std::list<std::string>& db, b
 			if(output) printAlignment();
 
 			//Calcuate the difference in the size ratios
-			double sizeRatio;
+			/*
+			double sizeRatio = 0;
 			if(iRef->length() < iSeq->length())
 				sizeRatio = (double)iRef->length()/ (double)iSeq->length();
 			else
 				sizeRatio = (double)iSeq->length()/ (double)iRef->length();
+				*/
 
 
 			//Go through the aligned sequence and add additional gap penalty
@@ -347,7 +365,7 @@ void SIMILARITY::initAlignment(){
 	//Set up the scoring scheme using a custom scoring matrix
 	//Located in lib/seqan/score/scorematrixwithdata
 	setDefaultScoreMatrix(s_Score, CircuitScoringMatrix());
-	showScoringMatrix(s_Score);
+	//showScoringMatrix(s_Score);
 
 }
 

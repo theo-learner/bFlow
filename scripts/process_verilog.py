@@ -12,6 +12,7 @@ import yosys;
 from bs4 import BeautifulSoup
 import error;
 import os;
+import argparse
 
 
 
@@ -27,41 +28,41 @@ def generateYosysScript(verilogFile, optVal):
 
 def main():
 	try:
-		if len(sys.argv) < 3 or len(sys.argv) > 5: 
-			raise error.ArgError();
+
+		#Parse command arguments
+		parser = argparse.ArgumentParser();
+		parser.add_argument("circuit", help="Verilog circuit to process");
+		parser.add_argument("k", help="Value of K-gram");
+		parser.add_argument("-O", "--optimize", help="Set optimization: 3: Full Opt, 2: Full opt no clean, 1: No opt w/ clean, 2: No Opt", type=int);
+		parser.add_argument("-v", "--verbose", help="Prints additional information", action="store_true");
+		parser.add_argument("-p", "--predict", help="Extracts information inorder to do prediction", action="store_true");
+	
+		arguments = parser.parse_args()
+		source = arguments.circuit;
+		kVal = arguments.k;
+		optFlag =  arguments.optimize
+		verboseFlag = arguments.verbose
+		predictFlag= arguments.verbose
+
 
 		#Remove the reference XML file if it exists
 		referenceFile = "data/reference.xml";
 		if(os.path.exists(referenceFile)):
 			os.remove(referenceFile);
 
-		
-		source = sys.argv[1];
-		kVal = sys.argv[2];
-		opt = False
-		verboseValue = False
-		if(len(sys.argv) == 4):
-			if(sys.argv[3] == "-O"):
-				opt = True
-			if(sys.argv[3] == "-v" ):
-				print "VERBOSE IS SET"
-				verboseValue = True;
-		elif(len(sys.argv) == 5):
-			if(sys.argv[4] == "-O"):
-				opt = True
-			if(sys.argv[4] == "-v"):
-				print "VERBOSE IS SET"
-				verboseValue = True;
 
 
 		#Preprocess yosys script
-		(scriptName, dotFiles, top, vfile) = generateYosysScript(source, opt);
+		print "--------------------------------------------------------------"
+		print "[*] -- Synthesizing circuit design..."
+		print "--------------------------------------------------------------"
+		(scriptName, dotFiles, top, vfile) = generateYosysScript(source, optFlag);
 		rVal = yosys.execute(scriptName);
 		if(rVal != ""):                       #Make sure no Error occurred during synthesis
 			if(("show") in  rVal):
 				print "[WARNING] -- Show error encountered..."
 				print "          -- Performing Yosys Synthesis without optimizations..."
-				(scriptName, dotFiles, top, vfile) = generateYosysScript(source, False);
+				(scriptName, dotFiles, top, vfile) = generateYosysScript(source, optFlag-1);
 
 				rVal = yosys.execute(scriptName);
 
@@ -71,9 +72,12 @@ def main():
 				raise error.YosysError(rVal);
 
 
+		print "\n--------------------------------------------------------------"
+		print "[*] -- Extracting birthmark from AST..."
+		print "--------------------------------------------------------------"
 		soup = BeautifulSoup();
 
-		ckttag = xmlExtraction.generateXML("./dot/" + top+".dot", soup, kVal, verbose=verboseValue, findEndGram=True)
+		ckttag = xmlExtraction.generateXML("./dot/" + top+".dot", soup, kVal, verbose=verboseFlag, findEndGram=predictFlag)
 		ckttag['name'] = top;
 		ckttag['file'] = vfile;
 		ckttag['id'] = -1
@@ -110,3 +114,4 @@ def main():
 
 if __name__ == '__main__':
 	main();
+

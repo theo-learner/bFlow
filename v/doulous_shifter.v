@@ -30,9 +30,9 @@ module doulous_shifter (Clk, EN, WR, RD, SI, SO, Data);
     else if (!WR)
       Reg = Data;
 
-  always @(WR or EN)
-    if (!WR & !EN)
-      $display("Error, Wr and En both active");
+  //always @(WR or EN)
+  // if (!WR & !EN)
+  //  $display("Error, Wr and En both active");
 
 endmodule
 

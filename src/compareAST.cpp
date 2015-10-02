@@ -34,66 +34,29 @@ using namespace rapidxml;
 
 
 int main( int argc, char *argv[] ){
-	Database* db = NULL;
 
 	try{
 		//Check arguments : Verilog File, XML Database File
-		if(argc != 3) throw ArgException();
+		if(argc != 5) throw ArgException();
 
-		std::string dotfile2= argv[2];
-		std::string dotfile1= argv[1];
+		std::string circuit1= argv[1];
+		std::string circuit2= argv[2];
+		std::string kval = argv[3];
+		std::string opt = argv[4];
 
 
-		//########################################################################
-		//Process first ast
-		//########################################################################
-		printf("[REF] -- Reading AST 1\n");
-		std::string cmd = "python scripts/process_ast.py " + dotfile1; 
-		int status = system(cmd.c_str());
-		std::string xmlREF = "data/reference.xml";
-		std::string xmldata= "";
-		std::string xmlline;
-		std::ifstream refStream;
-		refStream.open(xmlREF.c_str());
-		if (!refStream.is_open()) throw cException("(MAIN:T1) Cannot open file: " + xmlREF);
-		while(getline(refStream, xmlline))
-			xmldata+= xmlline + "\n";
-		refStream.close();
+		//set opt flags
+		Optmode opt1 = eOpt_No_Clean;
+		Optmode opt2 = eOpt_No_Clean;
+		if(opt == "1") opt2 = eOpt;
+		else if(opt == "2") opt1 = eOpt;
+		else if(opt == "3"){
+			opt1 = eOpt; 
+			opt2 = eOpt;
+		} 
 
-		//Parse the XML Data
-		xml_document<> xmldoc;
-		char* cstr = new char[xmldata.size() + 1];
-		strcpy(cstr, xmldata.c_str());
-
-		printf("[REF] -- Generating AST1 Birthmark\n");
-		xmldoc.parse<0>(cstr);
-		xml_node<>* cktNode= xmldoc.first_node();
-		Birthmark* birthmark1 = new Birthmark();
-		birthmark1->importXML(cktNode);
-		delete cstr;
-
-		//########################################################################
-		//Process second ast
-		//########################################################################
-		cmd = "python scripts/processAST.py " + dotfile2; 
-		status = system(cmd.c_str());
-		xmldata= "";
-		refStream.open(xmlREF.c_str());
-		if (!refStream.is_open()) throw cException("(MAIN:T0) Cannot open file: " + xmlREF);
-		while(getline(refStream, xmlline))
-			xmldata+= xmlline + "\n";
-		refStream.close();
-		
-		cstr = new char[xmldata.size() + 1];
-		strcpy(cstr, xmldata.c_str());
-
-		printf("[REF] -- Generating AST2 Birthmark\n");
-		xmldoc.parse<0>(cstr);
-		cktNode = xmldoc.first_node();
-		Birthmark* birthmark2 = new Birthmark();
-		birthmark2->importXML(cktNode);
-		delete cstr;
-
+		Birthmark* birthmark1 = extractBirthmark(circuit1, kval, false,  opt1);
+		Birthmark* birthmark2= extractBirthmark(circuit2, kval, false,  opt2);
 
 
 		//########################################################################
@@ -101,15 +64,17 @@ int main( int argc, char *argv[] ){
 		//########################################################################
 		timeval start_time, end_time;
 		gettimeofday(&start_time, NULL); //----------------------------------
-		db = new Database();
+		Database* db = new Database();
 		db->compareBirthmark(birthmark1, birthmark2);
 		gettimeofday(&end_time, NULL); //----------------------------------
-		delete birthmark1;
-		delete birthmark2;
 
 		double elapsedTime = (end_time.tv_sec - start_time.tv_sec) * 1000.0;
 		elapsedTime += (end_time.tv_usec - start_time.tv_usec) / 1000.0;
 		printf("[REF] -- Elapsed search time: %f\n", elapsedTime/1000.0);
+		
+		delete db;
+		delete birthmark1;
+		delete birthmark2;
 	}
 	catch(cException e){
 		printf("%s", e.what());
@@ -124,15 +89,14 @@ int main( int argc, char *argv[] ){
 			printf("    Compares the two  birthmark \n");
 			printf("    Outputs comparison results\n");
 
-			printf("\n  Usage: ./compareAST [DOT file 1]  [DOT file 2]\n\n");
+			printf("\n  Usage: ./compareAST [Verilog 1]  [Verilog 2] [K] [OPT]\n\n");
 		}
 		else{
 			printf("%s", e.what());
-			printf("\n  Usage: ./compareAST [DOT file 1]  [DOT file 2]\n\n");
+			printf("\n  Usage: ./compareAST [Verilog 1]  [Verilog 2] [K] [OPT]\n\n");
 		}
 	}
 
-	if(db != NULL) delete db;
 	return 0;
 }
 

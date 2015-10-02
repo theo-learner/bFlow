@@ -10,11 +10,23 @@ import sys;
 import re;
 import timeit;
 import datetime;
-from subprocess import call
+import subprocess;
 import error;
 import constructHierarchy as hierarchy;
 
-def create_yosys_script(fileName, scriptName, hier = False, opt = False):
+def create_yosys_script(fileName, scriptName, hier = False, opt=3):
+	'''
+	create_yosys_script
+		Creates a script to be run using yosys for a given design
+		@PARAMS: fileName - path of design
+		@PARAMS: scriptName - output script name
+		@PARAMS: hier - perform hierarchy processing
+		@PARAMS: opt - 	0: No optimization 
+										1: No optimization (cleans circuit) 
+										2: Optimization 
+										3: optimize for reference design (clean can cause noshow)
+	'''
+
 	script = "";	
 	script = script + "echo on\n";
 
@@ -28,44 +40,66 @@ def create_yosys_script(fileName, scriptName, hier = False, opt = False):
 	topfile = topModules[1];
 
 
-
-	if opt == True:                  #simplify only the database circuits
-		print "[YOSYS] -- Optimizations on"
-	else:
-		print "[YOSYS] -- Optimizations off"
-
+	#Read in the verilog files
 	for vfile in fileList:
 		script = script + "read_verilog " + vfile + "\n";
 
-	optcmd = "opt_muxtree; opt_reduce -full; opt_share; opt_rmdff;\n"
 
-	if opt == True:                  #simplify only the database circuits
-		optcmd = optcmd + "opt_clean;\n"     #Many unused net and cells will be removed
+	if opt == 3:                  #FULL OPTIMIZATIONS
+		optcmd = "opt;\n"     #Many unused net and cells will be removed
+		print " - Optimizations on"
+	elif opt == 2:                #Optimizations with no clean operation. Used for searching incomplete circuits
+		print " - Optimizations on (no CLEAN)"
+		optcmd = "opt -fast\n"
+	elif opt == 1:                #No optimizations except to just clean
+		print " - Optimizations off (CLEAN)"
+		optcmd = "clean;\n"
+	elif opt == 0:                #No optimizations at all
+		print " - Optimizations off"
+		optcmd = "";
+	else: 
+		raise error.GenError("Optimization flag (0,1,2) is unknown: " + repr(opt));
+
+
 
 	#if opt != True:
-	if opt != True:
-		fsmcmd = "fsm_detect; fsm_extract; fsm_opt; fsm_expand; fsm_opt; fsm_recode; fsm_map;\n"
-		#fsmcmd = fsmcmd + "fsm_recode; fsm_map;\n"
+	if opt == 3 or opt == 1:
+		fsmcmd = "fsm;\n"   #Command contains opt_clean
 	else:
-		fsmcmd = "fsm;\n"
+		fsmcmd = "fsm_detect; fsm_extract; fsm_opt; fsm_recode; fsm_map;\n"
+
+	if opt < 2:
+		memorycmd = "memory_collect;\n"
+	else:
+		memorycmd = "memory_collect; memory_dff; memory_share;\n"
+
+	
 
 	
 
 	script = script + "\n\n";
 	script = script + "hierarchy -check\n";
 	script = script + "proc;\n\n";
+	script = script + optcmd;
 	script = script + fsmcmd;
-	script = script + "memory_collect;\n\n";
+	script = script + optcmd;
+	#script = script + "memory_collect;\n\n";
+	script = script + " memory_dff; memory_share; memory_collect;\n";
+	script = script + optcmd;
+
 
 	#script = script + "techmap -map /usr/local/share/yosys/pmux2mux.v;\n\n"
 	script = script + "flatten\n";
-	
-	if opt == True:                  #simplify only the database circuits
-		script = script + "wreduce\n";
-
 	script = script + optcmd;
+	script = script + "wreduce\n";
+	if opt == 3 or opt == 1:
+		script = script + "opt_clean -purge\n";
+	else: 
+		script = script + optcmd;
+	#script = script + "dff2dffe\n";
+	#script = script + optcmd;
 	#script = script + "splice;\n";
-	script = script + "stat " + top + "\n\n";
+	#script = script + "stat " + top + "\n\n";
 
 
 	dotFile = [];
@@ -92,39 +126,39 @@ def create_yosys_script(fileName, scriptName, hier = False, opt = False):
 
 
 def execute(scriptFile):
-	print "[YOSYS] -- Running yosys tools..."
-	cmd = "yosys -Qq -s " + scriptFile + " -l data/.pyosys.log";
-	rc = call(cmd, shell=True);
+	print " - Running yosys tools..."
+	cmd = "yosys -Qq -s " + scriptFile# + " -l data/.pyosys.log";
+	#rc = call(cmd, shell=True);
+	result = subprocess.Popen(cmd, shell=True, stderr=subprocess.PIPE);
+	log = ""
+	for line in result.stderr:
+		sys.stdout.write("  " + line)
+		log += line;
+
+	print " - Yosys complete"
+		
 
 	msg = ""
 	fscline = ""
 	fswline = ""
 	hasError = False;
 
-	with open("data/.pyosys.log") as f:
-		for line in f:
-			if("ERROR:" in line or hasError):
-				hasError = True;
-				msg = msg + line;
-			elif("Number of cells:" in line):
-				fscline = fscline + "\n" + line;
-			elif("Number of wire bits:" in line):
-				fswline = fscline + "\n" + line;
+	if "ERROR:" in log:
+		return log;
+	else:
+		return ""
 
-
+	'''
 	fsc = open("data/statcell.dat", "a");
 	fsc.write(fscline);
 	fsc.close()
 	fsw = open("data/statwire.dat", "a");
 	fsw.write(fswline);
 	fsw.close()
+	'''
 
 
-	if hasError:
-		print msg;
-		return msg;
 	
-	return "";
 
 
 
@@ -157,7 +191,7 @@ def main():
 		execute(scriptName)
 
 		elapsed = timeit.default_timer() - start_time;
-		print "[YOSYS] -- ELAPSED: " +  repr(elapsed) + "\n";
+		print " - ELAPSED: " +  repr(elapsed) + "\n";
 
 		print dotFiles;
 		print "TOP: " + top

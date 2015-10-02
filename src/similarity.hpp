@@ -95,11 +95,10 @@ namespace SIMILARITY{
 
 	double resemblance(std::map<std::string,int>& , std::map<std::string, int>&) ;
 	double containment(std::map<std::string,int>& , std::map<std::string, int>&) ;
-	double resemblance(std::map<std::map<std::string,int>,int>& , std::map<std::map<std::string,int>, int>&, int) ;
-	double containment(std::map<std::map<std::string,int>,int>& , std::map<std::map<std::string,int>, int>&) ;
+	double resemblance(std::map<std::map<char,int>,int>& , std::map<std::map<char,int>, int>&) ;
+	double containment(std::map<std::map<char,int>,int>& , std::map<std::map<char,int>, int>&) ;
 
 }
-
 
 
 

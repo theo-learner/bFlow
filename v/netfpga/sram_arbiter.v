@@ -1,20 +1,17 @@
-/***********************************************************
- * $Id: sram_arbiter.v 5193 2009-03-06 00:15:26Z grg $
- *
- * Module: sram_arbiter.v
- * Project: Output Queues v2
- * Description: SRAM controller
- *
- * This controller always gives preference to writes!
- *
- * Author: Jad Naous <jnaous@stanford.edu>
- *
- **********************************************************/
+///////////////////////////////////////////////////////////////////////////////
+// $Id: sram_arbiter.v 4253 2008-07-09 17:52:05Z jnaous $
+//
+// Module: sram_arbiter.v
+// Project: Generic Lookups
+// Description: SRAM controller
+// Author: Jad Naous <jnaous@stanford.edu>
+//
+///////////////////////////////////////////////////////////////////////////////
 
 `timescale  1ns /  10ps
 
 module sram_arbiter  #(parameter SRAM_ADDR_WIDTH = 19,
-                       parameter DATA_WIDTH = 64,
+		       parameter DATA_WIDTH = 64,
                        parameter SRAM_DATA_WIDTH = 72)
 
    (// register interface
@@ -57,6 +54,14 @@ module sram_arbiter  #(parameter SRAM_ADDR_WIDTH = 19,
    `LOG2_FUNC
 
    //-------------------- Internal Parameters ------------------------
+   localparam NUM_RULE_WORDS       = ceildiv(`SRAM_ENTRY_NUM_RULE_BYTES*8, DATA_WIDTH);
+   localparam NUM_DATA_WORDS       = ceildiv(`SRAM_ENTRY_NUM_DATA_BYTES*8, DATA_WIDTH);
+
+   // calculate number of memory locations an entry uses + 1 word for counters
+   localparam ENTRY_IDX_WIDTH  = log2(NUM_RULE_WORDS+NUM_DATA_WORDS+1);
+
+   // reset the counters after reading them
+   localparam RESET_ON_READ    = 0;
 
    //------------------ Registers/Wires -----------------
    reg                       rd_0_vld_early2, rd_0_vld_early1, rd_0_vld_early3;
@@ -65,6 +70,7 @@ module sram_arbiter  #(parameter SRAM_ADDR_WIDTH = 19,
    reg                       sram_reg_ack_early3, sram_reg_ack_early2, sram_reg_ack_early1;
 
    reg                       sram_reg_addr_is_high, sram_reg_addr_is_high_d1, sram_reg_addr_is_high_d2;
+   reg                       sram_reg_cntr_read;
 
    wire [SRAM_DATA_WIDTH-1:0] sram_wr_data_early1_shuffled;
    wire [SRAM_DATA_WIDTH-1:0] sram_rd_data_shuffled;
@@ -87,37 +93,11 @@ module sram_arbiter  #(parameter SRAM_ADDR_WIDTH = 19,
       end
    endgenerate
 
-
-   always @(*) begin
-      // register access
-      if(sram_reg_req && !sram_reg_req_d1) begin
-         rd_0_ack   = 1'b0;
-         wr_0_ack   = 1'b0;
-      end
-      // writes
-      else if(wr_0_req) begin
-         wr_0_ack   = 1'b1;
-         rd_0_ack   = 1'b0;
-      end
-      // reads
-      else begin
-         rd_0_ack   = rd_0_req;
-         wr_0_ack   = 1'b0;
-      end // else: !if(wr_0_req)
-   end // always @ (*)
-
    always @(posedge clk) begin
       if(reset) begin
          {sram_we, sram_bw}    <= 9'h1ff;           // active low
          sram_addr             <= 0;
          sram_reg_req_d1       <= 0;
-         sram_reg_ack_early3   <= 1'b0;
-/* -----\/----- EXCLUDED -----\/-----
-         rd_0_ack              <= 1'b0;
-         wr_0_ack              <= 1'b0;
- -----/\----- EXCLUDED -----/\----- */
-         rd_0_vld_early3       <= 1'b0;
-         sram_tri_en_early2    <= 1'b0;
          do_reset              <= 1'b1;
          // synthesis translate_off
          do_reset              <= 0;
@@ -129,6 +109,10 @@ module sram_arbiter  #(parameter SRAM_ADDR_WIDTH = 19,
 
          /* first pipeline stage -- initiate request */
          sram_reg_addr_is_high    <= sram_reg_addr[0];
+         // first word after the rule has the counters
+         sram_reg_cntr_read       <= ((sram_reg_addr[ENTRY_IDX_WIDTH:1] == NUM_RULE_WORDS[ENTRY_IDX_WIDTH-1:0])
+                                      && sram_reg_rd_wr_L
+                                      && sram_reg_req);
 
          // Clear the SRAM. This is not executed in simulation
          if(do_reset) begin
@@ -139,10 +123,8 @@ module sram_arbiter  #(parameter SRAM_ADDR_WIDTH = 19,
                sram_tri_en_early2     <= 1'b0;
                sram_wr_data_early2    <= sram_wr_data_early2;
                sram_reg_ack_early3    <= 1'b0;
-/* -----\/----- EXCLUDED -----\/-----
                rd_0_ack               <= 1'b0;
                wr_0_ack               <= 1'b0;
- -----/\----- EXCLUDED -----/\----- */
             end
             else begin
                sram_addr              <= sram_addr + 1'b1;
@@ -172,10 +154,21 @@ module sram_arbiter  #(parameter SRAM_ADDR_WIDTH = 19,
                sram_tri_en_early2     <= !sram_reg_rd_wr_L;
                sram_reg_ack_early3    <= 1'b1;
                rd_0_vld_early3        <= 1'b0;
-/* -----\/----- EXCLUDED -----\/-----
                rd_0_ack               <= 1'b0;
                wr_0_ack               <= 1'b0;
- -----/\----- EXCLUDED -----/\----- */
+            end
+
+            // reset counters if counter read and reset-on-read enabled
+            else if(sram_reg_cntr_read && RESET_ON_READ) begin
+               sram_addr              <= sram_addr;           // keep the same reg addr
+               sram_we                <= 0; // active low
+               sram_bw                <= sram_reg_addr_is_high ? 8'h0f : 8'hf8; // don't reset the timestamp
+               sram_wr_data_early2    <= 0;
+               sram_tri_en_early2     <= sram_reg_cntr_read;
+               rd_0_vld_early3        <= 1'b0;
+               sram_reg_ack_early3    <= 1'b0;
+               rd_0_ack               <= 1'b0;
+               wr_0_ack               <= 1'b0;
             end
 
             // writes
@@ -184,12 +177,10 @@ module sram_arbiter  #(parameter SRAM_ADDR_WIDTH = 19,
                {sram_we, sram_bw}     <= 0; // active low
                sram_wr_data_early2    <= wr_0_data;
                sram_tri_en_early2     <= 1'b1;
+               wr_0_ack               <= 1'b1;
                rd_0_vld_early3        <= 1'b0;
                sram_reg_ack_early3    <= 1'b0;
-/* -----\/----- EXCLUDED -----\/-----
-               wr_0_ack               <= 1'b1;
                rd_0_ack               <= 1'b0;
- -----/\----- EXCLUDED -----/\----- */
             end
 
             // reads
@@ -200,10 +191,8 @@ module sram_arbiter  #(parameter SRAM_ADDR_WIDTH = 19,
                sram_tri_en_early2     <= 1'b0;
                sram_wr_data_early2    <= sram_wr_data_early2;
                sram_reg_ack_early3    <= 1'b0;
-/* -----\/----- EXCLUDED -----\/-----
                rd_0_ack               <= rd_0_req;
                wr_0_ack               <= 1'b0;
- -----/\----- EXCLUDED -----/\----- */
             end
          end // else: !if(do_reset)
 
@@ -249,6 +238,48 @@ module sram_arbiter  #(parameter SRAM_ADDR_WIDTH = 19,
    begin
       {sram_we, sram_bw} = 9'h1ff;
    end
+
+   // Detect when we write sequential addresses using reg iface, and we skip one
+   reg [2:0] seq_state;
+   reg [SRAM_ADDR_WIDTH-1:0] prev_addr;
+   always @(posedge clk) begin
+      if(reset) begin
+         seq_state <= 0;
+      end
+      else begin
+         case (seq_state)
+            // check when we start a new write
+            0: begin
+               if(sram_reg_req && !sram_reg_rd_wr_L) begin
+                  prev_addr <= sram_reg_addr;
+                  seq_state <= 1;
+               end
+            end
+
+            // wait till req goes low
+            1: begin
+               if(!sram_reg_req) begin
+                  seq_state <= 2;
+               end
+            end
+
+            // wait for new addr, check if sequential
+            2: begin
+               if(sram_reg_req && !sram_reg_rd_wr_L) begin
+                  // if it is not sequential then we check if we have moved to the next
+                  // sequence or if this is a mistake
+                  if(sram_reg_addr == prev_addr + 2) begin
+                     // Oh oh, we've skipped an address
+                     $display("%t %m WARNING: SRAM reg write request skipped an address: %05x.", $time, prev_addr + 1'b1);
+                     $stop;
+                  end
+                  seq_state <= 1;
+                  prev_addr <= sram_reg_addr;
+               end // if (sram_reg_req && !sram_reg_rd_wr_L)
+            end // case: 2
+         endcase // case(seq_state)
+      end // else: !if(reset)
+   end // always @ (posedge clk)
 
    // synthesis translate_on
 

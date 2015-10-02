@@ -71,14 +71,24 @@ struct sGram2{
 	//Next operation/letter, frequency
 	std::map<std::string, int> next;
 	std::map<std::string, std::vector<std::string> > files;
-
-
 	//File name,  list of line numbers
 	//std::map<std::string, std::vector<int> > filelinemap;
-
 };
 
 
+struct sResult{
+	std::string topMatch;
+	double topScore;
+	double nextScore;
+	int numTied;
+};
+
+
+
+enum SearchType {
+	eSimilarity,
+	eTrust
+};
 
 
 
@@ -89,6 +99,7 @@ class Database{
 		bool m_SuppressOutput;
 		std::string m_KVal;
 		int m_KInt;
+		SearchType m_SearchType;
 
 
 		//k-1 string....map of the count, and the last letter (last letter is the suggestion)
@@ -97,13 +108,16 @@ class Database{
 
 	public:
 		Database();
+		Database(SearchType);
+
 		Database(std::string);
+		Database(std::string, SearchType);
 		~Database();
 
 
 		int t_CurLine;
 		bool importDatabase(std::string);   //PARAM: File Name
-	  void searchDatabase(Birthmark*, std::string, bool printall = false);  //String: KFLags
+	  sResult* searchDatabase(Birthmark*, std::string, bool printall = false);  //String: KFLags
 		void compareBirthmark(Birthmark*, Birthmark*);
 		bool isBirthmarkEqual(Birthmark*, Birthmark*);
 	  void autoCorrelate();

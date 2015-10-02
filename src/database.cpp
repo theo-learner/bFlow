@@ -8,6 +8,29 @@
 
 #include "database.hpp"
 using namespace rapidxml;
+/**
+ * Constructor
+ *  Initializes alignment function for pairwise alignment
+ */
+Database::Database(SearchType st){	
+	SIMILARITY::initAlignment();
+	m_SuppressOutput = false;
+	t_CurLine = -1;
+	m_SearchType = st;
+}
+
+/**
+ * Constructor
+ *  Imports an existing database XML file
+ *  Initializes alignment function for pairwise alignment
+ */
+Database::Database(std::string file, SearchType st){	
+	SIMILARITY::initAlignment();
+	importDatabase(file);
+	m_SuppressOutput = false;
+	t_CurLine = -1;
+	m_SearchType = st;
+}
 
 /**
  * Constructor
@@ -17,6 +40,7 @@ Database::Database(){
 	SIMILARITY::initAlignment();
 	m_SuppressOutput = false;
 	t_CurLine = -1;
+	m_SearchType = eSimilarity;
 }
 
 /**
@@ -29,6 +53,7 @@ Database::Database(std::string file){
 	importDatabase(file);
 	m_SuppressOutput = false;
 	t_CurLine = -1;
+	m_SearchType = eSimilarity;
 }
 
 /**
@@ -73,7 +98,7 @@ bool Database::importDatabase(std::string path){
 	strcpy(cstr, xmlstring.c_str());
 
 	m_XML.parse<0>(cstr);
-	printf("[DATABASE] -- XML File imported. Parsing...");
+	printf("[DATABASE] -- XML File imported. Parsing...\n");
 
 
 	//Make sure Database doesn't have content TODO: Append database	
@@ -161,6 +186,8 @@ bool Database::importDatabase(std::string path){
 
 
 void Database::compareBirthmark(Birthmark* bm1, Birthmark* bm2){
+
+	//Get the components of the Reference circuit
 	std::list<std::string> max1, min1, alpha1;  //Functional
 	std::list<std::string> max2, min2, alpha2;  //Functional
 	bm1->getMaxSequence(max1);
@@ -170,24 +197,56 @@ void Database::compareBirthmark(Birthmark* bm1, Birthmark* bm2){
 	bm2->getMinSequence(min2);
 	bm2->getAlphaSequence(alpha2);
 
-
-	std::map<std::string, unsigned> feature1, feature2;       //Structural
+	std::map<std::string, unsigned> feature1;       //Structural
+	std::map<std::string, unsigned> feature2;       //Structural
 	bm1->getFingerprint(feature1);
 	bm2->getFingerprint(feature2);
 
-
-	std::vector<unsigned> constant1, constant2;                //Constant
+	std::vector<unsigned> constant1;                //Constant
+	std::vector<unsigned> constant2;                //Constant
 	bm1->getBinnedConstants(constant1);
 	bm2->getBinnedConstants(constant2);
+
+	std::vector<int> stat1;				          			  //Stat
+	std::vector<int> stat2;				          			  //Stat
+	bm1->getStat(stat1);
+	bm2->getStat(stat2);
+
+	std::map<std::string, int > kgramSet1, kgramList1;  //KGram
+	std::map<std::map<char, int >, int > kgramFreq1;  //KGram
+	std::map<std::string, int > kgramSet2, kgramList2;  //KGram
+	std::map<std::map<char, int >, int > kgramFreq2;  //KGram
+	bm1->getKGramSet(kgramSet1);
+	bm1->getKGramList(kgramList1);
+	bm1->getKGramFreq(kgramFreq1);
+	bm2->getKGramSet(kgramSet2);
+	bm2->getKGramList(kgramList2);
+	bm2->getKGramFreq(kgramFreq2);
+
+
+	/////////////////////////////////////////////////////////////////////////////
+	//   FUNCTIONAL SEQUENCE COMARPISON
+	//     Score returned by alignment is all the alignemnt scores among the list
+	//     Average to take into account different number os sequences
+	//     Final functional score is the sum of all the scores
+	/////////////////////////////////////////////////////////////////////////////
+	int maxScore = SIMILARITY::align(max1, max2);
+	double fScore = (double(maxScore) / ((double)max1.size() * (double)max2.size())) * 0.75;
+
+	int minScore = SIMILARITY::align(min1, min2);
+	fScore += double(minScore) / ((double)min1.size() * (double)min2.size()) * 2;
+
+	int alphaScore = SIMILARITY::align(alpha1, alpha2);
+	fScore += (double(alphaScore) / ((double)alpha1.size() * (double)alpha2.size())) * 3;
+
+
+
+
 	/////////////////////////////////////////////////////////////////////////////
 	//   STRUCTURAL SEQUENCE COMARPISON
 	//     Score is the total euclidean distance of all the features 
 	/////////////////////////////////////////////////////////////////////////////
-
-	double sScore= 0.0;
-	double tsim = SIMILARITY::euclidean(feature1, feature2);
-	sScore += tsim;
-	printf("  * SSCORE: %f\n", sScore);
+	double sScore= SIMILARITY::euclidean(feature1, feature2);
 
 
 
@@ -198,35 +257,39 @@ void Database::compareBirthmark(Birthmark* bm1, Birthmark* bm2){
 	/////////////////////////////////////////////////////////////////////////////
 	//printf(" -- Comparing Constant Components....\n");
 	double cScore = SIMILARITY::euclidean(constant1, constant2);
-	printf("  * CSCORE: %f\n", cScore);
+	double stScore = SIMILARITY::euclidean(stat1, stat2);
+
 
 
 	/////////////////////////////////////////////////////////////////////////////
-	//   FUNCTIONAL SEQUENCE COMARPISON
-	//     Score returned by alignment is all the alignemnt scores among the list
-	//     Average to take into account different number os sequences
-	//     Final functional score is the sum of all the scores
+	//   KGRAM COMARPISON
+	//     Score is the total euclidean distance of binned constant vector 
 	/////////////////////////////////////////////////////////////////////////////
-	printf("########################################################################\n");
-	int maxScore = SIMILARITY::align(max1, max2, true);
-	double fScore = (double(maxScore) / ((double)max1.size() * (double)max2.size())) * 0.75;
-	printf("########################################################################\n\n\n");
-
-	int minScore = SIMILARITY::align(min1, min2, true);
-	fScore += double(minScore) / ((double)min1.size() * (double)min2.size()) * 2;
-	printf("########################################################################\n\n\n");
-
-	int alphaScore = SIMILARITY::align(alpha1, alpha2, true);
-	fScore += (double(alphaScore) / ((double)alpha1.size() * (double)alpha2.size())) * 3;
-	printf("########################################################################\n");
-	printf("MAXSCORE: %4d\tAVG: %f\n", maxScore, double(maxScore) / ((double)max1.size() * (double)max2.size()));
-	printf("MINSCORE: %4d\tAVG: %f\n", minScore, double(minScore) / ((double)min1.size() * (double)min2.size()));
-	printf("ALPSCORE: %4d\tAVG: %f\n", alphaScore, double(alphaScore) / ((double)alpha1.size() * (double)alpha2.size()));
-	printf("  * FSCORE: %f\n", fScore);
+	double kScores = SIMILARITY::containment(kgramSet1, kgramSet2);
+	double kScoresr = SIMILARITY::resemblance(kgramSet1, kgramSet2);
+	double kScorel = SIMILARITY::containment(kgramList1, kgramList2);
+	double kScorelr = SIMILARITY::resemblance(kgramList1, kgramList2);
+	double kScoref = SIMILARITY::containment(kgramFreq1, kgramFreq2);
+	double kScorefr = SIMILARITY::resemblance(kgramFreq1, kgramFreq2);
 
 
-	//bm1->print();
-	//bm2->print();
+	printf("###############################################################\n");
+	printf("###                    SEARCH COMPLETE                      ###\n");
+	printf("###############################################################\n");
+
+
+	printf("NF:%5.2f  ", fScore);
+	printf("NS:%5.2f  ", sScore);
+	printf("NC:%5.2f  ", cScore);
+	printf("ST:%5.2f  ", stScore);
+	printf("SC:%5.2f  ", kScores);
+	printf("SR:%5.2f  ", kScoresr);
+	printf("LC:%5.2f  ", kScorel);
+	printf("LR:%5.2f  ", kScorelr);
+	printf("FC:%5.2f  ", kScoref);
+	printf("FR:%5.2f\n", kScorefr);
+
+	printf("==============================================================\n");
 }
 
 
@@ -237,29 +300,33 @@ void Database::compareBirthmark(Birthmark* bm1, Birthmark* bm2){
  *  Searches the database for a circuit similar to the reference 
  *  Outputs results in ranked order with circuits similar to reference
  */
-void Database::searchDatabase(Birthmark* reference, std::string operation, bool printall){
+sResult* Database::searchDatabase(Birthmark* reference, std::string operation, bool printall){
 	//Get the components of the Reference circuit
 	std::list<std::string> maxRef, minRef, alphaRef;  //Functional
+	std::list<std::string> maxDB, minDB, alphaDB;
 	reference->getMaxSequence(maxRef);
 	reference->getMinSequence(minRef);
 	reference->getAlphaSequence(alphaRef);
 
 	std::map<std::string, unsigned> featureRef;       //Structural
+	std::map<std::string, unsigned> featureDB;
 	reference->getFingerprint(featureRef);
 
 	std::vector<unsigned> constantRef;                //Constant
+	std::vector<unsigned> constantDB;
 	reference->getBinnedConstants(constantRef);
 
 	std::vector<int> statRef;				          			  //Stat
+	std::vector<int> statDB;						  //Stat
 	reference->getStat(statRef);
 
-	std::map<std::string, int > kgramSetRef;  //KGram
+	std::map<std::string, int > kgramSetRef, kgramListRef;  //KGram
+	std::map<std::string, int> kgramSetDB, kgramListDB;  //KGram
 	reference->getKGramSet(kgramSetRef);
-	//std::vector<std::map<std::string, int> > kgramMapRef;  //KGram
-	//reference->getKGramCounter(kgramMapRef);
-	std::map<std::string, int > kgramListRef;  //KGram
 	reference->getKGramList(kgramListRef);
-	std::map<std::map<std::string, int >, int > kgramFreqRef;  //KGram
+
+	std::map<std::map<char, int >, int > kgramFreqRef;  //KGram
+	std::map<std::map<char, int>, int > kgramFreqDB;  //KGram
 	reference->getKGramFreq(kgramFreqRef);
 
 	std::vector<Score> scoreList;
@@ -276,8 +343,8 @@ void Database::searchDatabase(Birthmark* reference, std::string operation, bool 
 
 	for(unsigned int i = 0; i < m_Database.size(); i++) {
 		//printf("###########################################################################################################\n");
-		if(!m_SuppressOutput)
-			printf("[DB] -- Comparing reference to %s\n", m_Database[i]->getName().c_str());
+		//if(!m_SuppressOutput)
+			//printf("[DB] -- Comparing reference to %s\n", m_Database[i]->getName().c_str());
 		//printf("###########################################################################################################\n");
 
 		/////////////////////////////////////////////////////////////////////////////
@@ -286,24 +353,21 @@ void Database::searchDatabase(Birthmark* reference, std::string operation, bool 
 		//     Average to take into account different number os sequences
 		//     Final functional score is the sum of all the scores
 		/////////////////////////////////////////////////////////////////////////////
-		std::list<std::string> maxDB;
 		m_Database[i]->getMaxSequence(maxDB);
 		int maxScore = SIMILARITY::align(maxRef, maxDB);
 		double fScore = (double(maxScore) / ((double)maxRef.size() * (double)maxDB.size())) * 0.75;
 
-		std::list<std::string> minDB;
 		m_Database[i]->getMinSequence(minDB);
 		int minScore = SIMILARITY::align(minRef, minDB);
 		fScore += double(minScore) / ((double)minRef.size() * (double)minDB.size()) * 2;
 
-		std::list<std::string> alphaDB;
 		m_Database[i]->getAlphaSequence(alphaDB);
 		int alphaScore = SIMILARITY::align(alphaRef, alphaDB);
 		fScore += (double(alphaScore) / ((double)alphaRef.size() * (double)alphaDB.size())) * 3;
 
 		if(fScore > maxf)  maxf = fScore;
 		if(fScore < minf)  minf = fScore;
-		
+
 		//printf("  * FSCORE: %f\n", fScore);
 
 
@@ -314,7 +378,6 @@ void Database::searchDatabase(Birthmark* reference, std::string operation, bool 
 		//   STRUCTURAL SEQUENCE COMARPISON
 		//     Score is the total euclidean distance of all the features 
 		/////////////////////////////////////////////////////////////////////////////
-		std::map<std::string, unsigned> featureDB;
 		m_Database[i]->getFingerprint(featureDB);
 
 		double sScore= SIMILARITY::euclidean(featureRef, featureDB);
@@ -333,14 +396,12 @@ void Database::searchDatabase(Birthmark* reference, std::string operation, bool 
 		//     Score is the total euclidean distance of binned constant vector 
 		/////////////////////////////////////////////////////////////////////////////
 		//printf(" -- Comparing Constant Components....\n");
-		std::vector<unsigned> constantDB;
 		m_Database[i]->getBinnedConstants(constantDB);
 		double cScore = SIMILARITY::euclidean(constantRef, constantDB);
 		//printf("  * CSCORE: %f\n", cScore);
 		if(cScore > maxc)    maxc = cScore;
 		if(cScore < minc)    minc = cScore;
 
-		std::vector<int> statDB;						  //Stat
 		m_Database[i]->getStat(statDB);
 		double stScore = SIMILARITY::euclidean(statDB, statRef);
 
@@ -354,24 +415,45 @@ void Database::searchDatabase(Birthmark* reference, std::string operation, bool 
 		//   KGRAM COMARPISON
 		//     Score is the total euclidean distance of binned constant vector 
 		/////////////////////////////////////////////////////////////////////////////
-		std::map<std::string, int> kgramSetDB;  //KGram
 		m_Database[i]->getKGramSet(kgramSetDB);
-		std::map<std::string, int> kgramListDB;  //KGram
 		m_Database[i]->getKGramList(kgramListDB);
-		std::map<std::map<std::string, int>, int > kgramFreqDB;  //KGram
 		m_Database[i]->getKGramFreq(kgramFreqDB);
 		//std::vector<std::map<std::string, int> > kgramMapDB;  //KGram
 		//m_Database[i]->getKGramCounter(kgramMapDB);
 
 		//double kScore = SIMILARITY::resemblance(kgramSetDB, kgramSetRef);
-		double kScores = SIMILARITY::containment(kgramSetDB, kgramSetRef);
-		double kScoresr = SIMILARITY::resemblance(kgramSetDB, kgramSetRef);
+		//double kScores = SIMILARITY::containment(kgramSetDB, kgramSetRef);
+		//double kScoresr = SIMILARITY::resemblance(kgramSetDB, kgramSetRef);
 		double kScorel = SIMILARITY::containment(kgramListDB, kgramListRef);
-		double kScorelr = SIMILARITY::resemblance(kgramListDB, kgramListRef);
 		double kScoref = SIMILARITY::containment(kgramFreqDB, kgramFreqRef);
-		double kScorefr = SIMILARITY::resemblance(kgramFreqDB, kgramFreqRef);
-		//printf("  * KSCORE: %f\n", kScore);
 
+		double kScorelr;
+		if(kgramListDB.size() > kgramListRef.size())
+			kScorelr = SIMILARITY::resemblance(kgramListRef, kgramListDB);
+		else
+			kScorelr = SIMILARITY::resemblance(kgramListDB, kgramListRef);
+
+		double kScorefr;
+		if(kgramFreqDB.size() > kgramFreqRef.size())
+			kScorefr= SIMILARITY::resemblance(kgramFreqRef, kgramFreqDB);
+		else
+			kScorefr= SIMILARITY::resemblance(kgramFreqDB, kgramFreqRef);
+
+
+/*
+		//For trust applications, make sure containment goes both ways and get the highest
+		if(m_SearchType == eTrust){
+			double kScores2 = SIMILARITY::containment(kgramSetRef, kgramSetDB);
+			double kScorel2 = SIMILARITY::containment(kgramListRef, kgramListDB);
+			double kScoref2 = SIMILARITY::containment(kgramFreqRef, kgramFreqDB);
+			if(kScores2 > kScores) kScores = kScores2;
+			if(kScorel2 > kScorel) kScorel = kScorel2;
+			if(kScoref2 > kScoref) kScoref = kScoref2;
+
+		}
+		*/
+
+		//Store the score results for this circuit
 		Score score;
 		score.id = m_Database[i]->getID();
 		score.name = m_Database[i]->getFileName();
@@ -379,9 +461,8 @@ void Database::searchDatabase(Birthmark* reference, std::string operation, bool 
 		score.tScore= stScore;
 		score.sScore= sScore;
 		score.cScore= cScore;
-
-		score.ksc= kScores;
-		score.ksr= kScoresr;
+		//score.ksc= kScores;
+		//score.ksr= kScoresr;
 		score.klc= kScorel;
 		score.klr= kScorelr;
 		score.kfc= kScoref;
@@ -397,80 +478,100 @@ void Database::searchDatabase(Birthmark* reference, std::string operation, bool 
 		printf("###############################################################\n");
 		printf("###                    SEARCH COMPLETE                      ###\n");
 		printf("###############################################################\n");
+	}
 
-		//Weights
-		double fweight = 0.80;  //If datapath birthmark, subtract .1
-		double sweight = 0.15;
-		double tweight = 0.05;
-		double cweight = 0.10;
-		//Need to normalize data
-		std::set<Score, setCompare> normalizedFinalScore;
+	//Weights
+	/*
+	weights for date paper
+	*/
 
-		//Combine and sort the scores in ranking order
-		for(unsigned int i = 0; i < scoreList.size(); i++){
-			//Normalization of the scores to the range of 0-1
-			double newScores = (double)(log(scoreList[i].sScore+1) - log(mins+1)) / (double)(log(maxs+1)-log(mins+1));
-			double newScoret = (double)(log(scoreList[i].tScore+1)- log(minst+1)) / (double)(log(maxst+1)-log(minst+1));  
-			double newScoref = (double)(scoreList[i].fScore- minf) / (double)(maxf-minf);  
-			double newScorec = (double)(log(scoreList[i].cScore+1) - log(minc+1)) / (double)(log(maxc+1)-log(minc+1));
+	/*
+	86.8852
+	double fweight = 0.90;  //If datapath birthmark, subtract .1
+	double sweight = 0.05;
+	double tweight = 0.00;
+	double cweight = 0.05;
+	*/
 
-			double newScore = (1 - newScores) * sweight * 100.0 +      //1 is dissimilar. Need to switch
-				(1 - newScoret) * tweight * 100.0;
+	//Need to normalize data
+	std::set<Score, setCompare> normalizedFinalScore;
 
-			if(operation == "BIRTHMARK"){
-				fweight -= 0.10;
-				newScore += (1 - newScorec) * cweight * 100.0 +
-					newScoref * fweight * 100.0;
-			}
-			else if(operation == "KLC") newScore += (scoreList[i].klc * fweight * 100.0);
+	//Combine and sort the scores in ranking order
+	for(unsigned int i = 0; i < scoreList.size(); i++){
+		//Normalization of the scores to the range of 0-1
+		//double newScoref = (double)(scoreList[i].fScore- minf) / (double)(maxf-minf);  
+
+		double newScore = 0.0;
+		double newScores= 0.0;
+		double newScoret= 0.0;
+		double newScorec= 0.0;
+
+		if(m_SearchType == eSimilarity){
+			double fweight = 0.40;  //If datapath birthmark, subtract .1
+			double sweight = 0.30;
+			double tweight = 0.20;
+			double cweight = 0.10;
+
+			newScores = (double)(log(scoreList[i].sScore+1) - log(mins+1)) / (double)(log(maxs+1)-log(mins+1));
+			newScoret = (double)(log(scoreList[i].tScore+1)- log(minst+1)) / (double)(log(maxst+1)-log(minst+1));  
+			newScorec = (double)(log(scoreList[i].cScore+1) - log(minc+1)) / (double)(log(maxc+1)-log(minc+1));
+
+			//if(operation == "BIRTHMARK") newScore +=newScoref * (fweight-0.1) * 100.0;
+			if(operation == "KLC") newScore += (scoreList[i].klc * fweight * 100.0);
 			else if(operation == "KLR") newScore += (scoreList[i].klr * fweight * 100.0);
-			else if(operation == "KSC") newScore += (scoreList[i].ksc * fweight * 100.0);
-			else if(operation == "KSR") newScore += (scoreList[i].ksr * fweight * 100.0);
+			//else if(operation == "KSC") newScore += (scoreList[i].ksc * fweight * 100.0);
+			//else if(operation == "KSR") newScore += (scoreList[i].ksr * fweight * 100.0);
 			else if(operation == "KFC") newScore += (scoreList[i].kfc * fweight * 100.0);
 			else if(operation == "KFR") newScore += (scoreList[i].kfr * fweight * 100.0);
+			else printf("UNKNOWN OPERATION: %s\n", operation.c_str());
 
-
-
-			Score sim;
-			sim.id = scoreList[i].id;
-			sim.name = scoreList[i].name;
-			sim.score = newScore;
-			sim.fScore = scoreList[i].fScore;
-			sim.cScore = scoreList[i].cScore;
-			sim.sScore = scoreList[i].sScore;
-			sim.tScore = scoreList[i].tScore;
-			sim.ksr = scoreList[i].ksr;
-			sim.ksc = scoreList[i].ksc;
-			sim.klr = scoreList[i].klr;
-			sim.klc = scoreList[i].klc;
-			sim.kfr = scoreList[i].kfr;
-			sim.kfc = scoreList[i].kfc;
-			sim.nf = newScoref;
-			sim.nc = newScorec;
-			sim.ns = newScores;
-			sim.stat = newScoret;
-			sim.bm = scoreList[i].bm;
-			normalizedFinalScore.insert(sim);
+			newScore += (1 - newScores) * sweight * 100.0 +      //1 is dissimilar. Need to switch
+									(1 - newScoret) * tweight * 100.0 +
+									(1 - newScorec) * cweight * 100.0;
+		}
+		else if (m_SearchType == eTrust){
+			if(operation == "KFR")
+				newScore += (scoreList[i].kfr * 100.0);
+			else if(operation == "KLR")
+				newScore += (scoreList[i].klr * 100.0);
 		}
 
+		Score sim;
+		sim.id = scoreList[i].id;
+		sim.name = scoreList[i].name;
+		sim.score = newScore;
+		sim.fScore = scoreList[i].fScore;
+		sim.cScore = scoreList[i].cScore;
+		sim.sScore = scoreList[i].sScore;
+		sim.tScore = scoreList[i].tScore;
+		//sim.ksr = scoreList[i].ksr;
+		//sim.ksc = scoreList[i].ksc;
+		sim.klr = scoreList[i].klr;
+		sim.klc = scoreList[i].klc;
+		sim.kfr = scoreList[i].kfr;
+		sim.kfc = scoreList[i].kfc;
+		//sim.nf = newScoref;
+		sim.nc = newScorec;
+		sim.ns = newScores;
+		sim.stat = newScoret;
+		sim.bm = scoreList[i].bm;
+		normalizedFinalScore.insert(sim);
+	}
 
-		// Print the scores
-		int count = 1;
-		std::set<Score, setCompare>::iterator iSet;
+
+	// Print the scores
+	int count = 1;
+	std::set<Score, setCompare>::iterator iSet;
+	if(!m_SuppressOutput){
 		for(iSet = normalizedFinalScore.begin(); iSet != normalizedFinalScore.end(); iSet++){
 			printf("R: %2d ", count);
-			printf("SC:%6.2f  ", iSet->score);
-			/*
-				 printf("F:%7.2f  ", iSet->f);
-				 printf("S:%7.2f  ", iSet->s);
-				 printf("C:%7.2f  ", iSet->c);
-			 */
-			printf("NF:%5.2f  ", iSet->nf);
-			printf("NS:%5.2f  ", 1.0-iSet->ns);
-			printf("NC:%5.2f  ", 1.0-iSet->nc);
+			printf("SC:%6.4f  ", iSet->score);
+			//printf("NF:%5.2f  ", iSet->nf);
+			printf("NS:%5.4f  ", 1.0-iSet->ns);
+			printf("NC:%5.4f  ", 1.0-iSet->nc);
 			printf("ST:%5.2f  ", 1.0-iSet->stat);
-			printf("SC:%5.2f  ", iSet->ksc);
-			printf("SR:%5.2f  ", iSet->ksr);
+			//printf("SC:%5.2f  ", iSet->ksc);
+			//printf("SR:%5.2f  ", iSet->ksr);
 			printf("LC:%5.2f  ", iSet->klc);
 			printf("LR:%5.2f  ", iSet->klr);
 			printf("FC:%5.2f  ", iSet->kfc);
@@ -482,62 +583,103 @@ void Database::searchDatabase(Birthmark* reference, std::string operation, bool 
 				break;
 			count++;
 		}
+	}
+	
+	//Get the top circuits
+	double topScore = normalizedFinalScore.begin()->score;
+	double nextScore = normalizedFinalScore.begin()->score;
+	std::vector<std::string> top_circuit_vector;
+	for(iSet = normalizedFinalScore.begin(); iSet != normalizedFinalScore.end(); iSet++){
+		if(topScore == iSet->score)
+			top_circuit_vector.push_back(iSet->name);
+		else{
+			nextScore = iSet->score;
+			break;
+		}
+	}
 
 
 
-		count = 1;
-		std::list<std::string> endgrams;
-		std::list<std::string>::iterator iList;
-		std::string currentEndGram = "";
 
-		if(t_CurLine == -1){
+
+	count = 1;
+	std::list<std::string> endgrams;
+	std::list<std::string>::iterator iList;
+	std::string currentEndGram = "";
+
+	if(t_CurLine == -1){
+		if(!m_SuppressOutput){
 			reference->getEndGrams(endgrams);
 			printf("Number of n-grams in reference circuit: %d\n", (int)endgrams.size());
 			printf("No line number of current design given...skipping code prediction...\n");
 		}
-		else{
-			printf("Predicting future code based on existing hardware database...\n");
-			//Get the endgrams with the current line as an end node
-			reference->getEndGrams(endgrams, t_CurLine);
-			printf("ENDGRAM: ");
-			for(iList = endgrams.begin(); iList != endgrams.end(); iList++)
-				printf(" %s, ", iList->c_str());
-			printf("\n");
+	}
+	else{
+		printf("Predicting future code based on existing hardware database...\n");
+		//Get the endgrams with the current line as an end node
+		reference->getEndGrams(endgrams, t_CurLine);
+		printf("ENDGRAM: ");
+		for(iList = endgrams.begin(); iList != endgrams.end(); iList++)
+			printf(" %s, ", iList->c_str());
+		printf("\n");
 
-			for(iSet = normalizedFinalScore.begin(); iSet != normalizedFinalScore.end(); iSet++){
-				printf("----------------------------------------------------------------\n");
-				printf("CKT: %s count: %d\n", iSet->name.c_str(), count);
+		for(iSet = normalizedFinalScore.begin(); iSet != normalizedFinalScore.end(); iSet++){
+			printf("----------------------------------------------------------------\n");
+			printf("CKT: %s count: %d\n", iSet->name.c_str(), count);
 
-				std::set<int> lines;
-				for(iList = endgrams.begin(); iList != endgrams.end(); iList++){
-					std::string nextOp = iSet->bm->getFuture(*iList, lines);
-					if(nextOp == "NONE") continue;
-					printf("\tENDGRAM: %s  ", iList->c_str());
-					printf("NEXT: %s\n", nextOp.c_str());
-				}
-
-				std::set<int>::iterator iSet2;
-				if(lines.size() != 0){
-					printf("  LINE:");
-					for(iSet2 = lines.begin(); iSet2 != lines.end(); iSet2++)
-						printf("%d ", *iSet2);
-					printf("\n");
-
-					getFutureLines(iSet->bm->getFileName(), lines);
-				}
-
-
-				if(count == 10)
-					break;
-				count++;
+			std::set<int> lines;
+			for(iList = endgrams.begin(); iList != endgrams.end(); iList++){
+				std::string nextOp = iSet->bm->getFuture(*iList, lines);
+				if(nextOp == "NONE") continue;
+				printf("\tENDGRAM: %s  ", iList->c_str());
+				printf("NEXT: %s\n", nextOp.c_str());
 			}
 
+			std::set<int>::iterator iSet2;
+			if(lines.size() != 0){
+				printf("  LINE:");
+				for(iSet2 = lines.begin(); iSet2 != lines.end(); iSet2++)
+					printf("%d ", *iSet2);
+				printf("\n");
+
+				getFutureLines(iSet->bm->getFileName(), lines);
+			}
+
+
+			if(count == 10)
+				break;
+			count++;
 		}
 
+	}
+
+	if(!m_SuppressOutput){
 		printf("Database Size: %d\n", (int)m_Database.size());
 		printf("KVAL: %s\n", m_KVal.c_str());
 		printf("Operation: %s\n", operation.c_str());
 	}
+
+	sResult* result = new sResult;
+	result->topScore = topScore;
+	result->nextScore = nextScore;
+	result->numTied= top_circuit_vector.size();
+	//Get the top ranked circuit to return
+	if(top_circuit_vector.size() == 1){
+		result->topMatch = top_circuit_vector[0];
+	}
+	else{
+		std::string ref_name = reference->getFileName();
+		result->topMatch = top_circuit_vector[0];
+
+		for(unsigned int i = 0; i < top_circuit_vector.size(); i++){
+			if(ref_name == top_circuit_vector[i]){
+				result->topMatch = top_circuit_vector[i];
+				break;
+			}
+		}
+	}
+		
+	return result;
 }
 
 
@@ -917,17 +1059,11 @@ void Database::getFutureOp(Birthmark* reference){
 			m_Database[k]->getKGramSet(kgramSetRef);
 			std::map<std::string, int> kgramListRef;  //KGram
 			m_Database[k]->getKGramList(kgramListRef);
-			std::map<std::map<std::string, int>, int > kgramFreqRef;  //KGram
+			std::map<std::map<char, int>, int > kgramFreqRef;  //KGram
 			m_Database[k]->getKGramFreq(kgramFreqRef);
 
-			std::vector<Score> fs;
-			std::vector<Score> ss;
-			std::vector<Score> cs;
-			std::vector<Score> ks;
-			fs.reserve(m_Database.size());
-			cs.reserve(m_Database.size());
-			ss.reserve(m_Database.size());
-			ks.reserve(m_Database.size());
+			std::vector<Score> scoreList;
+			scoreList.reserve(m_Database.size());
 
 			double maxf = 0.0;
 			double minf = 10000000000.0;
@@ -1031,7 +1167,7 @@ void Database::getFutureOp(Birthmark* reference){
 				m_Database[i]->getKGramSet(kgramSetDB);
 				std::map<std::string, int> kgramListDB;  //KGram
 				m_Database[i]->getKGramList(kgramListDB);
-				std::map<std::map<std::string, int>, int> kgramFreqDB;  //KGram
+				std::map<std::map<char, int>, int> kgramFreqDB;  //KGram
 				m_Database[i]->getKGramFreq(kgramFreqDB);
 				//std::vector<std::map<std::string, int> > kgramMapDB;  //KGram
 				//m_Database[i]->getKGramCounter(kgramMapDB);
@@ -1045,77 +1181,42 @@ void Database::getFutureOp(Birthmark* reference){
 				double kScorefr = SIMILARITY::resemblance(kgramFreqDB, kgramFreqRef);
 				//printf("  * KSCORE: %f\n", kScore);
 
-				Score scoref;
-				scoref.id = m_Database[i]->getID();
-				scoref.name = m_Database[i]->getFileName();
-				scoref.score = fScore;
-				scoref.stat = stScore;
-				//scoref.bm = m_Database[i];
-
-				Score scores;
-				scores.id = m_Database[i]->getID();
-				scores.name = m_Database[i]->getName();
-				scores.score = sScore;
-
-				Score scorec;
-				scorec.id = m_Database[i]->getID();
-				scorec.name = m_Database[i]->getName();
-				scorec.score = cScore;
-
-				Score scorek;
-				scorek.id = m_Database[i]->getID();
-				scorek.name = m_Database[i]->getName();
-				scorek.ksc= kScores;
-				scorek.ksr= kScoresr;
-				scorek.klc= kScorel;
-				scorek.klr= kScorelr;
-				scorek.kfc= kScoref;
-				scorek.kfr= kScorefr;
+				Score score;
+				score.id = m_Database[i]->getID();
+				score.name = m_Database[i]->getFileName();
+				score.fScore = fScore;
+				score.tScore= stScore;
+				score.sScore = sScore;
+				score.cScore = cScore;
+				score.ksc= kScores;
+				score.ksr= kScoresr;
+				score.klc= kScorel;
+				score.klr= kScorelr;
+				score.kfc= kScoref;
+				score.kfr= kScorefr;
 
 				//Need to store for normalization later. Data is in different scales
-				fs.push_back(scoref);
-				ss.push_back(scores);
-				cs.push_back(scorec);
-				ks.push_back(scorek);
+				scoreList.push_back(score);
 
 			}
 
 			//Weights
-			/*
-				 double fweight = 0.40;
-				 double sweight = 0.28;
-				 double stweight = 0.19;
-				 double cweight = 0.13;
-			 */
+			double fweight = 0.40;  //If datapath birthmark, subtract .1
+			double sweight = 0.40;
+			double tweight = 0.20;
 
 			//Need to normalize data
-			for(unsigned int i = 0; i < fs.size(); i++){
-				//printf("MAXS: %f MINS: %f\n", maxs, mins);
-				//printf("MAXC: %f MINC: %f\n", maxc, minc);
-				//printf("MAXST: %f MINST: %f\n", maxst, minst);
+			for(unsigned int i = 0; i < scoreList.size(); i++){
+				double newScores = (double)(log(scoreList[i].sScore+1) - log(mins+1)) / (double)(log(maxs+1)-log(mins+1));
+				double newScoret = (double)(log(scoreList[i].tScore+1)- log(minst+1)) / (double)(log(maxst+1)-log(minst+1));  
 
-				//Normalization of the scores to the range of 0-1
-				double newScoref = (double)(fs[i].score - minf) / (double)(maxf-minf);  
-				//double newScores = (double)(ss[i].score - mins) / (double)(maxs-mins);
-				//double newScorec = (double)(cs[i].score - minc) / (double)(maxc-minc);
-				//double newScores = (double)(log(ss[i].score+1) - log(mins+1)) / (double)(log(maxs+1)-log(mins+1));
-				//double newScorec = (double)(log(cs[i].score+1) - log(minc+1)) / (double)(log(maxc+1)-log(minc+1));
+				double newScore = (1 - newScores) * sweight * 100.0 +      //1 is dissimilar. Need to switch
+					(1 - newScoret) * tweight * 100.0;
 
-				//double newScorest = (double)(log(fs[i].stat+1)- log(minst+1)) / (double)(log(maxst+1)-log(minst+1));  
-
-				//newScoref = (ks[i].ksr  );
-				//newScoref = (ks[i].klr  );
-				newScoref = (ks[i].kfr );
-
-				/*
-					 double newScore = newScoref * fweight * 100.0 + 
-					 (1 - newScores) * sweight * 100.0 +      //1 is dissimilar. Need to switch
-					 (1 - newScorec) * cweight * 100.0 +
-					 (1 - newScorest) * stweight * 100.0;
-				 */
+				newScore += (scoreList[i].kfr * fweight * 100.0);
 
 
-				acTable[k][i] = newScoref;
+				acTable[k][i] = newScore;
 			}
 		}
 

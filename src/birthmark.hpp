@@ -11,6 +11,7 @@
 #ifndef BIRTHMARK_GUARD
 #define BIRTHMARK_GUARD 
 
+#include <sys/stat.h>
 #include <stdlib.h> 
 #include <stdio.h>
 #include <string>
@@ -28,6 +29,11 @@
 struct sGram{
 	std::string next;
 	std::vector<std::vector<int> > linenum;
+};
+
+
+enum Optmode {
+	eOpt, eOpt_No_Clean, eNoOpt_Clean, eNoOpt
 };
 
 
@@ -67,8 +73,11 @@ class Birthmark{
 		//kgram, list of lines
 		std::map<std::string, std::vector<std::vector<int> > >m_kgramline;
 
+		//(letter op, freq), count
+		std::map<std::map<char, int>, int > m_kgramfreq;
+		
+		//List of keys to m_kgramfreq (letter op, freq)
 		std::vector<std::map<std::string, int> > m_kgramcount;
-		std::map<std::map<std::string, int>, int > m_kgramfreq;
 
 
 
@@ -84,7 +93,7 @@ class Birthmark{
 		void getKGramSet(std::map<std::string, int>&);
 		void getKGramList(std::map<std::string, int>&);
 		void getKGramCounter(std::vector<std::map<std::string, int> > &);
-		void getKGramFreq(std::map<std::map<std::string, int>, int > &);
+		void getKGramFreq(std::map<std::map<char, int>, int > &);
 		int getKGramFreq();
 		int getKGramSetSize();
 		int getKGramListSize();
@@ -95,7 +104,7 @@ class Birthmark{
 		void getFingerprint(std::map<std::string, unsigned> &);
 		double getAvgSequenceLength();                           //Gets AVG SEQ LEN of all SEQ
 		std::string getName();
-		std::string getFileName();
+		std::string getFileName();                               //Gets the file anme of the Top
 		int getID();
 		unsigned getNumFPSubcomponents();
 		std::string getStatstr();
@@ -127,6 +136,8 @@ class Birthmark{
 };
 
 
+//Reads in a verilog file and extracts the birthmark from it
+Birthmark* extractBirthmark(std::string, std::string kval, bool predictFlag, Optmode=eOpt);
 
 
 #endif

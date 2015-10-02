@@ -26,7 +26,6 @@ def extractDataflow(fileName, kVal):
 		 @PARAM: fileName- Dot file of the circuit to read in
 		 @RETURN: Returns the results of the birthmark extraction
 	'''
-	start_time = timeit.default_timer();
 	# Read in dot file of the dataflow
 
 	if(".dot" not in fileName):
@@ -35,10 +34,6 @@ def extractDataflow(fileName, kVal):
 	
 	bExtractor = BirthmarkExtractor(fileName);
 	result = bExtractor.getBirthmark(kVal);
-
-	elapsed = timeit.default_timer() - start_time;
-	print "[DFX] -- ELAPSED: " +  repr(elapsed);
-	print
 
 	#fsd = open("data/dataflowtime.dat", "a");
 	#fsd.write(repr(elapsed)+ "\n")

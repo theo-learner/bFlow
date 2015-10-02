@@ -23,9 +23,9 @@ always @(CS or WE)
   if (!CS && !WE)
     Mem[Address] = Data;
 
-always @(WE or OE)
-  if (!WE && !OE)
-    $display("Operational error in RamChip: OE and WE both active");
+//always @(WE or OE)
+//  if (!WE && !OE)
+//   $display("Operational error in RamChip: OE and WE both active");
 
 endmodule
 

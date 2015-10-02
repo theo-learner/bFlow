@@ -8,13 +8,6 @@ CFLAGS = \
 		-g \
 		$
 
-OBJS = \
-	sw/src/ssw.o \
-	sw/src/ssw_cpp.o \
-	similarity.o \
-	print.o \
-	$
-
 OBJSERVER = \
 	$(SRC_DIR)/database.o \
 	$(SRC_DIR)/birthmark2.o \
@@ -41,9 +34,6 @@ all: bench_matlab rsearch bench_db cserver compareAST
 bench_matlab: $(OBJREF) $(SRC_DIR)/bench_matlab.o 
 	$(CXX) $(OBJREF) $(SRC_DIR)/bench_matlab.o -o bench_matlab 
 
-autocor: $(OBJS) $(SRC_DIR)/autocor.o 
-	$(CXX) $(OBJS) $(SRC_DIR)/autocor.o -o autocor 
-
 rsearch: $(OBJREF) $(SRC_DIR)/rsearch.o
 	$(CXX) $(OBJREF)  $(SRC_DIR)/rsearch.o -o rsearch 
 
@@ -53,8 +43,8 @@ compareAST: $(OBJREF) $(SRC_DIR)/compareAST.o
 bench_db: $(OBJREF) $(SRC_DIR)/bench_db.o 
 	$(CXX) $(OBJREF) $(SRC_DIR)/bench_db.o -o bench_db
 
-mainopt: $(OBJS) $(SRC_DIR)/swparam_opt.o
-	$(CXX) $(OBJS) $(SRC_DIR)/swparam_opt.o -o opt_sswparam 
+host_test1: $(OBJREF) $(SRC_DIR)/opt_test.o 
+	$(CXX) $(OBJREF) $(SRC_DIR)/opt_test.o -o host_test1 
 
 cserver:  $(OBJSERVER) $(SRC_DIR)/cserver.o
 	$(CXX)  -o cserver $(OBJSERVER) $(SRC_DIR)/cserver.o 

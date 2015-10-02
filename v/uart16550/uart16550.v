@@ -324,14 +324,14 @@ uart_debug_if dbg(/*AUTOINST*/
 initial
 begin
 	`ifdef DATA_BUS_WIDTH_8
-		$display("(%m) UART INFO: Data bus width is 8. No Debug interface.\n");
+		$display("UART INFO: Data bus width is 8. No Debug interface.\n");
 	`else
-		$display("(%m) UART INFO: Data bus width is 32. Debug Interface present.\n");
+		$display("UART INFO: Data bus width is 32. Debug Interface present.\n");
 	`endif
 	`ifdef UART_HAS_BAUDRATE_OUTPUT
-		$display("(%m) UART INFO: Has baudrate output\n");
+		$display("UART INFO: Has baudrate output\n");
 	`else
-		$display("(%m) UART INFO: Doesn't have baudrate output\n");
+		$display("UART INFO: Doesn't have baudrate output\n");
 	`endif
 end
 

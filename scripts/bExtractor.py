@@ -33,6 +33,7 @@ class BirthmarkExtractor(object):
 			 Initializes most of the private variables and settings 
 		'''
 		self.dfg = nx.DiGraph(nx.read_dot(dotFile));
+
 		#Get the nodes and edges of the graph
 		self.nodeList = self.dfg.nodes();
 		self.edgeList = self.dfg.edges();
@@ -75,11 +76,15 @@ class BirthmarkExtractor(object):
 
 	
 	
+
+	
 	def KGram2(self, k):
+		'''
+		  Searches and extracts the kgrams from the dot file	
+			 @PARAM: k - Length of the kgram
+		'''
 		start_time = timeit.default_timer();
-		print " -- Extracting KGRAM k length from nodes"
-		self.kgramset= Counter();
-		self.kgramcounter= Counter();
+		print " -- Extracting KGRAM k length from nodes (NODES: " + repr(len(self.cnodes)) + ", EDGES: "+repr(len(self.edgeList)) + ")";
 		self.kgramlist= Counter();
 		self.kgram= set();
 		self.kgramline = dict(); #tuple(Sequence letters)...list of list of line numbers associated with the tuple 
@@ -94,18 +99,30 @@ class BirthmarkExtractor(object):
 			marked = set();
 			self.findKGramPath(c ,  marked,  path );
 			#print
+
+		#for k, v in self.kgramlist.iteritems() :
+		#	self.kgramset[frozenset(k)] += v;
+		#	self.kgramcounter[FrozenDict(Counter(k))] += v;
 			
 		elapsed = timeit.default_timer() - start_time;
 		return elapsed;
 		
 
-	def findKGramPath(self, node, marked,  path): 
-		#print "Checking node: " + node +  "\t" + repr(path)
 
+
+
+	def findKGramPath(self, node, marked,  path): 
+		'''
+		  find the path for the specific kgrams
+			 @PARAM: node  : Starting node in the path
+			 @PARAM: makred: List of nodes that are already traversed
+			 @PARAM: path  : Current path for the kgram 
+		'''
+		#print "Checking node: " + node +  "\t" + repr(path)
 		marked.add(node)
+		appended = False
 
 		#Record nodes that aren't wires, splices, constants, or ports
-		appended = False
 		if not any(s in node for s in ['n', 'x', 'v']):
 			appended = True;
 			path.append(node);
@@ -113,24 +130,17 @@ class BirthmarkExtractor(object):
 
 			#Record the current gram if len is greater than k
 			pathlen = len(path)
-			if(pathlen <= self.k and pathlen > 1):
-			#if(pathlen == self.k):
-				#slist = [self.extractSequenceLetter(n) for n in path[len(path)-self.k:]]
-
+			#if(pathlen <= self.k and pathlen > 1):
+			if(pathlen <= self.k ):
 				slist = tuple(self.extractSequenceLetter(n) for n in path)
 				self.kgramline.setdefault(slist, set()).add(tuple(self.linenumber.get(n,"-1") for n in path));
 				self.kgramlist[slist] += 1;
-				self.kgramset[frozenset(slist)] += 1;
-				self.kgramcounter[FrozenDict(Counter(slist))] += 1;
-			
-				#print "  GRAM ADDED" 
 
 				if pathlen == self.k:
 					#print " POP"
 					del path[-1];
 					marked.remove(node)
 					return
-
 				
 		succList = self.dfg.successors(node);
 		for succ in succList:
@@ -139,11 +149,8 @@ class BirthmarkExtractor(object):
 			#else:
 			#	print succ + " is marked..."
 
-
-
 		#Pop only if node was inserted into path
 		#if not any(s in node for s in ['n', 'x', 'v']):
-
 		if appended == True:
 			del path[-1];
 			#print " POP"
@@ -163,7 +170,8 @@ class BirthmarkExtractor(object):
 
 			#Record the current gram if len is greater than k
 			pathlen = len(path)
-			if(pathlen <= self.k and pathlen > 1):
+			#if(pathlen <= self.k and pathlen > 1):
+			if(pathlen <= self.k):
 				#slist = [self.extractSequenceLetter(n) for n in path[len(path)-self.k:]]
 
 				#Reverse the path since traversal is backwards
@@ -875,10 +883,6 @@ class BirthmarkExtractor(object):
 		sys.setrecursionlimit(1500)
 		start_time = timeit.default_timer();
 		print " -- Extracting functional features..."# from : " + fileName;
-		self.pathList = set();
-		self.maxList = set();
-		self.minList = set();
-		self.alphaList = set();
 
 		totalMinPaths = 0;
 		totalMaxPaths = 0;
@@ -1104,7 +1108,7 @@ class BirthmarkExtractor(object):
 		 Returns the data for the birthmark
 		'''
 		#print "NUMBER OF CORES: " + repr(multiprocessing.cpu_count());
-		print "[DFX] -- Extracting birthmarks"
+		print " - Extracting birthmarks"
 
 		#f = multiprocessing.Process(target=self.extractFunctional);
 		#s = multiprocessing.Process(target=self.extractStructural);
@@ -1112,11 +1116,16 @@ class BirthmarkExtractor(object):
 		#f.start();
 		#time.sleep(1);
 		#s.start();
-		print "========================================================================"
 		#start_time = timeit.default_timer();
 		self.endSet = set()
 		self.endGramList = set();
 		self.endGramLine = dict();
+		self.pathList = set();
+		self.maxList = set();
+		self.minList = set();
+		self.alphaList = set();
+
+
 		selapsed = self.extractStructural();
 
 
@@ -1127,7 +1136,8 @@ class BirthmarkExtractor(object):
 
 		#print "========================================================================"
 		#start_time = timeit.default_timer();
-		felapsed = self.extractFunctional();
+		felapsed = 0.0;
+		#self.extractFunctional();
 		#elapsed = timeit.default_timer() - start_time;
 		#print "[FUNC] -- ELAPSED: " +  repr(elapsed) + "\n";
 		
@@ -1148,7 +1158,7 @@ class BirthmarkExtractor(object):
 
 		#Find the ngram backwards starting from the end node
 		if isFindEndGram != False:
-			#print "BACKTRAVERSAL"
+			#Look at nodes that have no successor. Nodes at the end.
 			for node in self.endSet:
 				marked = set();
 				path = []
@@ -1161,17 +1171,17 @@ class BirthmarkExtractor(object):
 		#	print repr(gram) + "   " + repr(self.endGramLine[gram]);
 		
 
-		kgram = (self.kgramset, self.kgramcounter, self.kgramlist, self.kgramline, self.endGramList, self.endGramLine);
+		kgram = (self.kgramlist, self.kgramline, self.endGramList, self.endGramLine);
 		
-		print "[KGRAM] -- ELAPSED: " +  repr(kelapsed) 
 		fileStream = open("data/kgramExtractionTime.csv", 'a');
 		fileStream.write(repr(kelapsed) + ",");
 		fileStream.close();
 
 
-		print "[FUNCT] -- ELAPSED: " +  repr(felapsed) 
-		print "[STRUC] -- ELAPSED: " +  repr(selapsed) 
-		print "[CONST] -- ELAPSED: " +  repr(celapsed) 
+		#print "[KGRAM] -- ELAPSED: " +  repr(kelapsed) 
+		#print "[FUNCT] -- ELAPSED: " +  repr(felapsed) 
+		#print "[STRUC] -- ELAPSED: " +  repr(selapsed) 
+		#print "[CONST] -- ELAPSED: " +  repr(celapsed) 
 
 		return (self.maxList, self.minList, self.constMap, self.fpDict, self.statstr, self.alphaList, kgram);
 

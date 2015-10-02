@@ -60,6 +60,7 @@ def extractModuleNames_single(moduleList, vfile):
 	hasEnd = True;
 	startIndex = 0;
 	comment = False;
+	includes = [];
 
 	for line in fileContent:
 		splitted = line.split();
@@ -70,7 +71,7 @@ def extractModuleNames_single(moduleList, vfile):
 
 				#Remove any unwanted characters such as (
 				moduleName = re.split('#|\(',splitted[1])[0]
-				print " -- MODULE NAME: " + moduleName
+				print "     MODULE: " + moduleName
 
 				if(hasEnd):             #Make sure there is an endmodule with every module
 					hasEnd = False
@@ -86,40 +87,58 @@ def extractModuleNames_single(moduleList, vfile):
 			elif 'endmodule' == splitted[0]:
 				moduleList[moduleName].snippet = fileContent[startIndex : index];
 				hasEnd = True;
+			elif '`include' == splitted[0]:
+				include = re.findall('"([^"]*)"', splitted[1])[0];
+				includes.append(include);
 
 		index = index + 1;	
+	return includes;
 
 
 
 def extractModuleNames(moduleList, name):
+	'''
+		extractModuleNames
+			Goes through the verilog files and finds all the modules located in 
+			each file. Also looks for additional include files
+	'''
 	fileList = []
-
 	if(os.path.isfile(name)):
-		vfile = name;
-		print "[HIER] -- Reading Verilog file: " + vfile;
+		vfile = name.rstrip();
+		print " - Reading Verilog file: " + vfile;
 
-		if(".v" !=  vfile[-2:]):
+		if(".v" !=  vfile[-2:]):   #if listing is a single verilog file
 			raise error.GenError("Make sure file is a verilog file");
 
-		extractModuleNames_single(moduleList, name)
+		includes = extractModuleNames_single(moduleList, name)
+
+		#Append directory path to the include file
+		vdir = os.path.dirname(vfile);
+		for x in xrange(len(includes)):
+			includes[x] = vdir + "/" + includes[x];
+
 		fileList.append(vfile);
+		fileList = fileList + includes;
 		
-	elif(os.path.isdir(name)):
-		vdir = name;
-		print "[HIER] -- Reading directory " + vdir;
+	elif(os.path.isdir(name)):		#if listing is a directory of verilog files
+		vdir = name.rstrip();
+		print " - Reading directory " + vdir;
 		if vdir[-1] != '/':
 			vdir = vdir+ '/';
 	
 		for vfile in listdir(vdir):
-			print " -- Reading in v File: " + vfile;
-	
 			#Make sure the file that is being read in is a DOT file
-			if(".v" !=  vfile[-2:]):
-				print "[WARNING] -- Extension does not match that of Verilog. Skipping file";
+			if(".v" !=  vfile[-2:] and ".inc" != vfile[-4:]):
+				print "[WARNING] -- File: " + vfile + " is not Verilog...skipping";
 				continue;
-
-			extractModuleNames_single(moduleList, vdir + vfile)
+			print " -  Reading in v File: " + vfile;
+	
+			#Append directory path to the include file
+			includes = extractModuleNames_single(moduleList, vdir + vfile)
+			for x in xrange(len(includes)):
+				includes[x] = vdir + includes[x];
 			fileList.append(vdir+vfile);
+			fileList = fileList + includes;
 	
 	return fileList;
 
@@ -132,7 +151,7 @@ def getTopModule(moduleList):
 
 		#Get the location of the module definitions
 		moduleLines = v.snippet;
-		#print "CHECKING SUBMODULES IN : " + k
+		print "CHECKING SUBMODULES IN : " + k
 		
 		for line in moduleLines:
 			splitted = line.split();
@@ -140,8 +159,13 @@ def getTopModule(moduleList):
 
 				#Get the module that was found in the line
 				matching = [s for s in moduleList.keys() if s == splitted[0]]
-				if len(matching) > 0:
-					#print " * SUBMODULE FOUND: " + matching[0]
+				if len(matching) > 0:			
+
+					# Check for recursive module
+					if(matching[0] == k):
+						continue;
+
+					print " * SUBMODULE FOUND: " + matching[0]
 					v.children.append(matching[0]);
 					moduleHasParent.add(matching[0]);    #Used to find top module
 
@@ -155,7 +179,7 @@ def getTopModule(moduleList):
 	if len(topModules) == 0:
 		raise error.GenError("No Top Module Found");
 	elif len(topModules) > 1:
-		print "[WARNING] -- Multiple possible top modules. Attempting narrow down top module"
+		print "[WARNING] -- Multiple top modules found. Narrowing top modules"
 		print topModules
 
 
@@ -169,10 +193,10 @@ def getTopModule(moduleList):
 		if len(topModules) == 0:
 			raise error.GenError("No Top Module Found");
 		elif len(topModules) > 1:
-			print "[ERROR] -- Multiple possible top modules"
-			raise error.GenError("Multiple possible top modules found. Please move top module to another project");
+			print "[ERROR] -- Multiple top modules"
+			raise error.GenError("Multiple top modules found. Please move top module to another project");
 		else:
-			print "[HIER] -- Issue resolved. TOP: " + topModules[0]
+			print " - Issue resolved. TOP: " + topModules[0]
 	
 	return (topModules[0], moduleList[topModules[0]].fileName)
 
@@ -230,7 +254,7 @@ def main():
 		start_time = timeit.default_timer();
 		processHierarchy(sys.argv[1]);
 		elapsed = timeit.default_timer() - start_time;
-		print "[HIER] -- ELAPSED: " +  repr(elapsed) + "\n";
+		print " - ELAPSED: " +  repr(elapsed) + "\n";
 		
 
 	except error.ArgError as e:

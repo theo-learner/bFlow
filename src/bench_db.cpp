@@ -92,7 +92,8 @@ int main( int argc, char *argv[] ){
 		//Autocorrelate the database
 		printf("[BENCH_DB] -- Autocorrelating the database...\n");
 		db->suppressOutput();
-		//db->autoCorrelate2();
+		db->autoCorrelate2();
+		printf("[BENCH_DB] -- Performaing k-fold cross validation\n");
 		db->crossValidation();
 		db->crossValidation();
 		db->crossValidation();
