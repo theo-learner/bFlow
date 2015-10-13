@@ -1,0 +1,8 @@
+
+The Scoring matrix is located in:
+   score/score_matrix_data.h
+   * Create the scoring table for Smith waterman here
+	 
+The translate table is located in:
+   basic/alphabet_residue_tabs.h
+	 * Have the character index the specific letter in the scoring matrix here
