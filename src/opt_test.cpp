@@ -58,6 +58,8 @@ int main( int argc, char *argv[] ){
 
 		//Print all ranking switch
 		TCLAP::SwitchArg printAllArg("v", "verbose", "Print detailed results", cmdline, false);
+		
+		TCLAP::SwitchArg allArg("a", "all", "Does all the kgram comparison. Rank based on kflag", cmdline, false);
 
 		//TCLAP::SwitchArg optimizeArg("O", "optimize", "Optimize the reference circuit", cmdline, false);
 
@@ -66,7 +68,8 @@ int main( int argc, char *argv[] ){
 
 		std::string xmlDB= databaseArg.getValue();
 		std::string database_file= circuitListArg.getValue();
-		bool printall = printAllArg.getValue();
+		bool printallresult = printAllArg.getValue();
+		bool allFlag = allArg.getValue();
 		//bool optimize = optimizeArg.getValue();
 		std::string kFlag = kArg.getValue();
 
@@ -78,6 +81,13 @@ int main( int argc, char *argv[] ){
 		printf("[*] -- Reading Database\n");
 		SearchType searchtype = eTrust;       //Set the search to "trust" so that containment goes both ways
 		db = new Database(xmlDB, searchtype);
+
+		//Settings
+		db->m_Settings->kgramSimilarity = kFlag;
+		db->m_Settings->show_all_result = printallresult;
+		db->m_Settings->allsim= allFlag;
+		db->suppressOutput();
+
 		db->t_CurLine = -1;
 
 
@@ -89,7 +99,6 @@ int main( int argc, char *argv[] ){
 
 
 
-		db->suppressOutput();
 
 		//Run test to see how similar the unoptimized is to the optimized
 		timeval start_time, end_time;
@@ -107,7 +116,7 @@ int main( int argc, char *argv[] ){
 			Birthmark* birthmark = extractBirthmark(circuit_name, db->getKVal(), false, true,  eOpt);//eNoOpt_Clean);
 
 			printf(" - Searching database for top circuit\n");
-			sResult* result = db->searchDatabase(birthmark, kFlag, printall);
+			sResult* result = db->searchDatabase(birthmark);
 			foundList[circuit_name] = result;
 
 			totalCircuit++;
