@@ -53,7 +53,7 @@ int main( int argc, char *argv[] ){
 		cmdline.add(circuitListArg);
 
 		//Database XML
-		TCLAP::ValueArg<std::string> kArg("k", "kflag", "KLC, KLR, KSC, KSR, KFC, KFR", false, "BIRTHMARK", "FLAG");
+		TCLAP::ValueArg<std::string> kArg("k", "kflag", "KLC, KLR, KSC, KSR, KFC, KFR", false, "KLR", "FLAG");
 		cmdline.add(kArg);
 
 		//Print all ranking switch
@@ -100,19 +100,14 @@ int main( int argc, char *argv[] ){
 		std::map<std::string, sResult*> foundList; //circuit name, top circuit that was returned
 		while(getline(circuitStream, circuit_name)){
 			printf( "\n\n===================================================================\n");
-			printf( "[*] -- Extracting birthmark from verilog file: %s\n", circuit_name.c_str());
+			printf( "[%3d] -- Extracting birthmark from verilog file: %s\n", totalCircuit, circuit_name.c_str());
 			printf( "===================================================================\n");
 
 			//Extract birthmark of reference circuit
-			Birthmark* birthmark = extractBirthmark(circuit_name, db->getKVal(), false,  eNoOpt_Clean);
+			Birthmark* birthmark = extractBirthmark(circuit_name, db->getKVal(), false, true,  eOpt);//eNoOpt_Clean);
 
 			printf(" - Searching database for top circuit\n");
 			sResult* result = db->searchDatabase(birthmark, kFlag, printall);
-			if(result->topMatch== birthmark->getFileName() ){
-				topCircuitCount++;
-				result->topMatch = "-------------";
-			}
-
 			foundList[circuit_name] = result;
 
 			totalCircuit++;
@@ -121,50 +116,57 @@ int main( int argc, char *argv[] ){
 		gettimeofday(&end_time, NULL); //----------------------------------
 
 
-		printf( "[*] -- Finished processing circuits\n");
-		std::map<std::string, sResult*>::iterator iMap; //circuit name, top circuit that was returned
+
+
 
 		FILE* ofs;
 		ofs = fopen("data/host_test1.out", "w");
-
-		double maxScore = 0.0;
-		double minScore = 200.0;
 		double maxScoreNext = 0.0;
 		double minScoreNext = 200.0;
-		double sumScore = 0.0;
 		double sumScore2 = 0.0;
+
+		printf( "[*] -- Finished processing circuits\n");
+		std::map<std::string, sResult*>::iterator iMap; //circuit name, top circuit that was returned
 		for(iMap = foundList.begin(); iMap != foundList.end(); iMap++){
-			printf("%35s  ==  %15s %5.2f-%5.2f : %d\n", iMap->first.c_str(), iMap->second->topMatch.c_str(), iMap->second->topScore, iMap->second->nextScore, iMap->second->numTied);
-			fprintf(ofs, "%35s  ==  %20s %7.4f : %d\n", iMap->first.c_str(), iMap->second->topMatch.c_str(), iMap->second->topScore, iMap->second->numTied);
-			if(iMap->second->topScore > maxScore){
-				maxScore = iMap->second->topScore;
-			}
-			else if(iMap->second->topScore < minScore) {
-				minScore = iMap->second->topScore;
-			}
-			if(iMap->second->nextScore > maxScoreNext){
-				maxScoreNext = iMap->second->nextScore;
-			}
-			else if(iMap->second->nextScore < minScoreNext) {
-				minScoreNext = iMap->second->nextScore;
+			printf("-----------------------------------------------------------------------------\n");
+			printf("%s:\n", iMap->first.c_str());
+			bool found = false;
+			if(iMap->second->topMatch.size() > 0){
+				for(unsigned int i = 0; i < iMap->second->topMatch.size(); i++){
+					printf("\033[1;32m    %5.2f : %s\033[0m\n", iMap->second->topScore[i], iMap->second->topMatch[i].c_str());
+				}
+				found = true;
 			}
 
-			sumScore += iMap->second->topScore;
-			sumScore2 += iMap->second->nextScore;
+			if(iMap->second->okayMatch.size() > 0){
+				for(unsigned int i = 0; i < iMap->second->okayMatch.size(); i++){
+					printf("\033[1;33m    %5.2f : %s\033[0m\n", iMap->second->okayScore[i], iMap->second->okayMatch[i].c_str());
+				}
+				found = true;
+			}
+
+			if(!found){
+				  printf("\033[1;31m    NO designs have been found to match reference\033[0m\n");
+			}
+
+			printf("  Next Top: %s -- %7.4f\n", iMap->second->topNextCircuit.c_str(), iMap->second->topNext);
+
+
+			if(iMap->second->topNext > maxScoreNext){
+				maxScoreNext = iMap->second->topNext;
+			}
+			else if(iMap->second->topNext < minScoreNext) {
+				minScoreNext = iMap->second->topNext;
+			}
+
+			sumScore2 += iMap->second->topNext;
 		}
 
 
-		printf(" -- Max Score: %f\n", maxScore);
-		printf(" -- Min Score: %f\n", minScore);
 		printf(" -- Max Score2: %f\n", maxScoreNext);
-		printf(" -- Min Score2: %f\n\n", minScoreNext);
-
-		printf(" -- AVG Score : %f\n", sumScore/(double) totalCircuit);
+		printf(" -- Min Score2: %f\n", minScoreNext);
 		printf(" -- AVG Score2: %f\n\n", sumScore2/(double) totalCircuit);
 
-		printf(" -- Total Match   : %d\n", topCircuitCount);
-		printf(" -- Total Circuits: %d\n", totalCircuit);
-		printf(" -- Naive Accuracy: %f\n", ((double)topCircuitCount/(double)totalCircuit));
 		fprintf(ofs, " -- Total Match   : %d\n", topCircuitCount);
 		fprintf(ofs, " -- Total Circuits: %d\n", totalCircuit);
 		fprintf(ofs, " -- Naive Accuracy: %f\n", ((double)topCircuitCount/(double)totalCircuit));

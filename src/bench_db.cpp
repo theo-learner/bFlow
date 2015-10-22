@@ -46,6 +46,7 @@ int main( int argc, char *argv[] ){
 		printf("[BENCH_DB] -- Reading Database\n");
 		db = new Database(xmlDB);
 		db->suppressOutput();
+		/*
 		
 		timeval start_time, end_time;
 		timeval start_search, end_search;
@@ -99,6 +100,9 @@ int main( int argc, char *argv[] ){
 		db->crossValidation();
 		db->crossValidation();
 		db->crossValidation();
+		*/
+
+		db->printStats();
 
 		printf(" -- COMPLETE!\n");
 	}

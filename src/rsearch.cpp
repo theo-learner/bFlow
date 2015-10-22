@@ -60,23 +60,30 @@ int main( int argc, char *argv[] ){
 		cmdline.add(lineArg);
 		
 		//Print all ranking switch
-		TCLAP::SwitchArg printAllArg("v", "verbose", "Print detailed results", cmdline, false);
-		
+		TCLAP::SwitchArg printAllResultArg("v", "verbose", "Print detailed results", cmdline, false);
 		TCLAP::SwitchArg optimizeArg("O", "optimize", "Optimize the reference circuit", cmdline, false);
+		TCLAP::SwitchArg strictArg("s", "strict", "Use stricter search constraints", cmdline, false);
+		TCLAP::SwitchArg trustArg("t", "trust", "Trust mode: only use kgram info", cmdline, false);
+		TCLAP::SwitchArg allArg("a", "all", "Does all the kgram comparison. Rank based on kflag", cmdline, false);
 
 
 		cmdline.parse(argc, argv);
 
 		std::string xmlDB= databaseArg.getValue();
 		std::string referenceFile = referenceArg.getValue();
-		bool printall = printAllArg.getValue();
+		bool printallresult = printAllResultArg.getValue();
+		bool strictFlag = strictArg.getValue();
+		bool trustFlag = trustArg.getValue();
+		bool allFlag = allArg.getValue();
 		std::string kFlag = kArg.getValue();
 		int lineNumber= lineArg.getValue();
+
 		Optmode optMode;
 		if(optimizeArg.getValue())
 			optMode = eOpt;
 		else
 			optMode = eNoOpt_Clean;
+		
 		
 		/*
 		//Check arguments : Verilog File, XML Database File
@@ -95,17 +102,27 @@ int main( int argc, char *argv[] ){
 
 		//Read Database
 		printf("[REF] -- Reading Database\n");
-		db = new Database(xmlDB);
+		if(!trustFlag)
+			db = new Database(xmlDB);
+		else{
+			SearchType searchType = eTrust;
+			db = new Database(xmlDB, searchType);
+		}
+
+		//Settings
+		db->m_Settings->kgramSimilarity = kFlag;
+		db->m_Settings->show_all_result = printallresult;
+		db->m_Settings->allsim= allFlag;
 
 		//Extract birthmark of reference circuit
-		Birthmark* refBirthmark = extractBirthmark(referenceFile, db->getKVal(), lineNumber!=-1,  optMode);
+		Birthmark* refBirthmark = extractBirthmark(referenceFile, db->getKVal(), lineNumber!=-1,  strictFlag, optMode);
 
 
 		timeval start_time, end_time;
 		gettimeofday(&start_time, NULL); //----------------------------------
 		db->t_CurLine = lineNumber;
 
-		db->searchDatabase(refBirthmark, kFlag, printall);
+		db->searchDatabase(refBirthmark);
 
 		if(lineNumber != -1){
 			printf("\n[RSEARCH] -- Current line number given. Searching for future operation\n");
