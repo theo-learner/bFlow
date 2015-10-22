@@ -44,6 +44,7 @@ try:
 	parser.add_argument("output", help="File of the processed circuits (XML)");
 	parser.add_argument("k", help="Value of K-gram");
 	parser.add_argument("-O", "--optimize", help="Turns on optimizations when processing the circuits", action="store_true");
+	parser.add_argument("-s", "--strict", help="Adds additional contraints to make the search more strict", action="store_true");
 	parser.add_argument("-l", "--hierarchy", help="Extracts hierarchical information (WIP)", action="store_true");
 	parser.add_argument("-p", "--prettify", help="Saves a prettified XML version of the database in data/", action="store_true");
 	start_all = timeit.default_timer();
@@ -58,6 +59,7 @@ try:
 		hierFlag= True;
 
 		
+	strictFlag = arguments.strict;
 	cfiles = arguments.db;
 	dbFile = arguments.output;
 	kVal = arguments.k;
@@ -125,7 +127,7 @@ try:
 		dotFiles = val[0];
 
 		elapsed = timeit.default_timer() - start_yosys;
-		print "[TIME] -- Synthesis: " +  repr(elapsed);
+		#print "[TIME] -- Synthesis: " +  repr(elapsed);
 		fsy = open("data/yosystime.dat", "a");
 		fsy.write(repr(elapsed)+ "\n")
 		fsy.close()
@@ -145,7 +147,7 @@ try:
 
 				processedTop.add(dotfile);
 				dotfilename = "./dot/"+dotfile+".dot";
-				ckttag = xmlExtraction.generateXML(dotfilename, soup, kVal)
+				ckttag = xmlExtraction.generateXML(dotfilename, soup, kVal, strict=strictFlag)
 				ckttag['name'] = dotfile;
 				ckttag['file'] = vfile;
 				ckttag['id'] = ID 
@@ -154,7 +156,7 @@ try:
 				ID = ID + 1;
 		else:
 			dotfilename = "./dot/"+dotFiles[0]+".dot";
-			ckttag = xmlExtraction.generateXML(dotfilename, soup, kVal)
+			ckttag = xmlExtraction.generateXML(dotfilename, soup, kVal, strict=strictFlag)
 			ckttag['name'] = dotFiles[0];
 			ckttag['file'] = vfile;
 			ckttag['id'] = ID 

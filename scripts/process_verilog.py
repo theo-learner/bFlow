@@ -13,6 +13,7 @@ from bs4 import BeautifulSoup
 import error;
 import os;
 import argparse
+import flag;
 
 
 
@@ -36,6 +37,7 @@ def main():
 		parser.add_argument("-O", "--optimize", help="Set optimization: 3: Full Opt, 2: Full opt no clean, 1: No opt w/ clean, 2: No Opt", type=int);
 		parser.add_argument("-v", "--verbose", help="Prints additional information", action="store_true");
 		parser.add_argument("-p", "--predict", help="Extracts information inorder to do prediction", action="store_true");
+		parser.add_argument("-s", "--strict", help="Perform a stricter search by adding more constraints", action="store_true");
 	
 		arguments = parser.parse_args()
 		source = arguments.circuit;
@@ -43,6 +45,7 @@ def main():
 		optFlag =  arguments.optimize
 		verboseFlag = arguments.verbose
 		predictFlag= arguments.verbose
+		strictFlag = arguments.strict
 
 
 		#Remove the reference XML file if it exists
@@ -77,7 +80,7 @@ def main():
 		print "--------------------------------------------------------------"
 		soup = BeautifulSoup();
 
-		ckttag = xmlExtraction.generateXML("./dot/" + top+".dot", soup, kVal, verbose=verboseFlag, findEndGram=predictFlag)
+		ckttag = xmlExtraction.generateXML("./dot/" + top+".dot", soup, kVal, verbose=verboseFlag, findEndGram=predictFlag, strict=strictFlag);
 		ckttag['name'] = top;
 		ckttag['file'] = vfile;
 		ckttag['id'] = -1

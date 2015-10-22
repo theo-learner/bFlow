@@ -96,6 +96,7 @@ def create_yosys_script(fileName, scriptName, hier = False, opt=3):
 		script = script + "opt_clean -purge\n";
 	else: 
 		script = script + optcmd;
+
 	#script = script + "dff2dffe\n";
 	#script = script + optcmd;
 	#script = script + "splice;\n";
@@ -127,6 +128,7 @@ def create_yosys_script(fileName, scriptName, hier = False, opt=3):
 
 def execute(scriptFile):
 	print " - Running yosys tools..."
+	start_yosys = timeit.default_timer();
 	cmd = "yosys -Qq -s " + scriptFile# + " -l data/.pyosys.log";
 	#rc = call(cmd, shell=True);
 	result = subprocess.Popen(cmd, shell=True, stderr=subprocess.PIPE);
@@ -134,7 +136,8 @@ def execute(scriptFile):
 	for line in result.stderr:
 		sys.stdout.write("  " + line)
 		log += line;
-
+	elapsed = timeit.default_timer() - start_yosys;
+	print "[TIME] -- Synthesis: " +  repr(elapsed);
 	print " - Yosys complete"
 		
 

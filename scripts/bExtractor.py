@@ -23,15 +23,21 @@ import collections
 import yosys;
 import math
 from sortedcontainers import SortedSet
+import flag;
 
 class BirthmarkExtractor(object):
 
-	def __init__(self, dotFile):
+	def __init__(self, dotFile, strictFlag=False):
 		'''
 		 Constructor	
 		   Initializes and reads in the circuit
 			 Initializes most of the private variables and settings 
 		'''
+		self.strictFlag = strictFlag;
+		if(self.strictFlag):
+			print " - Strict processing: ON"
+		else:
+			print " - Strict processing: OFF"
 		self.dfg = nx.DiGraph(nx.read_dot(dotFile));
 
 		#Get the nodes and edges of the graph
@@ -45,28 +51,49 @@ class BirthmarkExtractor(object):
 		# Preprocess edges 
 		self.edgeAttr = nx.get_edge_attributes(self.dfg, 'label');
 
-		self.logicStr  = ["$not", "$and", "$or", "$xor", "$xnor", "$reduce", "$logic"]
+		name = ["add", "mul", "div", "sh", "mux", "log", "eq", "cmp", "reg", "mem", "bb"];
+		if(not self.strictFlag):
+			self.logicStr  = ["$not", "$and", "$or", "$xor", "$xnor", "$reduce", "$logic"]
+			self.shiftStr  = ["$shr","$shl","$sshr","$sshl","$shift","$shiftx"]
+			self.cmpStr    = ["$lt", "$le", "$gt", "$ge"]
+			self.addStr    = ["$add", "$sub"]
+			self.eqStr     = ["$eq","$eqx","$ne", "$nex"]
+		else:
+			self.logicStr  = ["$logic"]
+			self.andStr    = ["$and"]
+			self.orStr     = ["$or"]
+			self.notStr    = ["$not"]
+			self.xorStr    = ["$xor", "$xnor"]
+			self.reduceStr = ["$reduce"]
+			self.shiftLStr = ["$shl","$sshl"]
+			self.shiftRStr = ["$shr","$sshr"]
+			self.lessStr   = ["$lt", "$le"]
+			self.greatStr  = ["$gt", "$ge"]
+			self.eqStr     = ["$eq","$eqx"]
+			self.neqStr    = ["$ne", "$nex"]
+			self.shiftStr  = ["$shift","$shiftx"]
+			self.addStr    = ["$add"]
+			self.subStr    = ["$sub"]
+			name = ["add", "mul", "div", "sh", "mux", "log", "eq", "cmp", "reg", "mem", "red", "shr", "shl", "and", "or", "not", "xor", "gt", "lt", "neq", "sub"];
+
 		self.regStr    = ["$dff","$dffe","$adff","$sr","$dffsr","$dlatch"]
 		self.wireStr   = ["$pos","$slice","$concat", "neg"]
-		self.eqStr     = ["$eq","$eqx","$ne", "$nex"]
 		self.muxStr    = ["$mux","$pmux"]
-		self.shiftStr  = ["$shr","$shl","$sshr","$sshl","$shift","$shiftx"]
 		self.arithStr  = ["$fa","$lcu", "$pow"]
 		self.aluStr    = ["$alu"]
 		self.macStr    = ["$macc", "alumacc"]
-		self.addStr    = ["$add", "$sub"]
 		self.multStr   = ["$mul"]
-		self.cmpStr    = ["$lt", "$le", "$gt", "$ge"]
 		self.divStr    = ["$div", "$mod"]
 		self.lutStr    = ["$lut"]
 		self.memStr    = ["$mem"]
 		
 		self.fpDict = {}
+
+		for n in name:
+			self.fpDict[n]=0;
+
 		self.statstr = "";
 		self.statstrf = "";
-		name = ["add", "mul", "div", "sh", "mux", "log", "eq", "cmp", "reg", "mem", "bb"]			
-		for n in name:
-			self.fpDict[n] = 0;
 
 		self.constantList= [];
 		self.outNodeList= [];
@@ -421,6 +448,48 @@ class BirthmarkExtractor(object):
 			return ""
 
 		operation = self.labelAttr[node];
+		if(not self.strictFlag):
+			if any(s in operation for s in self.logicStr):
+				return 'L';
+			elif any(s in operation for s in self.eqStr):
+				return '=';
+			elif any(s in operation for s in self.cmpStr):
+				return 'C';
+			elif any(s in operation for s in self.shiftStr):
+				return 'S';
+			elif any(s in operation for s in self.addStr):
+				return '+';
+		else:
+			if any(s in operation for s in self.logicStr):
+				return 'L';
+			elif any(s in operation for s in self.andStr):
+				return 'D';
+			elif any(s in operation for s in self.orStr):
+				return '|';
+			elif any(s in operation for s in self.xorStr):
+				return '^';
+			elif any(s in operation for s in self.notStr):
+				return '~';
+			elif any(s in operation for s in self.reduceStr):
+				return 'B';
+			elif any(s in operation for s in self.shiftLStr):
+				return '(';
+			elif any(s in operation for s in self.shiftRStr):
+				return ')';
+			elif any(s in operation for s in self.lessStr):
+				return '<';
+			elif any(s in operation for s in self.greatStr):
+				return '>';
+			elif any(s in operation for s in self.eqStr):
+				return '=';
+			elif any(s in operation for s in self.neqStr):
+				return '!';
+			elif any(s in operation for s in self.shiftStr):
+				return 'S';
+			elif any(s in operation for s in self.subStr):
+				return '_';
+			elif any(s in operation for s in self.addStr):
+				return '+';
 
 		if any(s in operation for s in self.wireStr):
 			return 'N';
@@ -428,33 +497,23 @@ class BirthmarkExtractor(object):
 			return 'M';
 		elif any(s in operation for s in self.regStr):
 			return 'F';
-		elif any(s in operation for s in self.addStr):
-			return 'A';
-		elif any(s in operation for s in self.logicStr):
-			return 'L';
-		elif any(s in operation for s in self.eqStr):
-			return 'E';
-		elif any(s in operation for s in self.cmpStr):
-			return 'C';
-		elif any(s in operation for s in self.shiftStr):
-			return 'S';
 		elif any(s in operation for s in self.multStr):
-			return 'X';
+			return '*';
 		elif any(s in operation for s in self.divStr):
-			return 'D';
+			return '/';
 		elif any(s in operation for s in self.memStr):
 			return 'R';
 		elif any(s in operation for s in self.macStr):
 			return 'W';
 		elif any(s in operation for s in self.aluStr):
-			return 'U';
+			return 'A';
 		elif any(s in operation for s in self.arithStr):
 			return 'H';
 		elif any(s in operation for s in self.lutStr):
 			return 'T';
 		else:
 			print "Unknown operation: " + operation;
-			return 'B';                                   
+			return 'Z';                                   
 
 
 
@@ -683,147 +742,257 @@ class BirthmarkExtractor(object):
 		maxFanin = 0;
 		maxFanout = 0;
 		nodeCount = 0;
+		removeConst = []
 
 		#start_time = timeit.default_timer();
-		for node in self.nodeList:
-			if 'v' in node:                     # Check to see if it is a  constant
+		#for node in self.nodeList:
+
+
+		# Loop through each node
+		for i in xrange(len(self.nodeList) -1 , -1, -1):
+			node = self.nodeList[i] 
+
+
+			# Check if node is constant
+			if 'v' in node:                
 				self.constantList.append(node);
 				continue;
 
+
+			# Basic Statistics
 			predList = self.dfg.predecessors(node);
 			sucList = self.dfg.successors(node);
 			totalFanin = totalFanin + len(predList)
 			totalFanout = totalFanout + len(sucList)
 			nodeCount = nodeCount + 1;
-			
-			if self.shapeAttr[node] == "octagon":  # Check to see if it is a port node
-				if len(predList) == 0:
-					self.inNodeList.append(node);
-				else:
-					self.outNodeList.append(node);
-				continue;  #TODO: CHECK
-
 			if(len(predList) > maxFanin):
 				maxFanin = len(predList)
 			if(len(sucList) > maxFanout):
 				maxFanout = len(sucList)
+			
 
-
+			# Keep track of nodes that have no successor 
 			if(len(sucList) == 0):
 				self.endSet.add(node);
 
-			#If it is a operational block
-			if 'c' in node:   
-				label = self.labelAttr[node];
-				
-				linenum =  re.search('!(.*)!', label);
-				label = re.search('\+(.*)\+', label);
-		
-				if label != None:
-					operation = label.group(1);
-					#print operation
-					self.labelAttr[node] = operation;
-					self.cnodes.append(node);
-					
-					#Is there an associated line number?
-					if linenum != None:
-						self.linenumber[node] = linenum.group(1);
 
-					size = 0;
-					for pred in predList:
-						if (pred,node) not in self.edgeAttr:
+			# Check if node is port
+			if self.shapeAttr[node] == "octagon": 
+				if len(predList) == 0:
+					self.inNodeList.append(node);
+				else:
+					self.outNodeList.append(node);
+				continue; 
+
+
+			# Check if node is a primitive operation
+			if 'c' not in node:   
+				continue;
+
+			
+			optimized = False
+			label = self.labelAttr[node];
+			linenum =  re.search('!(.*)!', label);
+			label = re.search('\+(.*)\+', label);
+			if label == None:
+				continue;
+
+
+			operation = label.group(1);
+			self.labelAttr[node] = operation;
+
+			#Get the size of the input bus
+			size = 0;
+			for pred in predList:
+				if (pred,node) not in self.edgeAttr:
+					psize = 1;
+				else:
+					label = self.edgeAttr[(pred,node)];
+					label = re.search('<(.*)>', label);
+					psize = int(label.group(1));
+
+				if(psize > size):
+					size = psize;
+			
+			#######################################
+			#Structural optimizations
+			opt_operation = -1;
+			if operation == "$not":
+
+				if(len(predList) !=  1):
+					raise error.GenError("Inverter block has more than one predecessor\n");
+
+				pred = predList[0];
+				if pred not in self.labelAttr:
+					continue;
+
+				pred_operation = self.labelAttr[pred];
+				pred_operation = re.search('\+(.*)\+', pred_operation);
+				if pred_operation != None:
+
+					#Compress and remove redundant inverter chains
+					if pred_operation.group(1) == "$not" :
+						successorList = self.dfg.successors(node);
+						predecessorList = self.dfg.predecessors(pred);
+						
+						start = predecessorList[0];
+
+						#Get the size of the edge going in
+						edgelabel = self.edgeAttr[(start,pred)];
+						psize = 0;
+						if edgelabel == None:
 							psize = 1;
 						else:
-							label = self.edgeAttr[(pred,node)];
-							label = re.search('<(.*)>', label);
-							psize = int(label.group(1));
+							edgelabel = re.search('<(.*)>', edgelabel);
+							psize = int(edgelabel.group(1));
 
-						if(psize > size):
-							size = psize;
+						#print "REMOVING INVERTER CHAIN " + pred + " " + node
+						self.dfg.remove_node(node);
+						self.dfg.remove_node(pred);
+						self.nodeList.remove(pred);
+						self.nodeList.remove(node);
 
-					for succ in sucList:
-						if (node, succ) not in self.edgeAttr:
-							ssize = 1;
-						else:
-							label = self.edgeAttr[(node, succ)];
-							label = re.search('<(.*)>', label);
-							ssize = int(label.group(1));
+						for end in successorList:
+							self.dfg.add_edge(start, end);
+							self.dfg[start][end]['label'] = "<" + repr(size) + ">";
 
-						if(ssize > size):
-							size = ssize;
+						#Update Edge Attributes edges 
+						self.edgeAttr = nx.get_edge_attributes(self.dfg, 'label');
 
-					if(size == 0):
-						print "[WARNING] -- There is a size of zero. OPERATION: " + operation;
-						print "IN:  " + repr(len(predList))
-						print "OUT: " + repr(len(sucList))
+						continue;
+				
+			#Remove 0 addtion identities
+			elif operation in ["$add", "$or", "$shl", "$shr", "$shift"]:
+				opt_operation = 0  #Identity is if 0 is a constant in one of the inputs
+			elif operation in ["$and", "$mul"]:
+				opt_operation = 1;
+
+			if(opt_operation != -1):
+				predecessorList = self.dfg.predecessors(node);
+				if(len(predecessorList) == 2):
+					mark = 1;  #keeps track of the other index;
+
+					# Look for constant 0
+					for pred in predecessorList:
+						if('v' in pred):
+							cnstVal = self.labelAttr[pred];
+							cnstVal = re.search('\'(.*)', cnstVal);
+
+							#No bit marking notation
+							if(cnstVal == None):
+								cnstVal = self.labelAttr[pred];
+								cnstVal = cnstVal.replace("L","")
+								cnstVal = int(cnstVal);
+
+							else:
+								cnstVal = cnstVal.group(1);
+								if('x' not in cnstVal and 'z' not in cnstVal): #no X or Z
+									cnstVal = int(cnstVal, 2)
+								else:
+									continue;
+
+							#print "NODE: " + node+ " OP: " + operation + " CONST: "  + repr(cnstVal);
+
+							if(cnstVal == opt_operation):
+								#print "REMOVING CONST: " + pred
+								successorList = self.dfg.successors(node);
+								self.dfg.remove_node(node);
+								self.dfg.remove_node(pred);
+								self.nodeList.remove(pred);
+								self.nodeList.remove(node);
+								removeConst.append(pred)
+
+								for end in successorList:
+									self.dfg.add_edge(predecessorList[mark], end);
+									self.dfg[predecessorList[mark]][end]['label'] = "<" + repr(size) + ">";
+								#Update Edge Attributes edges 
+								self.edgeAttr = nx.get_edge_attributes(self.dfg, 'label');
+								optimized = True;
+								break;
 						
+						mark = mark - 1;
 
-					#Count the number of components
-#TODO
-					'''
-					if any(s in operation for s in self.muxStr):
-						self.fpDict["mux"][size] = self.fpDict["mux"].get(size, 0) + 1;
-					elif any(s in operation for s in self.regStr):
-						self.fpDict["reg"][size] = self.fpDict["reg"].get(size, 0) + 1;
-						ffList.append(node);
-					elif any(s in operation for s in self.addStr):
-						self.fpDict["add"][size] = self.fpDict["add"].get(size, 0) + 1;
-					elif any(s in operation for s in self.logicStr):
-						self.fpDict["log"][size] = self.fpDict["log"].get(size, 0) + 1;
-					elif any(s in operation for s in self.eqStr):
-						self.fpDict["eq"][size] = self.fpDict["eq"].get(size, 0) + 1;
-					elif any(s in operation for s in self.cmpStr):
-						self.fpDict["cmp"][size] = self.fpDict["cmp"].get(size, 0) + 1;
-					elif any(s in operation for s in self.shiftStr):
-						self.fpDict["sh"][size] = self.fpDict["sh"].get(size, 0) + 1;
-					elif any(s in operation for s in self.multStr):
-						self.fpDict["mul"][size] = self.fpDict["mul"].get(size, 0) + 1;
-					elif any(s in operation for s in self.divStr):
-						self.fpDict["div"][size] = self.fpDict["div"].get(size, 0) + 1;
-					elif any(s in operation for s in self.memStr):
-						self.fpDict["mem"][size] = self.fpDict["mem"].get(size, 0) + 1;
-					elif any(s in operation for s in self.macStr):
-						print "[WARNING] -- There is a macc type node: " + operation
-					elif any(s in operation for s in self.aluStr):
-						print "[WARNING] -- There is an alu type node: " + operation
-					elif any(s in operation for s in self.arithStr):
-						print "[WARNING] -- There is an arithmetic type node: " + operation
-					elif any(s in operation for s in self.lutStr):
-						print "[WARNING] -- There is a lut node: " + operation
-					else:
-						self.fpDict["bb"][size] = self.fpDict["bb"].get(size, 0) + 1;
-						'''
-					if any(s in operation for s in self.muxStr):
-						self.fpDict["mux"] = self.fpDict.get("mux", 0) + 1;
-					elif any(s in operation for s in self.regStr):
-						self.fpDict["reg"] = self.fpDict.get("reg", 0) + 1;
-						ffList.append(node);
-					elif any(s in operation for s in self.addStr):
-						self.fpDict["add"] = self.fpDict.get("add", 0) + 1;
-					elif any(s in operation for s in self.logicStr):
-						self.fpDict["log"] = self.fpDict.get("log", 0) + 1;
-					elif any(s in operation for s in self.eqStr):
-						self.fpDict["eq"] = self.fpDict.get("eq", 0) + 1;
-					elif any(s in operation for s in self.cmpStr):
-						self.fpDict["cmp"] = self.fpDict.get("cmp", 0) + 1;
-					elif any(s in operation for s in self.shiftStr):
-						self.fpDict["sh"] = self.fpDict.get("sh", 0) + 1;
-					elif any(s in operation for s in self.multStr):
-						self.fpDict["mul"] = self.fpDict.get("mul", 0) + 1;
-					elif any(s in operation for s in self.divStr):
-						self.fpDict["div"] = self.fpDict.get("div", 0) + 1;
-					elif any(s in operation for s in self.memStr):
-						self.fpDict["mem"] = self.fpDict.get("mem", 0) + 1;
-					elif any(s in operation for s in self.macStr):
-						print "[WARNING] -- There is a macc type node: " + operation
-					elif any(s in operation for s in self.aluStr):
-						print "[WARNING] -- There is an alu type node: " + operation
-					elif any(s in operation for s in self.arithStr):
-						print "[WARNING] -- There is an arithmetic type node: " + operation
-					elif any(s in operation for s in self.lutStr):
-						print "[WARNING] -- There is a lut node: " + operation
-					else:
-						self.fpDict["bb"] = self.fpDict.get("bb", 0) + 1;
+					if optimized:
+						continue;
+			#######################################
+
+			self.cnodes.append(node);
+			#Is there an associated line number?
+			if linenum != None:
+				self.linenumber[node] = linenum.group(1);
+							
+			#Count the number of components
+			if any(s in operation for s in self.muxStr):
+				self.fpDict["mux"] = self.fpDict.get("mux", 0) + 1;
+			elif any(s in operation for s in self.regStr):
+				self.fpDict["reg"] = self.fpDict.get("reg", 0) + 1;
+				ffList.append(node);
+			elif any(s in operation for s in self.multStr):
+				self.fpDict["mul"] = self.fpDict.get("mul", 0) + 1;
+			elif any(s in operation for s in self.divStr):
+				self.fpDict["div"] = self.fpDict.get("div", 0) + 1;
+			elif any(s in operation for s in self.memStr):
+				self.fpDict["mem"] = self.fpDict.get("mem", 0) + 1;
+			elif any(s in operation for s in self.macStr):
+				print "[WARNING] -- There is a macc type node: " + operation
+			elif any(s in operation for s in self.aluStr):
+				print "[WARNING] -- There is an alu type node: " + operation
+			elif any(s in operation for s in self.arithStr):
+				print "[WARNING] -- There is an arithmetic type node: " + operation
+			elif any(s in operation for s in self.lutStr):
+				print "[WARNING] -- There is a lut node: " + operation
+			elif(not self.strictFlag):
+				if any(s in operation for s in self.addStr):
+					self.fpDict["add"] = self.fpDict.get("add", 0) + 1;
+				elif any(s in operation for s in self.logicStr):
+					self.fpDict["log"] = self.fpDict.get("log", 0) + 1;
+				elif any(s in operation for s in self.eqStr):
+					self.fpDict["eq"] = self.fpDict.get("eq", 0) + 1;
+				elif any(s in operation for s in self.cmpStr):
+					self.fpDict["cmp"] = self.fpDict.get("cmp", 0) + 1;
+				elif any(s in operation for s in self.shiftStr):
+					self.fpDict["sh"] = self.fpDict.get("sh", 0) + 1;
+			else:
+				if any(s in operation for s in self.addStr):
+					self.fpDict["add"] = self.fpDict.get("add", 0) + 1;
+				elif any(s in operation for s in self.subStr):
+					self.fpDict["sub"] = self.fpDict.get("sub", 0) + 1;
+				elif any(s in operation for s in self.logicStr):
+					self.fpDict["log"] = self.fpDict.get("log", 0) + 1;
+				elif any(s in operation for s in self.eqStr):
+					self.fpDict["eq"] = self.fpDict.get("eq", 0) + 1;
+				elif any(s in operation for s in self.neqStr):
+					self.fpDict["neq"] = self.fpDict.get("neq", 0) + 1;
+				elif any(s in operation for s in self.reduceStr):
+					self.fpDict["red"] = self.fpDict.get("red", 0) + 1;
+				elif any(s in operation for s in self.shiftStr):
+					self.fpDict["sh"] = self.fpDict.get("sh", 0) + 1;
+				elif any(s in operation for s in self.shiftRStr):
+					self.fpDict["shr"] = self.fpDict.get("shr", 0) + 1;
+				elif any(s in operation for s in self.shiftLStr):
+					self.fpDict["shl"] = self.fpDict.get("shl", 0) + 1;
+				elif any(s in operation for s in self.andStr):
+					self.fpDict["and"] = self.fpDict.get("and", 0) + 1;
+				elif any(s in operation for s in self.orStr):
+					self.fpDict["or"] = self.fpDict.get("or", 0) + 1;
+				elif any(s in operation for s in self.xorStr):
+					self.fpDict["xor"] = self.fpDict.get("xor", 0) + 1;
+				elif any(s in operation for s in self.notStr):
+					self.fpDict["not"] = self.fpDict.get("not", 0) + 1;
+				elif any(s in operation for s in self.lessStr):
+					self.fpDict["lt"] = self.fpDict.get("lt", 0) + 1;
+				elif any(s in operation for s in self.greatStr):
+					self.fpDict["gt"] = self.fpDict.get("gt", 0) + 1;
+				else:
+					print "[WARNING] -- UNKNOWN : " + operation
+					self.fpDict["bb"] = self.fpDict.get("bb", 0) + 1;
+
+		#Remove deleted constants
+		for rconst in removeConst:
+			try:
+				self.constantList.remove(rconst);
+			except ValueError:
+				pass;
 
 		avgFanin = totalFanin / nodeCount;	
 		avgFanout = totalFanout / nodeCount;	
@@ -866,6 +1035,21 @@ class BirthmarkExtractor(object):
 		s = ",".join(slist)
 		self.statstr = "%s,%s," % (self.statstr, s);
 		#print "STAT: " + statstr
+
+		#Update!
+		#Get the nodes and edges of the graph
+		self.nodeList = self.dfg.nodes();
+		self.edgeList = self.dfg.edges();
+
+		# Get the shape and label attributes
+		self.shapeAttr = nx.get_node_attributes(self.dfg, 'shape');
+		self.labelAttr = nx.get_node_attributes(self.dfg, 'label');
+
+		# Preprocess edges 
+		self.edgeAttr = nx.get_edge_attributes(self.dfg, 'label');
+		self.nodeList = self.dfg.nodes();
+		self.edgeList = self.dfg.edges();
+		#nx.write_dot(self.dfg, "./file.dot")
 
 		return timeit.default_timer() - start_time;
 
@@ -1019,6 +1203,7 @@ class BirthmarkExtractor(object):
 		for constant in self.constantList:
 			cnstVal = self.labelAttr[constant];
 			cnstVal = re.search('\'(.*)', cnstVal);
+			#No bit marking notation
 			if(cnstVal == None):
 				cnstVal = self.labelAttr[constant];
 				cnstVal = cnstVal.replace("L","")
@@ -1041,6 +1226,9 @@ class BirthmarkExtractor(object):
 				csize = 0;
 				succList = self.dfg.successors(constant);
 				for succ in succList:                         #Check if successor is PMUX
+					if succ not in self.labelAttr:
+						continue;
+
 					operation = self.labelAttr[succ];
 					if "pmux" in operation:
 						predList = self.dfg.predecessors(succ);

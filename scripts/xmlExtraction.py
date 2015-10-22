@@ -11,13 +11,13 @@ from sortedcontainers import SortedSet
 from bExtractor import BirthmarkExtractor
 import timeit
 
-def generateXML(dotfile, soup, kVal, verbose=False, findEndGram=False):
+def generateXML(dotfile, soup, kVal, verbose=False, findEndGram=False, strict=False):
 	if(".dot" not in dotfile):
 		print "[ERROR] -- Input file does not seem to be a dot file"
 		raise error.GenError("");
 	
-	bExtractor = BirthmarkExtractor(dotfile);
-	result = bExtractor.getBirthmark(kVal, isFindEndGram= findEndGram);
+	bExtractor = BirthmarkExtractor(dotfile, strictFlag=strict);
+	result = bExtractor.getBirthmark(kVal, isFindEndGram=findEndGram);
 
 	if verbose == True:
 		print "MAXSEQ" 

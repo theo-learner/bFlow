@@ -151,7 +151,7 @@ def getTopModule(moduleList):
 
 		#Get the location of the module definitions
 		moduleLines = v.snippet;
-		print "CHECKING SUBMODULES IN : " + k
+		#print "CHECKING SUBMODULES IN : " + k
 		
 		for line in moduleLines:
 			splitted = line.split();
@@ -165,7 +165,7 @@ def getTopModule(moduleList):
 					if(matching[0] == k):
 						continue;
 
-					print " * SUBMODULE FOUND: " + matching[0]
+					#print " * SUBMODULE FOUND: " + matching[0]
 					v.children.append(matching[0]);
 					moduleHasParent.add(matching[0]);    #Used to find top module
 
