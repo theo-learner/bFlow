@@ -54,13 +54,16 @@ namespace SIMILARITY{
 	static TAlign s_Align;
 	
 	void initAlignment();
-	int align(std::list<std::string>&, std::list<std::string>&, bool output = false);
+	int alignList(std::list<std::string>&, std::list<std::string>&, bool output = false);
+	int align(std::string, std::string);
+	std::string alignKGram(std::string, std::map<std::string, int>&);
+
 	double alignScore();
 	void printAlignment();
 
 	//Custom Scoring Matrix
 	typedef Score<int, ScoreMatrix<Circuit_Alpha, CircuitScoringMatrix> > TScoreMatrix;
-	static TScoreMatrix s_Score(-5, -1); //-5 for gap penalty...-1 for extended gap penalty
+	static TScoreMatrix s_Score(-3, -1); //-5 for gap penalty...-1 for extended gap penalty
 
 	template <typename TScoreValue, typename TSequenceValue, typename TSpec>
 		void showScoringMatrix(Score<TScoreValue, ScoreMatrix<TSequenceValue, TSpec> > const & scoringScheme){
