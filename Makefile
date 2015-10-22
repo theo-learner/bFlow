@@ -6,6 +6,8 @@ CFLAGS = \
 		-Wunused-result \
 		-O1 \
 		-g \
+		-std=c++11 \
+		\
 		$
 
 OBJSERVER = \
@@ -27,7 +29,7 @@ DOTDIR:= dot/
 DATADIR:= dot/
 
 
-all: bench_matlab rsearch bench_db cserver compareAST
+all: rsearch bench_db compareAST
 
 #build subdirectories
 	
