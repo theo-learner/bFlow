@@ -462,11 +462,39 @@ char const TranslateTableByteToAA_<T>::VALUE[256] =
 template <typename T = void>
 struct TranslateTableCAToChar_
 {
-    static char const VALUE[16];
+    static char const VALUE[26];
 };
+
 template <typename T>
-char const TranslateTableCAToChar_<T>::VALUE[16] =
+char const TranslateTableCAToChar_<T>::VALUE[26] =
 {
+	'L',
+	'D',
+	'|',
+	'^',
+	'~',
+	'B',
+	')',
+	'(',
+	'<',
+	'>',
+	'=',
+	'!',
+	'S',
+	'_',
+	'+',
+	'N',
+	'M',
+	'F',
+	'*',
+	'/',
+	'R',
+	'W',
+	'A',
+	'H',
+	'T',
+	'Z'
+	/*
     'N', // Net Splice
     'M', // Mux 
     'F', // Flip FLops 
@@ -483,6 +511,7 @@ char const TranslateTableCAToChar_<T>::VALUE[16] =
     'H', // Arithmetic 
     'T', // LUT 
     'B', // Black Boxes 
+		*/
 };
 
 template <typename T = void>
@@ -496,15 +525,15 @@ char const TranslateTableCharToCA_<T>::VALUE[256] =
 {
     26,  26,  26,  26,  26,  26,  26,  26,  26,  26,  26,  26,  26,  26,  26,  26, //0
     26,  26,  26,  26,  26,  26,  26,  26,  26,  26,  26,  26,  26,  26,  26,  26, //1
-    26,  11,  26,  26,  26,  26,  26,  26,   7,   6,  18,  14,  26,  13,  26,  19, //2
+    26,  11,  26,  26,  26,  26,  26,  26,   7,   6,  18,  14,  26,  26,  26,  19, //2
 //        !                                  (    )    *    +         -         / 
     26,  26,  26,  26,  26,  26,  26,  26,  26,  26,  26,  26,   8,  10,   9,  26, //3
 //                                                               <    =    >
     26,  22,   5,  26,   1,  26,  17,  26,  23,  26,  26,  26,   0,  16,  15,  26, //4
 //    ,   A,   B,   C,   D,   E,   F,   G,   H,   I,   J,   K,   L,   M,   N,   O,
 
-    26,  26,  20,  12,  24,  26,  26,  21,  26,  26,  25,  26,  26,  26,   3,  26, //5
-//   P,   Q,   R,   S,   T,   U,   V,   W,   X,   Y,   Z,    ,    ,    ,   ^ ,   ,
+    26,  26,  20,  12,  24,  26,  26,  21,  26,  26,  25,  26,  26,  26,   3,  13, //5
+//   P,   Q,   R,   S,   T,   U,   V,   W,   X,   Y,   Z,    ,    ,    ,   ^ ,  _,
 
     26,  22,   5,  26,   1,  26,  17,  26,  23,  26,  26,  26,   0,  16,  15,  26, //6
 //    ,   a,   b,   c,   d,   e,   f,   g,   h,   i,   j,   k,   l,   m,   n,   o,

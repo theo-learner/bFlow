@@ -98,7 +98,7 @@ template <>
 struct ValueSize<Circuit_Alpha>
 {
     typedef __uint8 Type;
-    static const Type VALUE = 16;
+    static const Type VALUE = 26;
 };
 
 template <>
