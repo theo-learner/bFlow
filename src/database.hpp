@@ -54,6 +54,7 @@ struct Score{
 	Birthmark* bm;
 };
 
+
 /**
  * setCompare 
  *  Comparator for input to set templace 
@@ -77,10 +78,12 @@ struct sGram2{
 
 
 struct sResult{
-	std::string topMatch;
-	double topScore;
-	double nextScore;
-	int numTied;
+	std::vector<std::string> topMatch;
+	std::vector<double> topScore;
+	std::vector<std::string> okayMatch;
+	std::vector<double> okayScore;
+	double topNext;
+	std::string topNextCircuit;
 };
 
 
@@ -90,6 +93,13 @@ enum SearchType {
 	eTrust
 };
 
+struct s_db_setting{
+	bool allsim;
+	bool show_all_result;
+	bool suppressOutput;
+	SearchType searchType;
+	std::string kgramSimilarity;
+};
 
 
 class Database{
@@ -116,8 +126,10 @@ class Database{
 
 
 		int t_CurLine;
+		s_db_setting* m_Settings;
+
 		bool importDatabase(std::string);   //PARAM: File Name
-	  sResult* searchDatabase(Birthmark*, std::string, bool printall = false);  //String: KFLags
+	  sResult* searchDatabase(Birthmark*);  
 		void compareBirthmark(Birthmark*, Birthmark*);
 		bool isBirthmarkEqual(Birthmark*, Birthmark*);
 	  void autoCorrelate();
@@ -139,6 +151,8 @@ class Database{
 		void printXML();
 		void print();
 		void printKTable();
+
+		void printStats();
 };
 
 
