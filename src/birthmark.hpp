@@ -137,7 +137,7 @@ class Birthmark{
 
 
 //Reads in a verilog file and extracts the birthmark from it
-Birthmark* extractBirthmark(std::string, std::string kval, bool predictFlag, Optmode=eOpt);
+Birthmark* extractBirthmark(std::string, std::string kval, bool predictFlag, bool strictFlag, Optmode=eOpt);
 
 
 #endif

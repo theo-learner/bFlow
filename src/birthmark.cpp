@@ -893,7 +893,7 @@ void Birthmark::print(){
 
 
 
-Birthmark* extractBirthmark(std::string file, std::string kval, bool predictFlag, Optmode optFlag){
+Birthmark* extractBirthmark(std::string file, std::string kval, bool predictFlag,  bool  strictFlag, Optmode optFlag){
 	//Get extension
 	int lastDotIndex= file.find_last_of(".");
 	std::string ext = file.substr(lastDotIndex+1, file.length()-lastDotIndex);
@@ -908,6 +908,9 @@ Birthmark* extractBirthmark(std::string file, std::string kval, bool predictFlag
 
 	std::string predictCmd = "";
 	if(predictFlag) predictCmd = " -p";
+	
+	std::string strictCmd = "";
+	if(strictFlag) strictCmd = " -s";
 
 	std::string cmd = "";
 	struct stat statbuf;
@@ -916,11 +919,11 @@ Birthmark* extractBirthmark(std::string file, std::string kval, bool predictFlag
 	if(ext == "v"){
 		//Extract the birthmark from the verilog
 		printf(" -- Reading Reference Verilog Design\n");
-		cmd = "python scripts/process_verilog.py " + file + " " + kval + " " +  optCmd + " " + predictCmd; 
+		cmd = "python scripts/process_verilog.py " + file + " " + kval + " " +  optCmd + " " + predictCmd + " " + strictCmd; 
 	}
 	else if(stat(file.c_str(), &statbuf) != -1){
 		if(S_ISDIR(statbuf.st_mode))
-			cmd = "python scripts/process_verilog.py " + file + " " + kval + " " + optCmd + " " + predictCmd; 
+			cmd = "python scripts/process_verilog.py " + file + " " + kval + " " + optCmd + " " + predictCmd + " " + strictCmd; 
 	}
 	else throw cException("(extractBirthmark:T1) Unknown Extension: " + ext);
 
