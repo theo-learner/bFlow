@@ -16,9 +16,6 @@ using namespace rapidxml;
  */
 Birthmark::Birthmark(){
 	m_BinnedConstants.resize(m_NumBin+2, 0); //Add 2 for z,x constants
-	m_MaxSequence.push_back("a");
-	m_MinSequence.push_back("a");
-	m_AlphaSequence.push_back("a");
 }
 
 /**
@@ -26,9 +23,6 @@ Birthmark::Birthmark(){
  *  Loads birthmark from XML 
  */
 Birthmark::Birthmark(xml_node<>* cktNode){
-	m_MaxSequence.push_back("a");
-	m_MinSequence.push_back("a");
-	m_AlphaSequence.push_back("a");
 	m_BinnedConstants.resize(m_NumBin+2, 0); //Add 2 for z,x constants
 	importXML(cktNode);
 }
@@ -163,30 +157,16 @@ bool Birthmark::importXML(xml_node<>* cktNode){
 			//Calculate the frequency and set count:
 			std::string kstr_sorted = kstr;
 			std::sort(kstr_sorted.begin(), kstr_sorted.end());
-			std::string kset;
-			std::map<char, int> kfreq;
-			std::map<char, int>::iterator iFreq;
+			std::string kset = "";
 			char prev = '#';
 
 			for(unsigned int i = 0; i < kstr_sorted.length(); i++){
-
-				if(kstr_sorted[i] != prev){
-					//Set
+				if(kstr_sorted[i] != prev)
 					kset += kstr_sorted[i];
-
-					//Freq
-					std::pair<std::map<char, int>::iterator, bool> ret;
-					ret = kfreq.insert(std::pair<char, int> (kstr_sorted[i], 1));
-					iFreq = ret.first;
-					prev = kstr_sorted[i];
-				}
-				else{
-					iFreq->second++;
-				}
 			}
 
 		 	m_kgramset[kset]++;
-			m_kgramfreq[kfreq]++;
+			m_kgramfreq[kstr_sorted]++;
 
 
 		}
@@ -274,10 +254,7 @@ int Birthmark::getKGramSetSize(){
 int Birthmark::getKGramListSize(){
 	return m_kgramlist.size(); 
 }
-int Birthmark::getKGramCounterSize(){
-	return m_kgramcount.size(); 
-}
-int Birthmark::getKGramFreq(){
+int Birthmark::getKGramFreqSize(){
 	return m_kgramfreq.size(); 
 }
 
@@ -347,19 +324,11 @@ void Birthmark::getKGramSet(std::map<std::string, int >& rVal){
  * getKGramCounter
  *  Returns Kgram counter version 
  */
-void Birthmark::getKGramFreq(std::map<std::map<char, int>, int >& rVal){
+void Birthmark::getKGramFreq(std::map<std::string, int>& rVal){
 	//void Birthmark::getKGramFreq(std::set<std::map<std::string, int> >& rVal){
 	rVal = m_kgramfreq;
 }
 
-
-/**
- * getKGramCounter
- *  Returns Kgram counter version 
- */
-void Birthmark::getKGramCounter(std::vector<std::map<std::string, int> >& rVal){
-	rVal = m_kgramcount;
-}
 
 /**
  * getEndGrams
@@ -845,12 +814,9 @@ void Birthmark::print(){
 	for(it = m_AlphaSequence.begin(); it != m_AlphaSequence.end(); it++)
 		printf("Alpha Sequence: %s\n", it->c_str());
 
+/*
 	//Print the constant
 	printf("Constants: ");	
-	/*std::set<int>::iterator iSet;
-		for(iSet = m_Constants.begin(); iSet != m_Constants.end(); iSet++)
-		printf("%d ", *iSet);*/
-
 	for(unsigned int i = 0; i < m_BinnedConstants.size(); i++)
 		printf("%d ", m_BinnedConstants[i]);
 
@@ -874,12 +840,7 @@ void Birthmark::print(){
 	for(iMap = m_kgramset.begin(); iMap != m_kgramset.end(); iMap++)
 		printf("%10s  %d\n", iMap->first.c_str(), iMap->second);
 
-	printf("\nK-GRAM Counter:\n");
-	for(unsigned i = 0; i < m_kgramcount.size(); i++){
-		for(iMap = m_kgramcount[i].begin(); iMap != m_kgramcount[i].end(); iMap++)
-			printf("%s:%d ", iMap->first.c_str(), iMap->second);
-		printf("\n");
-	}
+  */
 
 	printf("---------------------------------------------------------------\n"); 
 }
@@ -903,7 +864,7 @@ Birthmark* extractBirthmark(std::string file, std::string kval, bool predictFlag
 	//Defined in scripts/yosys.py:24
 	std::string optCmd = "";
 	if(optFlag == eOpt)  optCmd= " -O 3";
-	else if(optFlag == eOpt_No_Clean)  optCmd = " -O 2";
+    else if(optFlag == eOpt_NoClean)  optCmd = " -O 2";
 	else if(optFlag == eNoOpt_Clean)  optCmd = " -O 1";
 
 	std::string predictCmd = "";
@@ -919,11 +880,11 @@ Birthmark* extractBirthmark(std::string file, std::string kval, bool predictFlag
 	if(ext == "v"){
 		//Extract the birthmark from the verilog
 		printf(" -- Reading Reference Verilog Design\n");
-		cmd = "python scripts/process_verilog.py " + file + " " + kval + " " +  optCmd + " " + predictCmd + " " + strictCmd; 
+        cmd = "python scripts/process_verilog.py " + file + " " + kval + " " +  optCmd + " " + predictCmd + " " + strictCmd;
 	}
 	else if(stat(file.c_str(), &statbuf) != -1){
 		if(S_ISDIR(statbuf.st_mode))
-			cmd = "python scripts/process_verilog.py " + file + " " + kval + " " + optCmd + " " + predictCmd + " " + strictCmd; 
+            cmd = "python scripts/process_verilog.py " + file + " " + kval + " " + optCmd + " " + predictCmd + " " + strictCmd;
 	}
 	else throw cException("(extractBirthmark:T1) Unknown Extension: " + ext);
 
@@ -931,7 +892,7 @@ Birthmark* extractBirthmark(std::string file, std::string kval, bool predictFlag
 	int status = system(cmd.c_str());
 
 	//Read in the XML file
-	std::string xmlREF = "data/reference.xml";
+    std::string xmlREF = "data/reference.xml";
 	std::string xmldata= "";
 	std::string xmlline;
 	std::ifstream refStream;

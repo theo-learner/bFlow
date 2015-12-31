@@ -67,11 +67,11 @@ def extractModuleNames_single(moduleList, vfile):
 		if len(splitted) > 0:
 
 			#Look for the module tag
-			if 'module' == splitted[0]:
+			if 'module' == splitted[0] and len(splitted) > 1:
 
 				#Remove any unwanted characters such as (
 				moduleName = re.split('#|\(',splitted[1])[0]
-				print "     MODULE: " + moduleName
+				#print "     MODULE: " + moduleName
 
 				if(hasEnd):             #Make sure there is an endmodule with every module
 					hasEnd = False
@@ -129,7 +129,7 @@ def extractModuleNames(moduleList, name):
 		for vfile in listdir(vdir):
 			#Make sure the file that is being read in is a DOT file
 			if(".v" !=  vfile[-2:] and ".inc" != vfile[-4:]):
-				print "[WARNING] -- File: " + vfile + " is not Verilog...skipping";
+				#print "[WARNING] -- File: " + vfile + " is not Verilog...skipping";
 				continue;
 			print " -  Reading in v File: " + vfile;
 	
@@ -177,6 +177,10 @@ def getTopModule(moduleList):
 	
 	#Make sure there is at least 1 module found for top
 	if len(topModules) == 0:
+		yosysErrorFile = "data/.pyosys.error";
+		e = open(yosysErrorFile, "w");
+		e.write("Error: No Top Module Found");
+		e.close()
 		raise error.GenError("No Top Module Found");
 	elif len(topModules) > 1:
 		print "[WARNING] -- Multiple top modules found. Narrowing top modules"

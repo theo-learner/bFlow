@@ -11,13 +11,13 @@ from sortedcontainers import SortedSet
 from bExtractor import BirthmarkExtractor
 import timeit
 
-def generateXML(dotfile, soup, kVal, verbose=False, findEndGram=False, strict=False):
+def generateXML(dotfile, soup, kVal, verbose=False, findEndGram=False, strict=False, runFlag=False):
 	if(".dot" not in dotfile):
 		print "[ERROR] -- Input file does not seem to be a dot file"
 		raise error.GenError("");
 	
-	bExtractor = BirthmarkExtractor(dotfile, strictFlag=strict);
-	result = bExtractor.getBirthmark(kVal, isFindEndGram=findEndGram);
+	bExtractor = BirthmarkExtractor(dotfile, strictFlag=strict, );
+	result = bExtractor.getBirthmark(kVal, isFindEndGram=findEndGram, productivity=runFlag);
 
 	if verbose == True:
 		print "MAXSEQ" 
@@ -51,7 +51,6 @@ def generateXML(dotfile, soup, kVal, verbose=False, findEndGram=False, strict=Fa
 
 	#Store the max seq
 	
-	'''
 	maxList = result[0];
 	for seq in maxList:
 		seqtag = soup.new_tag("max");
@@ -66,10 +65,9 @@ def generateXML(dotfile, soup, kVal, verbose=False, findEndGram=False, strict=Fa
 	
 	alphaList = result[5];
 	for seq in alphaList:
-		seqtag = soup.new_tag("rlph");
+		seqtag = soup.new_tag("alph");
 		seqtag.string = seq 
 		ckttag.append(seqtag);
-	'''
 	
 	constSet= result[2];
 	for const, count in constSet.iteritems():
@@ -104,12 +102,14 @@ def generateXML(dotfile, soup, kVal, verbose=False, findEndGram=False, strict=Fa
 		kgramlist_tag.append(kgramdp_tag);
 
 
+		"""
 		for lineset in kgramlinenum[s]:
 			klinenum = ",".join(item for item in lineset)
 
 			kgramline_tag = soup.new_tag("ln");
 			kgramline_tag.string = klinenum;
 			kgramlist_tag.append(kgramline_tag);
+		"""
 		
 		
 		kgramlist_tag['cnt'] = cnt

@@ -56,7 +56,7 @@ namespace SIMILARITY{
 	void initAlignment();
 	int alignList(std::list<std::string>&, std::list<std::string>&, bool output = false);
 	int align(std::string, std::string);
-	std::string alignKGram(std::string, std::map<std::string, int>&);
+	std::string alignKGram(std::string, std::map<std::string, int>&, std::set<std::string>&);
 
 	double alignScore();
 	void printAlignment();
@@ -96,26 +96,12 @@ namespace SIMILARITY{
 		std::map<unsigned, unsigned>&);
 
 
-	double resemblance(std::map<std::string,int>& , std::map<std::string, int>&) ;
-	double containment(std::map<std::string,int>& , std::map<std::string, int>&) ;
+	double resemblance(std::map<std::string,int>& , std::map<std::string, int>&, bool, bool) ;
+	double containment(std::map<std::string,int>& , std::map<std::string, int>&, bool) ;
 	double resemblance(std::map<std::map<char,int>,int>& , std::map<std::map<char,int>, int>&) ;
 	double containment(std::map<std::map<char,int>,int>& , std::map<std::map<char,int>, int>&) ;
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 #endif

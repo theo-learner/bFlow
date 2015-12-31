@@ -45,31 +45,28 @@ int main( int argc, char *argv[] ){
 		TCLAP::CmdLine cmdline("This program reads in a verilog file as well as a XMLdatabase files. It preprocesses the verilog file and extracts the birthmark. Compares the reference birthmark to the birthmarks in the database. Outputs a ranked list showing the circuits that are similar to the reference", ' ', "0.0");
 
 		//Reference
-		TCLAP::ValueArg<std::string> databaseArg("d", "database", "Processed Database file (XML)", true, "", "XML");
+		TCLAP::ValueArg<std::string> databaseArg("x", "xml", "Processed Database file (XML)", true, "", "XML");
 		cmdline.add(databaseArg);
 
 		//Database XML
-		TCLAP::ValueArg<std::string> circuitListArg("c", "circuits", "File that contains circuits to process", true, "", "DB");
+		TCLAP::ValueArg<std::string> circuitListArg("d", "database", "File that contains circuits to process", true, "", "DB");
 		cmdline.add(circuitListArg);
 
 		//Database XML
 		TCLAP::ValueArg<std::string> kArg("k", "kflag", "KLC, KLR, KSC, KSR, KFC, KFR", false, "KLR", "FLAG");
 		cmdline.add(kArg);
 
-		//Print all ranking switch
-		TCLAP::SwitchArg printAllArg("v", "verbose", "Print detailed results", cmdline, false);
+		//Partial matching flag
+		TCLAP::SwitchArg partialArg("p", "partial", "Sets partial matching during kgram match", cmdline, false);
 		
-		TCLAP::SwitchArg allArg("a", "all", "Does all the kgram comparison. Rank based on kflag", cmdline, false);
-
-		//TCLAP::SwitchArg optimizeArg("O", "optimize", "Optimize the reference circuit", cmdline, false);
 
 
 		cmdline.parse(argc, argv);
 
 		std::string xmlDB= databaseArg.getValue();
 		std::string database_file= circuitListArg.getValue();
-		bool printallresult = printAllArg.getValue();
-		bool allFlag = allArg.getValue();
+		bool allFlag = true;//allArg.getValue();
+		bool partialFlag = partialArg.getValue();//allArg.getValue();
 		//bool optimize = optimizeArg.getValue();
 		std::string kFlag = kArg.getValue();
 
@@ -84,8 +81,8 @@ int main( int argc, char *argv[] ){
 
 		//Settings
 		db->m_Settings->kgramSimilarity = kFlag;
-		db->m_Settings->show_all_result = printallresult;
 		db->m_Settings->allsim= allFlag;
+		db->m_Settings->partialMatch = partialFlag;
 		db->suppressOutput();
 
 		db->t_CurLine = -1;
@@ -137,36 +134,52 @@ int main( int argc, char *argv[] ){
 		printf( "[*] -- Finished processing circuits\n");
 		std::map<std::string, sResult*>::iterator iMap; //circuit name, top circuit that was returned
 		for(iMap = foundList.begin(); iMap != foundList.end(); iMap++){
-			printf("-----------------------------------------------------------------------------\n");
+			printf("-------------------------------------------------------------------------\n");
 			printf("%s:\n", iMap->first.c_str());
 			bool found = false;
+			//Print out the top matching circuit
 			if(iMap->second->topMatch.size() > 0){
-				for(unsigned int i = 0; i < iMap->second->topMatch.size(); i++){
-					printf("\033[1;32m    %5.2f : %s\033[0m\n", iMap->second->topScore[i], iMap->second->topMatch[i].c_str());
+				fprintf(ofs, "%s", iMap->second->topMatch[0].c_str());
+				for(unsigned int i = 0; i < iMap->second->topMatch.size(); i++)
+					printf("\033[1;32m    R:%5.2f : %s\033[0m\n", iMap->second->topScore[i], iMap->second->topMatch[i].c_str());
+
+				found = true;
+			}
+			
+			//Print out the possible containment
+			if(iMap->second->topContain.size() > 0){
+				fprintf(ofs, "%s", iMap->second->topContain[0].c_str());
+				for(unsigned int i = 0; i < iMap->second->topContain.size(); i++){
+					printf("\033[1;34m    C:(%4.2f)(%4.2f):%4.2f%s", iMap->second->conCScore1[i],iMap->second->conCScore2[i], iMap->second->conCScore[i], iMap->second->conDir[i].c_str());
+					printf("\033[1;34mR:%5.2f : %s\033[0m\n", iMap->second->conRScore[i],  iMap->second->topContain[i].c_str());
 				}
 				found = true;
 			}
 
+			//Print out the possible matches
 			if(iMap->second->okayMatch.size() > 0){
-				for(unsigned int i = 0; i < iMap->second->okayMatch.size(); i++){
-					printf("\033[1;33m    %5.2f : %s\033[0m\n", iMap->second->okayScore[i], iMap->second->okayMatch[i].c_str());
-				}
+				fprintf(ofs, "%s", iMap->second->okayMatch[0].c_str());
+				for(unsigned int i = 0; i < iMap->second->okayMatch.size(); i++)
+					printf("\033[1;33m    O:%5.2f : %s\033[0m\n", iMap->second->okayScore[i], iMap->second->okayMatch[i].c_str());
 				found = true;
 			}
+				
 
+			//If no designs were found
 			if(!found){
-				  printf("\033[1;31m    NO designs have been found to match reference\033[0m\n");
+				  printf("\033[1;31m    E:NO designs have been found to match reference\033[0m\n");
+					fprintf(ofs, "NONE");
 			}
+
+			fprintf(ofs, "\n");
 
 			printf("  Next Top: %s -- %7.4f\n", iMap->second->topNextCircuit.c_str(), iMap->second->topNext);
 
 
-			if(iMap->second->topNext > maxScoreNext){
+			if(iMap->second->topNext > maxScoreNext)
 				maxScoreNext = iMap->second->topNext;
-			}
-			else if(iMap->second->topNext < minScoreNext) {
+			else if(iMap->second->topNext < minScoreNext) 
 				minScoreNext = iMap->second->topNext;
-			}
 
 			sumScore2 += iMap->second->topNext;
 		}

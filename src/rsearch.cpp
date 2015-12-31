@@ -65,6 +65,8 @@ int main( int argc, char *argv[] ){
 		TCLAP::SwitchArg strictArg("s", "strict", "Use stricter search constraints", cmdline, false);
 		TCLAP::SwitchArg trustArg("t", "trust", "Trust mode: only use kgram info", cmdline, false);
 		TCLAP::SwitchArg allArg("a", "all", "Does all the kgram comparison. Rank based on kflag", cmdline, false);
+		TCLAP::SwitchArg partialArg("p", "parital", "Partial Kgram matching", cmdline, false);
+		TCLAP::SwitchArg invertedArg("i", "inverted", "Performed search using inverted index", cmdline, false);
 
 
 		cmdline.parse(argc, argv);
@@ -75,6 +77,8 @@ int main( int argc, char *argv[] ){
 		bool strictFlag = strictArg.getValue();
 		bool trustFlag = trustArg.getValue();
 		bool allFlag = allArg.getValue();
+		bool partialFlag = partialArg.getValue();
+    bool invertedFlag = invertedArg.getValue();
 		std::string kFlag = kArg.getValue();
 		int lineNumber= lineArg.getValue();
 
@@ -82,7 +86,7 @@ int main( int argc, char *argv[] ){
 		if(optimizeArg.getValue())
 			optMode = eOpt;
 		else
-			optMode = eNoOpt_Clean;
+			optMode = eOpt_NoClean;
 		
 		
 		/*
@@ -102,8 +106,11 @@ int main( int argc, char *argv[] ){
 
 		//Read Database
 		printf("[REF] -- Reading Database\n");
-		if(!trustFlag)
-			db = new Database(xmlDB);
+		if(!trustFlag){
+			SearchType searchType = ePredict;
+			//SearchType searchType = eSimilarity;
+			db = new Database(xmlDB, searchType);
+		}
 		else{
 			SearchType searchType = eTrust;
 			db = new Database(xmlDB, searchType);
@@ -113,6 +120,8 @@ int main( int argc, char *argv[] ){
 		db->m_Settings->kgramSimilarity = kFlag;
 		db->m_Settings->show_all_result = printallresult;
 		db->m_Settings->allsim= allFlag;
+		db->m_Settings->partialMatch= partialFlag;
+    db->invertDatabase();
 
 		//Extract birthmark of reference circuit
 		Birthmark* refBirthmark = extractBirthmark(referenceFile, db->getKVal(), lineNumber!=-1,  strictFlag, optMode);
@@ -122,7 +131,10 @@ int main( int argc, char *argv[] ){
 		gettimeofday(&start_time, NULL); //----------------------------------
 		db->t_CurLine = lineNumber;
 
-		db->searchDatabase(refBirthmark);
+    if(invertedFlag && kFlag[0] == 'K')
+		  db->searchIDatabase(refBirthmark);
+    else
+		  db->searchDatabase(refBirthmark);
 
 		if(lineNumber != -1){
 			printf("\n[RSEARCH] -- Current line number given. Searching for future operation\n");

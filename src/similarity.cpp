@@ -1,4 +1,4 @@
-/*@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@ 
+    /*@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@
 	@  similarity.cpp
 	@  
 	@  @AUTHOR:Kevin Zeng
@@ -22,14 +22,13 @@ double SIMILARITY::euclidean(std::map<std::string, unsigned>& data1, std::map<st
 	iMap2 = data2.begin();
 	for(iMap = data1.begin(); iMap != data1.end(); iMap++){
 		if(iMap2->first == iMap2->first){
-			sum += (double)((iMap->second- iMap2->second)*(iMap->second-iMap2->second));
+			sum += (double)abs((iMap->second - iMap2->second));
 			iMap2++;
 		}
 		else throw cException("(SIMILARITY::euclidean) FP Type name doesn't match");
 	}
-	
 
-	return sqrt(sum);
+	return (sum);
 }
 
 /**
@@ -41,9 +40,9 @@ double SIMILARITY::euclidean(std::vector<unsigned>& data1, std::vector<unsigned>
 
 	double sum = 0.0;
 	for(unsigned int i =  0; i < data1.size(); i++)
-		sum += (double)((data1[i]- data2[i])*(data1[i]- data2[i]));
+		sum += (double)abs((data1[i]- data2[i]));
 
-	return sqrt(sum);
+	return (sum);
 }
 
 /**
@@ -58,17 +57,17 @@ double SIMILARITY::euclidean(std::vector<int>& data1, std::vector<int>& data2){
 
 	double sum = 0.0;
 	for(unsigned int i =  0; i < smallSize; i++)
-		sum += (double)((data1[i]- data2[i])*(data1[i]- data2[i]));
+		sum += (double)abs((data1[i]- data2[i]));
 
 	
 	if(data1.size() < data2.size())
 		for(unsigned int i =  smallSize; i < data2.size(); i++)
-			sum += (double)(data2[i] * data2[i]);
+			sum += (double)abs(data2[i]);
 	else
 		for(unsigned int i =  smallSize; i < data1.size(); i++)
-			sum += (double)(data1[i] * data1[i]);
+			sum += (double)abs(data1[i]);
 	
-	return sqrt(sum);
+	return sum;
 }
 
 
@@ -142,56 +141,88 @@ double SIMILARITY::cosine(std::vector<unsigned>& data1, std::vector<unsigned>& d
  *   Resemblance formula for two sets of KGRAM SET AND LIST BASE
  */
 
-double SIMILARITY::resemblance(std::map<std::string,int>& data1, std::map<std::string, int>& data2){
+double SIMILARITY::resemblance(std::map<std::string,int>& data1, std::map<std::string, int>& data2, bool partialMatch, bool countMatch){
 	double intersection = 0.0;
 	double numunion= 0.0;
 	double total1 = 0.0;
 
 	//Goes through and finds the grams that are the same
+	std::set<std::string> marked;
 	std::map<std::string, int>::iterator iMap;
 	for(iMap = data1.begin(); iMap != data1.end(); iMap++){
+		double size = (double) iMap->first.size();
+
+		if(countMatch) total1+= (size *2.0);
+		else           total1+= (size );
 
 		//Intersection is the number of grams that are shared between the two
-		if(data2.find(iMap->first) != data2.end()){
-			intersection +=  (double) iMap->first.size(); //larger q-grams have a higher weight
-			total1+= (double) iMap->first.size();
+		std::map<std::string, int>::iterator iMap2;
+		iMap2 = data2.find(iMap->first);
+
+		if(iMap2 != data2.end()){
+			//larger q-grams have a higher weight as well as two kgrams with close counts
+
+			if(countMatch){
+				std::map<std::string, int>::iterator iMap2;
+				iMap2 = data2.find(iMap->first);
+				double count2 = (double) iMap2->second;
+				double countRatio = iMap->second > count2? 
+														count2 / (double) iMap->second : 
+														(double) iMap->second / count2;
+				intersection +=  (size + countRatio*size);
+			}
+			else
+				intersection +=  (size);
+
 		}
 		else if(iMap->first.size() > 1){ //Partial kgram match
-			std::string maxString = alignKGram(iMap->first, data2);
+			if(partialMatch){
+				std::string maxString = alignKGram(iMap->first, data2, marked);
 
-			if(maxString != ""){
-				int idealScore1 = align(iMap->first, iMap->first);
-				int idealScore2 = align(maxString, maxString);
-				int matchScore= align(iMap->first, maxString);
-				int idealScore = idealScore1 < idealScore2 ? idealScore1 : idealScore2;
+				if(maxString != ""){
+					int idealScore1 = align(iMap->first, iMap->first);
+					int idealScore2 = align(maxString, maxString);
+					double matchScore  = (double) align(iMap->first, maxString);
+					double idealScore  = (double) idealScore1 < idealScore2 ? (double) idealScore1 : (double) idealScore2;
 
-				double result = (double) matchScore / (double) idealScore;
+					double result =  matchScore / idealScore;
 
-				if(result >0.8) //Is the result significant enough 
-				{
-					intersection += (result * (double) iMap->first.size());
-					//printf("   RGRAM: %8s - %8s  SCORE: %5.3f  MAT: %3d  ID1: %d ID2: %d\n\n", iMap->first.c_str(), maxString.c_str(), result, matchScore, idealScore1, idealScore2);
-				}
-				else{
-					//printf("NO GRAM:  %8s - %8s  SCORE: %5.2f  MAT: %3d  ID1: %d ID2: %d\n", iMap->first.c_str(), maxString.c_str(),result, matchScore, idealScore1, idealScore2);
+					if(result >0.8) //Is the result significant enough 
+					{
+						marked.insert(maxString);
+						if(countMatch){
+							double count2 = (double) data2[maxString];
+							double countRatio = iMap->second > count2? 
+																	count2 / (double) iMap->second : 
+																	(double) iMap->second / count2;
+							std::map<std::string, int>::iterator iMap2;
+							iMap2 = data2.find(iMap->first);
+
+							intersection += (result * size) + countRatio * size ;
+						}
+						else           intersection += (result * size); 
+						//printf("INTERSECTION: %f MAT: %d  IDEAL: %d  RESULT: %f", intersection, matchScore, idealScore, result);
+						//printf("   RGRAM: |%8s| - |%8s| \n", iMap->first.c_str(), maxString.c_str());
+						//printf("   RGRAM: |%s| - |%s|  SCORE: %5.3f  MAT: %3d  ID1: %d ID2: %d\n\n", iMap->first.c_str(), maxString.c_str(), result, matchScore, idealScore1, idealScore2);
+					}
+					else{
+						//printf("NO GRAM:  %8s - %8s  SCORE: %5.2f  MAT: %3d  ID1: %d ID2: %d\n", iMap->first.c_str(), maxString.c_str(),result, matchScore, idealScore1, idealScore2);
+					}
 				}
 			}
-
-			total1 += (double) iMap->first.size();
-		}
-		else{
-				//printf("Skipped GRAM: %s\n",  iMap->first.c_str());
 		}
 	}
 	
 	double total2 = 0.0;
-	for(iMap = data2.begin(); iMap != data2.end(); iMap++)
-		if(data1.find(iMap->first) != data1.end())
-			total2+= (double) iMap->first.size();
-		else if(iMap->first.size() > 1)
-			total2+= (double) iMap->first.size();
+	//Find the kgrams that are in the second one that are not by the datai1
+	for(iMap = data2.begin(); iMap != data2.end(); iMap++){
+		if(countMatch) total2+= (double) iMap->first.size() *2.0;
+		else total2+= (double) iMap->first.size();
+
+	}
 			
 	//printf("INTERSECTION: %f\n", intersection);
+	//printf("union: %ff\n", total1+total2-intersection);
 
 	//Union is the number of shared + the number of items not shared in 1 and 2
 	numunion = total1 + total2 - intersection;
@@ -199,7 +230,6 @@ double SIMILARITY::resemblance(std::map<std::string,int>& data1, std::map<std::s
 		return 0.0;
 
 //printf("total1 : %f\ttotal2: %f\n", total1, total2);
-//printf("total : %ff\n", total1+total2-intersection);
 
 //printf("INTER: %f\tUNION: %f\n", intersection, numunion);
 
@@ -214,7 +244,7 @@ double SIMILARITY::resemblance(std::map<std::string,int>& data1, std::map<std::s
  *   Data1 is the smaller or query circuit
  */
 
-double SIMILARITY::containment(std::map<std::string,int>& data1, std::map<std::string, int>& data2){
+double SIMILARITY::containment(std::map<std::string,int>& data1, std::map<std::string, int>& data2, bool countMatch){
 	double intersection = 0.0;
 	double total = 0.0;
 	if(data1.size() == 0 || data2.size() == 0)
@@ -223,10 +253,25 @@ double SIMILARITY::containment(std::map<std::string,int>& data1, std::map<std::s
 	std::map<std::string, int>::iterator iMap;
 	for(iMap = data1.begin(); iMap != data1.end(); iMap++){
 		//Intersection is the number of grams that are shared between the two
-		total += (double) iMap->first.size();
+		double size = (double) iMap->first.size();
+		if(countMatch) total += size * 2.0;
+		else 				   total += size;
+		
 
-		if(data2.find(iMap->first) != data2.end())
-			intersection += (double)iMap->first.size();
+		if(data2.find(iMap->first) != data2.end()){
+			if(countMatch){
+				std::map<std::string, int>::iterator iMap2;
+				iMap2 = data2.find(iMap->first);
+				double count2 = (double) iMap2->second;
+				double countRatio = iMap->second > count2? 
+														count2 / (double) iMap->second : 
+														(double) iMap->second / count2;
+				intersection +=  (size + countRatio*size);
+
+			}
+			else intersection += (double)iMap->first.size();
+
+		}
 	}
 
 	//printf("NUM: %f\tDEN: %d\n", intersection, data2.size());
@@ -247,22 +292,32 @@ double SIMILARITY::resemblance(std::map<std::map<char,int>, int>& data1, std::ma
 	double total2 = 0.0;
 
 	std::map<std::map<char, int>, int>::iterator iMap;
+	std::map<char, int>::const_iterator iMapC;
 	for(iMap = data1.begin(); iMap != data1.end(); iMap++){
-		total1+= (double) iMap->first.size()*(double) iMap->second;
+		//Count how long the gram is 
+		int size = 0;
+		for(iMapC = iMap->first.begin(); iMapC != iMap->first.end(); iMapC++)
+			size += iMapC->second;
+
+		total1+= (double) size;
 		//Intersection is the number of grams that are shared between the two
 		if(data2.find(iMap->first) != data2.end())
-			intersection +=(double) iMap->first.size() *(double) iMap->second;
+			intersection +=(double) size;
 	}
 	
-	for(iMap = data2.begin(); iMap != data2.end(); iMap++)
-		total2+= (double) iMap->first.size()*(double) iMap->second;
+	for(iMap = data2.begin(); iMap != data2.end(); iMap++){
+		int size = 0;
+		for(iMapC = iMap->first.begin(); iMapC != iMap->first.end(); iMapC++)
+			size += iMapC->second;
+		
+		total2+= (double) size;
+	}
 
 	//Union is the number of shared + the number of items not shared in 1 and 2
-	numunion = intersection + total1 -intersection + total2 - intersection;
+	numunion = total1 + total2 - intersection;
 	if(numunion == 0.0) return 0.0;
 
 	return intersection / numunion;
-	
 }
 
 
@@ -321,13 +376,17 @@ int SIMILARITY::align(std::string str1, std::string str2){
  * alignKGram
  *   Find the closest matching gram in the list that matches the string
  */
-std::string SIMILARITY::alignKGram(std::string str, std::map<std::string, int>& gram){
+std::string SIMILARITY::alignKGram(std::string str, std::map<std::string, int>& gram, std::set<std::string>& marked){
 	std::map<std::string, int>::iterator iMap;
 
 	int maxScore = 0;
 	std::string maxScoreString = "";
 	for(iMap = gram.begin(); iMap != gram.end(); iMap++){
-		if(iMap->first.length() <= str.length()+1 && iMap->first.length() >= str.length() -1){
+		if(marked.find(iMap->first) != marked.end())
+			continue;
+			
+		//if(iMap->first.length() <= str.length()+1 && iMap->first.length() >= str.length() -1){
+		if(iMap->first.length() == str.length()){
 			int score = align(iMap->first, str);
 			//printf("COMPARE: !%s! - !%s! : SCORE: %d\n", str.c_str(), iMap->first.c_str(), score);
 			if(score > maxScore){
@@ -350,8 +409,7 @@ std::string SIMILARITY::alignKGram(std::string str, std::map<std::string, int>& 
 
 /**
  * alignList 
- *  given a list of sequences (REF and DB), align the sequences and extract
- *  the similarity of the alignment (AVG SIM) 
+ *  given a list of sequences (REF and DB), align the sequences and extract *  the similarity of the alignment (AVG SIM) 
  */
 int SIMILARITY::alignList(std::list<std::string>& ref, std::list<std::string>& db, bool output){
 	//	timeval start_time, end_time;
@@ -366,12 +424,13 @@ int SIMILARITY::alignList(std::list<std::string>& ref, std::list<std::string>& d
 			//Assign the alignment structure with the sequences
 			TSequence seq1 = *iRef;
 			TSequence seq2 = *iSeq;
+			//printf("S1 %s - S2%s\n", iRef->c_str(), iSeq->c_str());
 			assignSource(row(s_Align, 0), seq1);
 			assignSource(row(s_Align, 1), seq2);
 			
 			//Alignment of the sequence
 			int score = localAlignment(s_Align, s_Score);
-			if(output) printAlignment();
+			//printAlignment();
 
 			//Calcuate the difference in the size ratios
 			/*
@@ -384,6 +443,8 @@ int SIMILARITY::alignList(std::list<std::string>& ref, std::list<std::string>& d
 
 
 			//Go through the aligned sequence and add additional gap penalty
+      /*
+      GAP PENALTY MATRIX NEEDS TO BE UPDATED. OTHERWISE IGNORE
 			TRowIterator it1 = begin(row(s_Align,0));
 			TRowIterator it2 = begin(row(s_Align,1));
 			TRowIterator it1End = end(row(s_Align,0));
@@ -392,9 +453,10 @@ int SIMILARITY::alignList(std::list<std::string>& ref, std::list<std::string>& d
 				else if(isGap(it2))  score += CircuitGapPenaltyMatrix[*it1];
 				++it2;
 			}
+      */
 
-
-			if(output)
+				//printf("[SIM] -- %5d \n", score );
+       if(output)
 				printf("[SIM] -- %5d   ALIGN: %s - %s\n==================\n", score, iRef->c_str(), iSeq->c_str());
 			//Sum the entire score
 			//totalScore += (score*sizeRatio);

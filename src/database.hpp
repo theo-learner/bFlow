@@ -42,6 +42,7 @@ struct Score{
 	double ksc;
 	double ksr;
 	double klc;
+	double klc2;
 	double klr;
 	double kfc;
 	double kfr;
@@ -51,6 +52,7 @@ struct Score{
 	double stat;
 	unsigned id;
 	std::string name;
+	std::string direction;
 	Birthmark* bm;
 };
 
@@ -80,25 +82,40 @@ struct sGram2{
 struct sResult{
 	std::vector<std::string> topMatch;
 	std::vector<double> topScore;
+
 	std::vector<std::string> okayMatch;
 	std::vector<double> okayScore;
+
+	std::vector<std::string> topContain;
+	std::vector<std::string> conDir;
+	std::vector<double> conRScore;
+	std::vector<double> conCScore;
+	std::vector<double> conCScore1;
+	std::vector<double> conCScore2;
 	double topNext;
 	std::string topNextCircuit;
+
+	std::string ranked_result_r; //resemblance rank
+	std::string ranked_result_c; //containment rank
 };
 
 
 
 enum SearchType {
 	eSimilarity,
+	ePredict,
 	eTrust
 };
 
 struct s_db_setting{
-	bool allsim;
-	bool show_all_result;
-	bool suppressOutput;
-	SearchType searchType;
-	std::string kgramSimilarity;
+	bool allsim;                  //Performs all the Similarity matching to compare
+	bool show_all_result;         //Shows the entire ranking instead of just 10
+	bool suppressOutput;          //Suppresses the output
+	bool partialMatch;            //Performs partial q-gram matching with KLR
+	bool countMatch;              //Takes the count of the q-grams into account
+	bool backEndProductivity;     //This is set for running the actual backend
+	SearchType searchType;        //Search type: ePredict, eTrust, eSimilarity
+	std::string kgramSimilarity;  //The type of q-gram scheme to use: KLR, KLC, KFR, KFC
 };
 
 
@@ -106,6 +123,7 @@ class Database{
 	private:
 		rapidxml::xml_document<> m_XML;
 		std::vector<Birthmark*> m_Database;
+    std::map<std::string, std::vector<int> > m_IDatabase;
 		bool m_SuppressOutput;
 		std::string m_KVal;
 		int m_KInt;
@@ -129,7 +147,9 @@ class Database{
 		s_db_setting* m_Settings;
 
 		bool importDatabase(std::string);   //PARAM: File Name
+		bool invertDatabase();   //PARAM: File Name
 	  sResult* searchDatabase(Birthmark*);  
+	  sResult* searchIDatabase(Birthmark*);  
 		void compareBirthmark(Birthmark*, Birthmark*);
 		bool isBirthmarkEqual(Birthmark*, Birthmark*);
 	  void autoCorrelate();
@@ -153,6 +173,7 @@ class Database{
 		void printKTable();
 
 		void printStats();
+		void printSettings();
 };
 
 

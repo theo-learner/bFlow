@@ -33,9 +33,22 @@ struct sGram{
 
 
 enum Optmode {
-	eOpt, eOpt_No_Clean, eNoOpt_Clean, eNoOpt
+	eOpt, eOpt_NoClean, eNoOpt_Clean, eNoOpt
+};
+		
+struct cmpLengthValue{
+	bool operation(const std::string& a, const std::string& b) const {
+		if(a.length() == b.length())	{
+			return a < b;
+		}
+		else{
+			return a.length() > b.length();
+		}
+	}
 };
 
+
+typedef std::map<std::string, int, cmpLengthValue> t_kgram_list;
 
 class Birthmark{
 	private: 
@@ -69,12 +82,12 @@ class Birthmark{
 		//Gram, count
 		std::map<std::string, int> m_kgramset;
 		std::map<std::string, int> m_kgramlist;
+		std::map<std::string, int> m_kgramfreq;
 
 		//kgram, list of lines
 		std::map<std::string, std::vector<std::vector<int> > >m_kgramline;
 
 		//(letter op, freq), count
-		std::map<std::map<char, int>, int > m_kgramfreq;
 		
 		//List of keys to m_kgramfreq (letter op, freq)
 		std::vector<std::map<std::string, int> > m_kgramcount;
@@ -92,12 +105,10 @@ class Birthmark{
 		void getConstants(std::set<int>&);
 		void getKGramSet(std::map<std::string, int>&);
 		void getKGramList(std::map<std::string, int>&);
-		void getKGramCounter(std::vector<std::map<std::string, int> > &);
-		void getKGramFreq(std::map<std::map<char, int>, int > &);
-		int getKGramFreq();
+		void getKGramFreq(std::map<std::string, int> &);
+		int getKGramFreqSize();
 		int getKGramSetSize();
 		int getKGramListSize();
-		int getKGramCounterSize();
 		void getStat(std::vector<int>&);
 		void getBinnedConstants(std::vector<unsigned>&);         //Bins the constants into a histogram
 		void getBinnedConstants2(std::vector<unsigned>&);         //Bins the constants into a histogram

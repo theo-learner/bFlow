@@ -46,11 +46,13 @@ def create_yosys_script(fileName, scriptName, hier = False, opt=3):
 
 
 	if opt == 3:                  #FULL OPTIMIZATIONS
-		optcmd = "opt;\n"     #Many unused net and cells will be removed
+		optcmd = "opt -keepdc;\n"     #Many unused net and cells will be removed
+		#optcmd = "opt_const -keepdc -undriven; opt_muxtree; opt_reduce; opt_share; opt_clean\n"
 		print " - Optimizations on"
 	elif opt == 2:                #Optimizations with no clean operation. Used for searching incomplete circuits
 		print " - Optimizations on (no CLEAN)"
-		optcmd = "opt -fast\n"
+		#optcmd = "opt_const -keepdc -undriven; opt_muxtree; opt_reduce; opt_share\n"
+		optcmd = "opt -fast -keepdc\n"
 	elif opt == 1:                #No optimizations except to just clean
 		print " - Optimizations off (CLEAN)"
 		optcmd = "clean;\n"
@@ -68,14 +70,7 @@ def create_yosys_script(fileName, scriptName, hier = False, opt=3):
 	else:
 		fsmcmd = "fsm_detect; fsm_extract; fsm_opt; fsm_recode; fsm_map;\n"
 
-	if opt < 2:
-		memorycmd = "memory_collect;\n"
-	else:
-		memorycmd = "memory_collect; memory_dff; memory_share;\n"
 
-	
-
-	
 
 	script = script + "\n\n";
 	script = script + "hierarchy -check\n";
@@ -83,19 +78,21 @@ def create_yosys_script(fileName, scriptName, hier = False, opt=3):
 	script = script + optcmd;
 	script = script + fsmcmd;
 	script = script + optcmd;
-	#script = script + "memory_collect;\n\n";
-	script = script + " memory_dff; memory_share; memory_collect;\n";
+	script = script + "flatten\n";
+	script = script + optcmd;
+	#script = script + "memory;\n\n";
+	script = script + " memory_dff; memory_share; memory_collect; \n"#memory_map\n";
 	script = script + optcmd;
 
 
 	#script = script + "techmap -map /usr/local/share/yosys/pmux2mux.v;\n\n"
-	script = script + "flatten\n";
-	script = script + optcmd;
-	script = script + "wreduce\n";
+	script = script + "wreduce;\n";
 	if opt == 3 or opt == 1:
-		script = script + "opt_clean -purge\n";
+		script = script + "opt_clean -purge;\n";
 	else: 
 		script = script + optcmd;
+	
+        #script = script + "opt_clean -buf_clean;\n"
 
 	#script = script + "dff2dffe\n";
 	#script = script + optcmd;
@@ -147,6 +144,11 @@ def execute(scriptFile):
 	hasError = False;
 
 	if "ERROR:" in log:
+                yosysErrorFile = "data/.pyosys.error";
+                e = open(yosysErrorFile, "w");
+                e.write(log);
+                e.close()
+
 		return log;
 	else:
 		return ""

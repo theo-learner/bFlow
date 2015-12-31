@@ -44,15 +44,24 @@ int main( int argc, char *argv[] ){
 
 		//Read Database
 		printf("[BENCH_DB] -- Reading Database\n");
+		//SearchType searchtype = eTrust;       //Set the search to "trust" so that containment goes both ways
+		//db = new Database(xmlDB, searchtype);
 		db = new Database(xmlDB);
 		db->suppressOutput();
-		/*
+		db->m_Settings->kgramSimilarity = "KFR";
+		db->m_Settings->allsim= true;
+		db->m_Settings->partialMatch = false;
+    db->invertDatabase();
 		
 		timeval start_time, end_time;
 		timeval start_search, end_search;
 		std::ofstream ofs;
 		std::ofstream ofs2;
+		std::ofstream ofsi;
+		std::ofstream ofsq;
 		ofs.open("data/c2DB_Time.dat");
+		ofsi.open("data/c2DB_qTime_inverted.dat");
+		ofsq.open("data/c2DB_qTime.dat");
 		ofs2.open("data/avgSeqLength.dat");
 
 
@@ -64,21 +73,48 @@ int main( int argc, char *argv[] ){
 		printf("[BENCH_DB] -- Performing single pass through database vs database\n");
 		for(unsigned int i = 0; i < db->getSize(); i++){
 			printf("[BENCH_DB] -- Reference Circuit: %s\n", db->getBirthmark(i)->getName().c_str());
+      //Functional
+      printf("Functional Search\n");
+		  db->m_Settings->kgramSimilarity = "FUNC";
 			gettimeofday(&start_search, NULL); 
-			db->searchDatabase(db->getBirthmark(i), "");
+			db->searchDatabase(db->getBirthmark(i));
 			gettimeofday(&end_search, NULL);
 
 			double elapsedTime = (end_search.tv_sec - start_search.tv_sec) * 1000.0;
 			elapsedTime += (end_search.tv_usec - start_search.tv_usec) / 1000.0;
-			ofs<<elapsedTime/1000<<"\n";
+			ofs<<elapsedTime/1000.0<<"\n";
 			ofs2<<db->getBirthmark(i)->getAvgSequenceLength()<<"\n";
+      printf("ELAPSED: %f\n", elapsedTime/1000.0);
+			
+      //qgram
+      printf("Qgram Linear Search\n");
+		  db->m_Settings->kgramSimilarity = "KFR";
+      gettimeofday(&start_search, NULL); 
+			db->searchDatabase(db->getBirthmark(i));
+			gettimeofday(&end_search, NULL);
 
-			//Create a fasta format of the alpha sequences
-		  //fastaout<<">"<<db->getBirthmark(i)->getName()<<"\n"<<db->getBirthmark(i)->getAlpha<<"\n";
+			elapsedTime = (end_search.tv_sec - start_search.tv_sec) * 1000.0;
+			elapsedTime += (end_search.tv_usec - start_search.tv_usec) / 1000.0;
+			ofsq<<elapsedTime/1000.0<<"\n";
+      printf("ELAPSED: %f\n", elapsedTime/1000.0);
+
+      //Inverted qgram
+      printf("Qgram inverted Search\n");
+      gettimeofday(&start_search, NULL); 
+			db->searchIDatabase(db->getBirthmark(i));
+			gettimeofday(&end_search, NULL);
+
+			elapsedTime = (end_search.tv_sec - start_search.tv_sec) * 1000.0;
+			elapsedTime += (end_search.tv_usec - start_search.tv_usec) / 1000.0;
+			ofsi<<elapsedTime/1000.0<<"\n";
+      printf("ELAPSED: %f\n", elapsedTime/1000.0);
 
 			printf("[BENCH_DB] --  * Elapsed search time: %f\n\n", elapsedTime/1000.0);
 		}
+
 		ofs.close();
+		ofsi.close();
+		ofsq.close();
 		ofs2.close();
 		gettimeofday(&end_time, NULL);
 
@@ -91,8 +127,8 @@ int main( int argc, char *argv[] ){
 
 
 		//Autocorrelate the database
+		/*
 		printf("[BENCH_DB] -- Autocorrelating the database...\n");
-		db->suppressOutput();
 		db->autoCorrelate2();
 		printf("[BENCH_DB] -- Performaing k-fold cross validation\n");
 		db->crossValidation();

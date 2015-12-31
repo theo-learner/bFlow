@@ -57,6 +57,7 @@ int main( int argc, char *argv[] ){
 
 		//Print all ranking switch
 		TCLAP::SwitchArg strictArg("s", "strict", "Use stricter search constraints", cmdline, false);
+		TCLAP::SwitchArg partialArg("p", "partial", "Sets partial matching during kgram match", cmdline, false);
 
 		cmdline.parse(argc, argv);
 
@@ -65,12 +66,13 @@ int main( int argc, char *argv[] ){
 		std::string circuit2= circuit2Arg.getValue();
 		std::string kval = kArg.getValue();
 		bool strict = strictArg.getValue();
+		bool partialFlag = partialArg.getValue();
 		int opt = optArg.getValue();
 
 
 		//set opt flags
-		Optmode opt1 = eOpt_No_Clean;
-		Optmode opt2 = eOpt_No_Clean;
+		Optmode opt1 = eOpt_NoClean;
+		Optmode opt2 = eOpt_NoClean;
 		if(opt == 1) opt2 = eOpt;
 		else if(opt == 2) opt1 = eOpt;
 		else if(opt == 3){
@@ -80,6 +82,8 @@ int main( int argc, char *argv[] ){
 
 		Birthmark* birthmark1 = extractBirthmark(circuit1, kval, false, strict,  opt1);
 		Birthmark* birthmark2= extractBirthmark(circuit2, kval, false,  strict, opt2);
+		birthmark1->print();
+		birthmark2->print();
 
 
 		//########################################################################
@@ -88,6 +92,8 @@ int main( int argc, char *argv[] ){
 		timeval start_time, end_time;
 		gettimeofday(&start_time, NULL); //----------------------------------
 		Database* db = new Database();
+		db->m_Settings->partialMatch = partialFlag;
+		db->m_Settings->allsim= true;
 
 		db->compareBirthmark(birthmark1, birthmark2);
 		printf("KGram1: %6d\tKGram2: %6d\n", birthmark1->getKGramListSize(), birthmark2->getKGramListSize());

@@ -28,19 +28,62 @@
 
 #include "rapidxml/rapidxml.hpp"
 #include "rapidxml/rapidxml_print.hpp"
+#include "tclap/CmdLine.h"
+
 using namespace rapidxml;
+using namespace TCLAP;
 
 int main( int argc, char *argv[] ){
 	Database* db = NULL;
 	Server* server = NULL;
 
 	try{
-		if(argc != 3) throw ArgException();
+		TCLAP::CmdLine cmdline("This program acts as a central server for comparing circuits. XML Database file is read in and waits for a client to connect. Client sends over the birthmark of the circuit in XML format. Server searches for circuits in the database similar to the reference", ' ', "0.0");
+			
+
+		//Database XML
+		TCLAP::ValueArg<std::string> databaseArg("x", "database", "Database XML file", true, "", "XML");
+		cmdline.add(databaseArg);
+		
+		//KFlag XML
+		TCLAP::ValueArg<std::string> kArg("k", "kflag", "KLC, KLR, KSC, KSR, KFC, KFR", false, "BIRTHMARK", "FLAG");
+		cmdline.add(kArg);
+		
+		//Port Number
+		TCLAP::ValueArg<int> portArg("n", "port", "Port number to connect to", true, 8001, "PORT");
+		cmdline.add(portArg);
+		
+		//Print all ranking switch
+		TCLAP::SwitchArg printAllResultArg("v", "verbose", "Print detailed results", cmdline, false);
+		TCLAP::SwitchArg optimizeArg("O", "optimize", "Optimize the reference circuit", cmdline, false);
+		TCLAP::SwitchArg strictArg("s", "strict", "Use stricter search constraints", cmdline, false);
+		TCLAP::SwitchArg allArg("a", "all", "Does all the kgram comparison. Rank based on kflag", cmdline, false);
+		TCLAP::SwitchArg partialArg("p", "partial", "Partial Kgram matching", cmdline, false);
+
+
+		cmdline.parse(argc, argv);
 
 		//Read the xml database in
-		std::string xmlFile = argv[2];
-		unsigned port = (unsigned)s2i::string2int(argv[1]);
-		db = new Database(xmlFile);
+		unsigned port = portArg.getValue();
+		std::string xmlDB= databaseArg.getValue();
+		bool printallresult = printAllResultArg.getValue();
+		bool strictFlag = strictArg.getValue();
+		bool allFlag = allArg.getValue();
+		bool partialFlag = partialArg.getValue();
+		std::string kFlag = kArg.getValue();
+
+
+		//Need to pass in current line number
+		//int lineNumber= lineArg.getValue();
+
+		SearchType sType = ePredict;
+		db = new Database(xmlDB, sType);
+
+		//Settings
+		db->m_Settings->kgramSimilarity = kFlag;
+		db->m_Settings->show_all_result = printallresult;
+		db->m_Settings->allsim= allFlag;
+		db->m_Settings->partialMatch= partialFlag;
 
 		//Start up the server
 		server = new Server(port);
@@ -67,11 +110,12 @@ int main( int argc, char *argv[] ){
 			Birthmark* refBirthmark = new Birthmark();
 			refBirthmark->importXML(cktNode);
 
-			db->searchDatabase(refBirthmark, "KFC" );
+			sResult* result = db->searchDatabase(refBirthmark);
 
-
+			printf(" -- Sending result to monitor\n");
+			server->sendData("Resemblance:\n" + result->ranked_result_r + "\n\nContainment:\n" + result->ranked_result_c);
 			delete refBirthmark;
-			server->sendData("SERVER_READY");
+			delete result;
 		}
 		
 		server->closeSocket();
@@ -79,6 +123,7 @@ int main( int argc, char *argv[] ){
 	catch(cException e){
 		printf("%s", e.what());
 	}
+	/*
 	catch(ArgException e){
 		if(argc == 1){
 			printf("\n  cserver\n");
@@ -96,6 +141,7 @@ int main( int argc, char *argv[] ){
 			printf(" -- Usage: ./cserver [XML Database] [Port number]\n\n");
 		}
 	}
+	*/
 
 	
 	if(db != NULL) delete db;
