@@ -1,0 +1,11 @@
+v/reuse/sign_extender.v
+v/reuse/button_debounce.v
+v/reuse/uart_tx.v
+v/reuse/div_pipelined.v
+v/reuse/uart_rx.v
+v/reuse/reset
+v/reuse/pipeline_registers_set.v
+v/reuse/pipeline_registers.v
+v/reuse/sqrt_generic
+v/reuse/sqrt_pipelined.v
+v/reuse/ram_infer.v
