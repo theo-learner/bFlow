@@ -186,7 +186,7 @@ class BirthmarkExtractor(object):
     self.cnodes = []
     self.addlist = []
     self.linenumber= dict()
-    self.commutative = False;
+    self.commutative = True;
 
 
 

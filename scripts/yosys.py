@@ -81,7 +81,7 @@ def create_yosys_script(fileName, scriptName, hier = False, opt=3):
 	script = script + "flatten\n";
 	script = script + optcmd;
 	#script = script + "memory;\n\n";
-	script = script + " memory_dff; memory_share; memory_collect; \n"#memory_map\n";
+	script = script + " memory_dff; memory_share; memory_collect; memory_map\n";
 	script = script + optcmd;
 
 
